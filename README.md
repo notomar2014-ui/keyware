@@ -109,8 +109,7 @@ Please report vulnerabilities privately as described in [SECURITY.md](SECURITY.m
 ## Support Keyware
 
 Keyware is free and has no ads. If it saves you time, you can support it on Ko-fi:
-**Support Keyware**: *link coming soon*
-<!-- TODO: replace "link coming soon" with the Ko-fi page, e.g. [Support Keyware](https://ko-fi.com/<page>) -->
+[Support Keyware on Ko-fi](https://ko-fi.com/keyware)
 
 ## License
 
