@@ -22,6 +22,9 @@ const KEYS = new Set([...MODIFIERS, ...MEDIA, ...NAMED]);
 for (let c = 97; c <= 122; c += 1) KEYS.add(String.fromCharCode(c));
 for (let d = 0; d <= 9; d += 1) { KEYS.add(String(d)); KEYS.add(`numpad${d}`); }
 for (let f = 1; f <= 24; f += 1) KEYS.add(`f${f}`);
+// The Copilot key (Win+Shift+F23 from the keyboard) is one trigger key. It is never sent.
+const TRIGGER_ONLY = new Set(['copilot']);
+KEYS.add('copilot');
 
 const ALIASES = {
   control: 'ctrl', ctl: 'ctrl', lctrl: 'ctrl', rctrl: 'ctrl', left_ctrl: 'ctrl', right_ctrl: 'ctrl',
@@ -36,6 +39,7 @@ const ALIASES = {
   play_pause: 'media_play_pause', next_track: 'media_next', prev_track: 'media_prev', previous_track: 'media_prev',
   ';': 'semicolon', '=': 'equals', ',': 'comma', '-': 'minus', '.': 'period', '/': 'slash', '`': 'backtick',
   '[': 'bracket_left', ']': 'bracket_right', '\\': 'backslash', "'": 'quote',
+  copilot_key: 'copilot', copilot_button: 'copilot', co_pilot: 'copilot', co_pilot_key: 'copilot', caps_lock_key: 'caps_lock',
 };
 
 function canonKey(raw) {
@@ -116,6 +120,7 @@ function cleanKeys(list, what) {
   for (const raw of list) {
     const k = canonKey(raw);
     if (!k) throw new Bad(`${what} key`);
+    if (what !== 'trigger' && TRIGGER_ONLY.has(k)) throw new Bad(`${what} key`);
     if (!out.includes(k)) out.push(k);
   }
   if (!out.length) throw new Bad(`${what} keys`);
@@ -128,11 +133,16 @@ function isPanic(keys) {
   return (has('ctrl', 'alt', 'shift', 'esc') && s.size === 4) || (has('ctrl', 'alt', 'delete') && s.size === 3);
 }
 
-function cleanTrigger(t) {
+function cleanTrigger(t, tapHold) {
   if (!isObj(t)) throw new Bad('trigger');
   let mode = str(t.mode).trim().toLowerCase().replace(/[\s-]+/g, '_');
   mode = MODE_ALIASES[mode] || mode;
-  const keys = cleanKeys(t.keys, 'trigger');
+  let keys = cleanKeys(t.keys, 'trigger');
+  // A recorded Win+Shift+F23 is the Copilot key.
+  if (keys.includes('copilot') || (keys.length === 3 && ['win', 'shift', 'f23'].every((k) => keys.includes(k)))) {
+    keys = ['copilot'];
+    if (!['tap', 'hold', 'double_tap', 'triple_tap'].includes(mode)) mode = 'tap';
+  }
   const mods = keys.filter((k) => MODIFIERS.has(k));
   const plain = keys.filter((k) => !MODIFIERS.has(k));
   if (!MODES.has(mode)) {
@@ -150,7 +160,12 @@ function cleanTrigger(t) {
     if (plain.length !== 1 || mods.length) throw new Bad(`${mode} needs one key`);
     out.keys = [plain[0]];
   }
-  if (mode === 'hold') out.hold_ms = clampInt(t.hold_ms, 300, 5000, 800);
+  if (mode === 'hold') {
+    // Tap vs hold on one key uses a short threshold (default 200 ms).
+    const dual = tapHold === true;
+    out.hold_ms = clampInt(t.hold_ms, dual ? 100 : 300, 5000, dual ? 200 : 800);
+    if (t.keep_held === true || t.keep_held === 'true') out.keep_held = true;
+  }
   return out;
 }
 
@@ -163,6 +178,12 @@ const KNOWN_APPS = {
   firefox: ['firefox.exe'], code: ['code.exe'], 'vs code': ['code.exe'], vscode: ['code.exe'], 'visual studio code': ['code.exe'],
   discord: ['discord.exe'], spotify: ['spotify.exe'], notepad: ['notepad.exe'], roblox: ['robloxplayerbeta.exe'],
   valorant: ['valorant.exe'], fortnite: ['fortniteclient-win64-shipping.exe'],
+  cursor: ['cursor.exe'], slack: ['slack.exe'], word: ['winword.exe'], 'microsoft word': ['winword.exe'],
+  excel: ['excel.exe'], 'microsoft excel': ['excel.exe'], powerpoint: ['powerpnt.exe'],
+  photoshop: ['photoshop.exe'], 'adobe photoshop': ['photoshop.exe'],
+  premiere: ['adobe premiere pro.exe'], 'premiere pro': ['adobe premiere pro.exe'], 'adobe premiere pro': ['adobe premiere pro.exe'],
+  'after effects': ['afterfx.exe'], obs: ['obs64.exe'], 'obs studio': ['obs64.exe'],
+  figma: ['figma.exe'], blender: ['blender.exe'],
 };
 
 function cleanProfile(p) {
@@ -284,6 +305,7 @@ function cleanAction(a, trigger) {
     case 'media': return { type, media: cleanMedia(a.media || a.key), count: clampInt(a.count, 1, 50, 1) };
     case 'lock_screen': return { type };
     case 'screenshot': return { type };
+    case 'none': return { type };
     case 'run_command': {
       const command = str(a.command).trim();
       if (!command || command.length > 500 || /[\r\n]/.test(command)) throw new Bad('command');
@@ -317,14 +339,28 @@ function scanAction(action) {
 const LABEL_FALLBACK = {
   open_url: 'Open link', open_app: 'Open app', type_text: 'Type text', key_combo: 'Shortcut', macro: 'Macro',
   auto_click: 'Auto-click', open_path: 'Open folder', media: 'Media key', lock_screen: 'Lock PC',
-  screenshot: 'Screenshot', run_command: 'Run command', play: 'Play',
+  screenshot: 'Screenshot', run_command: 'Run command', play: 'Play', none: 'Key off',
 };
 
 function cleanBinding(b) {
   if (!isObj(b)) throw new Bad('binding');
-  const trigger = cleanTrigger(b.trigger);
+  const t = isObj(b.trigger) ? b.trigger : {};
+  const tapRaw = isObj(b.tap_action) ? b.tap_action : isObj(t.tap_action) ? t.tap_action : null;
+  const dual = Boolean(tapRaw) || t.keep_held === true || t.keep_held === 'true';
+  const trigger = cleanTrigger(b.trigger, dual);
+  if (trigger.keep_held !== undefined) delete trigger.keep_held;
   const action = cleanAction(b.action, trigger);
   scanAction(action);
+  let tapAction = null;
+  if (trigger.mode === 'hold' && dual) {
+    if ((t.keep_held === true || t.keep_held === 'true') && action.type === 'key_combo') trigger.keep_held = true;
+    if (tapRaw) {
+      tapAction = cleanAction(tapRaw, { mode: 'tap' });
+      scanAction(tapAction);
+      if (tapAction.type === 'auto_click' && tapAction.click_mode === 'hold') tapAction.click_mode = 'toggle';
+    }
+    if (!tapAction && !trigger.keep_held) trigger.hold_ms = Math.max(300, trigger.hold_ms);
+  }
   if (action.type === 'auto_click' && trigger.mode === 'hold') {
     // A hold trigger would wait hold_ms before clicking; the prompt asks for tap + click_mode.
     trigger.mode = 'tap';
@@ -333,7 +369,9 @@ function cleanBinding(b) {
   const profile = cleanProfile(b.profile);
   const label = str(b.label).replace(/\s+/g, ' ').trim().slice(0, 40) || LABEL_FALLBACK[action.type];
   const notes = str(b.notes).replace(/\s+/g, ' ').trim().slice(0, 300);
-  return { label, profile, trigger, action, notes };
+  const out = { label, profile, trigger, action, notes };
+  if (tapAction) out.tap_action = tapAction;
+  return out;
 }
 
 function refusal(error, notBinding) {

@@ -65,9 +65,9 @@
  {
   "model": "gemini",
   "name": "unknown app profile name alone is kept for the app to match",
-  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Photoshop\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Krita\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
   "status": "ok",
-  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Photoshop\",\"process_names\":[]},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}"
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Krita\",\"process_names\":[]},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}"
  },
  {
   "model": "gemini",
@@ -348,5 +348,61 @@
   "raw": "{\"ok\":true,\"bindings\":[{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.youtube.com\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f12\"]},\"action\":{\"type\":\"run_command\",\"command\":\"shutdown -r\"},\"notes\":\"\"}]}",
   "status": "ok",
   "reply": "{\"ok\":true,\"bindings\":[{\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.youtube.com\"},\"notes\":\"Left out one binding: Keyware won't shut down, restart or sign out.\"}]}"
+ },
+ {
+  "model": "any",
+  "name": "copilot key opens cursor",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"Copilot key\"]},\"action\":{\"type\":\"open_app\",\"app\":\"cursor.exe\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"copilot\"]},\"action\":{\"type\":\"open_app\",\"app\":\"cursor.exe\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "any",
+  "name": "win shift f23 chord becomes the copilot key",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"win\",\"shift\",\"f23\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"copilot\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "any",
+  "name": "copilot key is never sent",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f1\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"copilot\"]},\"notes\":\"\"}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "any",
+  "name": "caps lock tap esc hold ctrl",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"caps lock\"],\"hold_ms\":200,\"keep_held\":true},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\"]},\"notes\":\"\",\"tap_action\":{\"type\":\"key_combo\",\"keys\":[\"esc\"]}}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"caps_lock\"],\"hold_ms\":200,\"keep_held\":true},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\"]},\"notes\":\"\",\"tap_action\":{\"type\":\"key_combo\",\"keys\":[\"esc\"]}}"
+ },
+ {
+  "model": "any",
+  "name": "turn caps lock off",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"caps_lock\"]},\"action\":{\"type\":\"none\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"caps_lock\"]},\"action\":{\"type\":\"none\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "any",
+  "name": "tap play pause hold spotify",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"f9\"],\"hold_ms\":400},\"action\":{\"type\":\"open_app\",\"app\":\"spotify.exe\"},\"notes\":\"\",\"tap_action\":{\"type\":\"media\",\"media\":\"media_play_pause\"}}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"f9\"],\"hold_ms\":400},\"action\":{\"type\":\"open_app\",\"app\":\"spotify.exe\"},\"notes\":\"\",\"tap_action\":{\"type\":\"media\",\"media\":\"media_play_pause\",\"count\":1}}"
+ },
+ {
+  "model": "any",
+  "name": "unsafe tap side is refused",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"f9\"],\"hold_ms\":400},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\",\"tap_action\":{\"type\":\"run_command\",\"command\":\"shutdown -s\"}}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't shut down, restart or sign out.\"}"
+ },
+ {
+  "model": "any",
+  "name": "OBS profile from the name alone",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"OBS\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f13\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\",\"shift\",\"r\"]},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"OBS\",\"process_names\":[\"obs64.exe\"]},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f13\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\",\"shift\",\"r\"]},\"notes\":\"\"}"
  }
 ]

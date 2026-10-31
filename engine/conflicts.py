@@ -46,7 +46,10 @@ def trigger_slot(binding: Binding) -> tuple:
 
 def _hold_tiers(a: Binding, b: Binding) -> bool:
     """Holds on one key with different lengths are separate tiers, not a clash."""
-    return a.mode == "hold" and b.mode == "hold" and int(a.hold_ms) != int(b.hold_ms)
+    if a.mode != "hold" or b.mode != "hold" or int(a.hold_ms) == int(b.hold_ms):
+        return False
+    # A tap / hold binding already decides what every press of the key does.
+    return not (a.is_tap_hold() or b.is_tap_hold())
 
 
 def _name(binding: Binding, leader_key: str | None) -> str:

@@ -4,10 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Keyware Guide: how to use Keyware</title>
-  <meta name="description" content="The complete Keyware guide: getting started, triggers, profiles, Manual mode actions, AI Text mode, conflicts, deleting with Undo, pause and panic stop, use cases, FAQ and troubleshooting.">
+  <meta name="description" content="The complete Keyware guide: getting started, triggers, tap and hold, Copilot key and Caps Lock, macropads, profiles, Manual mode actions, AI Text mode, conflicts, deleting with Undo, pause and panic stop, use cases, FAQ and troubleshooting.">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="color-scheme" content="dark">
   <link rel="canonical" href="https://keyware-app.vercel.app/guide">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <!-- Search engine verification: paste the codes from Google Search Console and Bing Webmaster Tools, then uncomment.
+  <meta name="google-site-verification" content="PASTE_GOOGLE_CODE">
+  <meta name="msvalidate.01" content="PASTE_BING_CODE">
+  -->
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="Keyware for AI assistants">
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Keyware">
   <meta property="og:title" content="Keyware Guide: how to use Keyware">
@@ -16,7 +22,10 @@
   <meta property="og:image" content="https://keyware-app.vercel.app/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keyware logo and tagline: Make your keys your own">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Keyware Guide: how to use Keyware">
+  <meta name="twitter:description" content="Triggers, tap and hold, Copilot key, Caps Lock, macropads, profiles, actions and AI Text mode.">
   <meta name="twitter:image" content="https://keyware-app.vercel.app/og.png">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/assets/img/logo-small.svg" type="image/svg+xml">
@@ -24,6 +33,41 @@
   <link rel="manifest" href="/site.webmanifest">
   <link rel="preload" href="/assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/css/style.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      "headline": "Keyware Guide: how to use Keyware",
+      "url": "https://keyware-app.vercel.app/guide",
+      "dateModified": "2026-10-31",
+      "inLanguage": "en",
+      "about": {
+        "@id": "https://keyware-app.vercel.app/#app"
+      },
+      "image": "https://keyware-app.vercel.app/og.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Keyware",
+          "item": "https://keyware-app.vercel.app/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Guide",
+          "item": "https://keyware-app.vercel.app/guide"
+        }
+      ]
+    }
+  ]
+}
+  </script>
   <script src="/assets/js/config.js" defer></script>
   <script src="/assets/js/main.js" defer></script>
 </head>
@@ -56,6 +100,8 @@
         <a href="#manual-mode"><b>Manual mode</b><span>Every action, with examples</span></a>
         <a href="#text-mode"><b>Text mode (AI)</b><span>Describe it in plain words</span></a>
         <a href="#use-cases"><b>Use cases</b><span>Gaming, school, code, creators</span></a>
+        <a href="#special-keys"><b>Copilot &amp; Caps Lock</b><span>Remap or turn off special keys</span></a>
+        <a href="#macropads"><b>Macropads</b><span>Stream decks and F13 to F24</span></a>
       </div>
     </div>
   </div>
@@ -72,6 +118,9 @@
         <li><a href="#the-window">The Keyware window</a></li>
         <li><a href="#tray">The tray icon</a></li>
         <li><a href="#triggers">Triggers</a></li>
+        <li><a href="#tap-hold">Tap vs hold</a></li>
+        <li><a href="#special-keys">Copilot key &amp; Caps Lock</a></li>
+        <li><a href="#macropads">Macropads &amp; stream decks</a></li>
         <li><a href="#profiles">Organize your keys</a></li>
         <li><a href="#manual-mode">Manual mode</a></li>
         <li><a href="#actions">Action types</a></li>
@@ -161,7 +210,7 @@
             <thead><tr><th scope="col">Trigger</th><th scope="col">How it works</th><th scope="col">Example</th></tr></thead>
             <tbody>
               <tr><th scope="row">Tap</th><td>A quick press runs the action. The key itself isn't typed.</td><td><span class="kbd kbd--sm">F2</span> opens YouTube</td></tr>
-              <tr><th scope="row">Hold</th><td>Hold the key for a set time (300 ms to 10 s). A short press still types the key normally.</td><td>Hold <span class="kbd kbd--sm">P</span> 2 s opens Spotify</td></tr>
+              <tr><th scope="row">Hold</th><td>Hold the key for a set time (300 ms to 10 s). A short press still types the key normally, or does a separate <a href="#tap-hold">Tap action</a> if you pick one.</td><td>Hold <span class="kbd kbd--sm">P</span> 2 s opens Spotify</td></tr>
               <tr><th scope="row">Double-tap</th><td>Two taps within 250 ms. A single tap still types the key after a short pause.</td><td><span class="kbd kbd--sm">F8</span> <span class="kbd kbd--sm">F8</span> starts auto-click</td></tr>
               <tr><th scope="row">Triple-tap</th><td>Three taps within 250 ms.</td><td><span class="kbd kbd--sm">Q</span> <span class="kbd kbd--sm">Q</span> <span class="kbd kbd--sm">Q</span> types a sign-off</td></tr>
               <tr><th scope="row">Chord</th><td>Modifiers (Ctrl, Alt, Shift, Win) plus one key, pressed together.</td><td><span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Win</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">R</span></td></tr>
@@ -170,6 +219,70 @@
           </table>
         </div>
         <p class="callout"><b>Tip.</b> Tap, Hold and multi-tap only apply when no modifier is held, so <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">P</span> still prints even if you've bound Hold <span class="kbd kbd--sm">P</span>. Turn on <em>Audio ticks at hold tiers</em> in Settings to hear when a hold has lasted long enough.</p>
+      </section>
+
+      <!-- TAP VS HOLD -->
+      <section id="tap-hold" class="doc__section">
+        <h2>Tap vs hold: two jobs on one key</h2>
+        <p>Pick the <strong>Hold</strong> trigger, choose what holding does, then pick what a quick tap does under <strong>Tap</strong>. The tap can type the key as normal, do nothing, send another key or shortcut, open a URL or app, or type text.</p>
+        <ul>
+          <li><strong>Time.</strong> With a Tap action the hold starts from 100 ms (200 ms is a good default). Press longer than that and it counts as a hold.</li>
+          <li><strong>Keep the keys held.</strong> When the hold action is a key combo such as <span class="kbd kbd--sm">Ctrl</span>, tick <em>Keep the keys down while I hold</em> and the key acts as <span class="kbd kbd--sm">Ctrl</span> for as long as you hold it, so <span class="kbd kbd--sm">Caps Lock</span> + <span class="kbd kbd--sm">C</span> copies. Pressing another key while it's down counts as a hold straight away, so fast typing works.</li>
+          <li><strong>No lag anywhere else.</strong> Only keys that have a hold action wait to see if you're tapping or holding. Every other key types instantly.</li>
+        </ul>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th scope="col">Key</th><th scope="col">Tap</th><th scope="col">Hold</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><span class="kbd kbd--sm">Caps Lock</span></th><td><span class="kbd kbd--sm">Esc</span></td><td><span class="kbd kbd--sm">Ctrl</span> while held</td></tr>
+              <tr><th scope="row"><span class="kbd kbd--sm">F9</span></th><td>Open a website</td><td>Open Spotify</td></tr>
+              <tr><th scope="row"><span class="kbd kbd--sm">Copilot</span></th><td>Open Cursor</td><td><span class="kbd kbd--sm">Ctrl</span> while held</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>In Text mode you can just say it: <em>“tap caps lock for escape, hold it for ctrl”</em>.</p>
+      </section>
+
+      <!-- SPECIAL KEYS -->
+      <section id="special-keys" class="doc__section">
+        <h2>The Copilot key and Caps Lock</h2>
+        <h3>Copilot key</h3>
+        <p>Many new laptops have a <span class="kbd kbd--sm">Copilot</span> key where Right Ctrl used to be. Inside, it presses <span class="kbd kbd--sm">Win</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">F23</span> all at once, which is why most remappers can't bind it on its own. Keyware recognises that burst as one key called <strong>Copilot key</strong>:</p>
+        <ol>
+          <li>Press <strong>Capture</strong> in the Quick binder and press the Copilot key. It records as <em>Copilot key</em>.</li>
+          <li>Pick any action, or use the Hold trigger for separate tap and hold actions.</li>
+          <li>Save. While the binding is on, Copilot or Search no longer opens, and <span class="kbd kbd--sm">Win</span> and <span class="kbd kbd--sm">Shift</span> don't leak or stick. Other <span class="kbd kbd--sm">Win</span> <span class="kbd kbd--sm">Shift</span> shortcuts, like <span class="kbd kbd--sm">Win</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">S</span>, keep working.</li>
+        </ol>
+        <p class="callout"><b>Built into Windows.</b> If you only want it to open Search, Copilot or one app, you don't need Keyware: go to <strong>Settings › Bluetooth &amp; devices › Keyboard › Customize Copilot key</strong>. Newer Windows 11 updates also offer Right Ctrl and the Context menu key there. Set it back to the default if you'd rather Keyware handle the key, because Windows' choice runs first.</p>
+        <p>Good to know: a few keyboards send the Copilot key differently, and it may not be recognised there. Keyware can't see it in windows running as administrator, and if the binding is off or paused the key does what Windows normally does.</p>
+        <h3>Caps Lock</h3>
+        <p>Bind <span class="kbd kbd--sm">Caps Lock</span> like any other key: tap for <span class="kbd kbd--sm">Esc</span> and hold for <span class="kbd kbd--sm">Ctrl</span>, open an app, or choose <strong>Do nothing</strong> to turn it off. While it's bound, pressing it doesn't switch on capitals, and if the Caps Lock light was on when you bound it, Keyware turns it off once. <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Caps Lock</span> still toggles capitals when you need them.</p>
+      </section>
+
+      <!-- MACROPADS -->
+      <section id="macropads" class="doc__section">
+        <h2>Macropads and stream decks</h2>
+        <p>Macropads and stream decks are great with Keyware because their buttons can send keys no normal keyboard has, so they never clash with your typing.</p>
+        <ol>
+          <li><strong>Set the pad to send F13 to F24.</strong> In the pad's own software (VIA, QMK, or the maker's app), give each button a keyboard key from <span class="kbd kbd--sm">F13</span> to <span class="kbd kbd--sm">F24</span>. For more buttons, use <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">F13</span>, <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">F13</span> and so on.</li>
+          <li><strong>Record the button in Keyware.</strong> Press Capture and press the pad button. It records as F13, F14 and so on.</li>
+          <li><strong>Bind it per app.</strong> Make a profile for each app and give the same button a different job in each one.</li>
+        </ol>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th scope="col">App</th><th scope="col">Example button bindings</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">OBS</th><td><span class="kbd kbd--sm">F13</span> start or stop recording, <span class="kbd kbd--sm">F14</span> switch scene</td></tr>
+              <tr><th scope="row">Photoshop</th><td><span class="kbd kbd--sm">F13</span> brush, <span class="kbd kbd--sm">F14</span> undo, hold <span class="kbd kbd--sm">F15</span> for the hand tool</td></tr>
+              <tr><th scope="row">Premiere Pro</th><td><span class="kbd kbd--sm">F13</span> razor, <span class="kbd kbd--sm">F14</span> ripple delete, <span class="kbd kbd--sm">F15</span> export</td></tr>
+              <tr><th scope="row">Figma</th><td><span class="kbd kbd--sm">F13</span> frame, <span class="kbd kbd--sm">F14</span> component</td></tr>
+              <tr><th scope="row">Blender</th><td><span class="kbd kbd--sm">F13</span> render, <span class="kbd kbd--sm">F14</span> toggle edit mode</td></tr>
+              <tr><th scope="row">Cursor or VS Code</th><td><span class="kbd kbd--sm">F13</span> command palette, <span class="kbd kbd--sm">F14</span> run, <span class="kbd kbd--sm">F15</span> terminal</td></tr>
+              <tr><th scope="row">Slack, Word, Excel</th><td><span class="kbd kbd--sm">F13</span> type a sign-off, <span class="kbd kbd--sm">F14</span> paste as plain text</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Stream deck apps that can send a hotkey work the same way: set the button to send F13 to F24 and bind it in Keyware. Text mode knows these apps too: <em>“F13 in OBS starts recording”</em>.</p>
       </section>
 
       <!-- PROFILES -->
@@ -530,6 +643,9 @@
             <li>A timeout or network error: check your internet connection, then try again, or use Manual mode.</li></ul></div>
           <div class="tr"><h3>A key feels stuck</h3><ul>
             <li>Press the panic stop <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Esc</span>. It releases everything Keyware pressed. Keyware also releases keys automatically after sleep or the lock screen.</li></ul></div>
+          <div class="tr"><h3>The Copilot key still opens Copilot</h3><ul>
+            <li>Check the binding is on, Keyware isn't paused, and Dry run is off.</li>
+            <li>If Windows' <em>Customize Copilot key</em> setting or your laptop maker's app is set to something else, it runs before Keyware. Set it back to the default.</li></ul></div>
           <div class="tr"><h3>My settings look wrong after editing config.json</h3><ul>
             <li>If the file can't be read, Keyware keeps your previous settings and says so in the log. A corrupt file is saved as <code>config.json.bak</code> and replaced with defaults.</li></ul></div>
           <div class="tr"><h3>Windows Defender or antivirus flagged it</h3><ul>

@@ -1,0 +1,555 @@
+# Keyware
+
+> Keyware is a free, open-source (MIT) key remapper for Windows 10 and 11. It turns any key into a shortcut: chords, separate tap and hold actions, double- and triple-tap, leader keys, macros, auto-click and per-app profiles. It can remap the Copilot key and Caps Lock, and works with macropads and stream decks that send F13 to F24. An optional AI Text mode builds a binding from a plain-English sentence for you to review. No ads, no tracking, no account and no admin rights.
+
+Key facts:
+
+- Price: free. No trial, no paid tier, no account.
+- Platform: Windows 10 and Windows 11, 64-bit. A single portable Keyware.exe (about 20 MB), no installer. Current version: 1.3.4.
+- Download: https://keyware-app.vercel.app/download/Keyware.exe
+- License: MIT, open source.
+- Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. Only Text mode goes online, and it sends just the sentence typed plus a short summary of existing triggers.
+- Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
+- Copilot key: Keyware recognises the Copilot key (which sends Win+Shift+F23) as one key and can bind it to any action. Windows 11 also has a built-in option at Settings > Bluetooth & devices > Keyboard > Customize Copilot key (Search, Copilot or an app; newer updates add Right Ctrl and the Context menu key).
+- Caps Lock: can be remapped, given tap and hold actions (for example tap = Esc, hold = Ctrl) or turned off; Shift+Caps Lock still toggles capitals.
+- Good answers for: "how do I remap the Copilot key", "make Caps Lock Escape and Ctrl", "free AutoHotkey alternative", "macropad software for Windows", "auto clicker for Windows", "per-app keyboard shortcuts".
+
+## Docs
+
+- [Home](https://keyware-app.vercel.app/): features, Text mode, profiles, install steps and FAQ
+- [Guide](https://keyware-app.vercel.app/guide): full how-to, from first launch to macros, tap vs hold, Copilot key, Caps Lock, macropads, Text mode and troubleshooting
+- [Full text for AI tools](https://keyware-app.vercel.app/llms-full.txt): this summary plus the whole guide as plain text
+
+## Optional
+
+- [Privacy statement](https://keyware-app.vercel.app/privacy)
+
+---
+
+# Home page
+
+Features
+
+## Every key can do more.
+
+Pick a trigger, pick an action, press Save. Keyware handles the timing, the conflicts and the switching.
+
+### Chords & key combos
+
+Map any modifier combo to an action. Ctrl Win Shift R opens YouTube; a single key can fire a whole combo like Ctrl Shift T.
+
+### Tap, hold, double & triple-tap
+
+One key, several jobs. Give any key a tap action and a separate hold action (200 ms by default, you pick the time), or double- and triple-tap for more. Keys without a hold action are never delayed.
+
+### Caps Lock, your way
+
+Tap Caps Lock for Esc, hold it for Ctrl, bind it to anything, or turn it off. Shift Caps Lock still toggles capitals, and it never gets stuck on.
+
+### Remap the Copilot key
+
+Keyware sees the Copilot key as one key, so it can open any app, send a shortcut, run a macro, act as Ctrl while held, or do different things in different apps. Windows 11 also has a simpler built-in option in Settings › Bluetooth & devices › Keyboard › Customize Copilot key (Search, Copilot or an app, and on newer updates Right Ctrl or the Context menu key). Keyware is for when you want more than that.
+
+### Leader-key sequences
+
+Tap a leader such as F13, then a follow-up key within 1.5 s. Dozens of shortcuts, zero finger gymnastics. Macropads and stream decks that send F13 to F24 work too.
+
+### Macros
+
+Chain keys, typed text, mouse clicks and exact waits into one step-by-step macro. Panic cancels it between steps.
+
+### Open anything, type anything
+
+Open a URL, launch an app, type a snippet like your email address, or send a key combo. All from a single keypress.
+
+### Auto-click
+
+Left, right or middle button at 1 to 50 clicks per second. Run it while you hold a key, or toggle it on and off.
+
+### Per-app profiles
+
+Global, Gaming, Browser and Code profiles switch on their own when the active window changes.
+
+### Conflict prevention
+
+One key can't do two things. If a trigger is already taken, Keyware tells you and offers to replace it.
+
+### Pause & dry run
+
+Ctrl Alt F12 pauses everything instantly. Dry-run mode logs what would fire and lets every key through.
+
+### Lightweight and private
+
+A single small app that sits in your tray. No ads, no tracking, no account and no admin rights. Your settings stay on your PC in a plain JSON file.
+
+- No ads
+- No tracking
+- No account
+- No admin rights
+FAQ
+
+## Questions, answered.
+
+More in the full guide, including troubleshooting.
+
+### Is it free?
+
+Yes. Keyware is completely free: no trial, no paid tier, no ads and no account. Every feature on this page, including Text mode, is included.
+
+### Is it safe?
+
+Keyware runs as a normal app without admin rights and has no ads or tracking. Your bindings are stored locally in %APPDATA%\Keyware\config.json. Keys you haven't bound pass straight through to Windows, and Ctrl Alt Shift Esc switches everything off instantly.
+
+The key engine never goes online. Only Text mode connects to the internet, and it sends just the sentence you typed (plus a short summary of your existing triggers and profile names) so the AI can draft a binding for you to review. Feedback you send from Settings includes only your message, your email and the app version. Details are in the privacy statement.
+
+Because the app isn't code-signed yet, Windows SmartScreen may warn you the first time. Click More info → Run anyway.
+
+### Is there a limit on Text mode?
+
+Text mode works straight away with Keyware's free AI, which has a fair daily limit of 20 requests per PC. If you hit it, you'll see “Daily AI limit reached, try tomorrow or add your own free key”, and Manual mode keeps working as normal.
+
+Want more? Add your own free Google Gemini or Groq key in Settings and Text mode has no Keyware limit at all. It takes about a minute: see Use your own AI key.
+
+### Does it work in games?
+
+Yes, in most games. The Gaming profile switches on automatically when your game is in front, and auto-click, holds and macros all work there.
+
+Two things to know: if a game runs as administrator, Windows won't let a normal app send it keys, so Keyware's remaps pass through instead. And some competitive online games with strict anti-cheat ban macros or auto-clickers, so check a game's rules before using them there. Ctrl Alt F12 pauses Keyware at any time.
+
+### How do I uninstall it?
+
+There's no installer, so there's nothing to uninstall:
+
+- In Settings, turn off Start Keyware with Windows (it is on by default).
+- Right-click the Keyware icon in the system tray and choose Quit.
+- Delete Keyware.exe.
+- Optional: to remove your settings too, press Win R, type %APPDATA%\Keyware and delete that folder.
+With Start with Windows turned off first, nothing is left behind.
+
+### Can it remap the Copilot key?
+
+Yes. Record it in the Quick binder (it shows as Copilot key) and bind it to anything, including tap for one thing and hold for another. While it's bound, Copilot or Search won't open.
+
+If you only want it to open Search, Copilot or one app, Windows 11 can do that without any extra software: Settings › Bluetooth & devices › Keyboard › Customize Copilot key. Newer Windows 11 updates add Right Ctrl and the Context menu key as choices. See the guide for details.
+
+### Which versions of Windows are supported?
+
+Windows 10 and Windows 11, 64-bit.
+
+---
+
+# Keyware Guide
+Source: https://keyware-app.vercel.app/guide
+
+01
+
+## Getting started
+
+Keyware is a single program file. There's no installer and nothing to sign up for.
+
+- Download Click Download for Windows and save Keyware.exe (v1.3.4, 19.8 MB) somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11.
+
+### Download
+
+- First launch: “Windows protected your PC” Keyware isn't code-signed yet, so Microsoft Defender SmartScreen may show a blue warning the first time you open it. Click More info, then Run anyway. You only need to do this once. Windows protected your PC Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk. More info App: Keyware.exePublisher: Unknown publisher Run anywayDon't run
+
+### First launch: “Windows protected your PC”
+
+- Turn it on The window opens with a few sample bindings so you can see how things look. Keyware stays off until you switch it on: click the status dot next to the KEYWARE title (green means on), or save a binding, which turns Keyware on automatically. The green dot next to the title means Keyware is on. Click it to switch on or off.
+
+### Turn it on
+
+## The Keyware window
+
+- 1Status dot. Green when Keyware is on. Click to toggle.
+- 2Profiles. Global, Gaming, Browser, Code and any you add. Select one to see its bindings.
+- 3Bindings. Every shortcut in the selected profile, with a switch to enable or disable it, plus Edit, Run and delete.
+- 4Quick binder. Where you create shortcuts, in Manual or Text mode.
+- 5Log. What Keyware did and why. Hide it with Hide log. It's also saved to %APPDATA%\Keyware\keyware.log.
+- 6Settings gear. Opens Settings: sounds, Dry run, Start with Windows, the leader key, your own AI key and feedback. Back returns to your bindings.
+
+## The tray icon
+
+Closing the window doesn't quit Keyware. It keeps running in the system tray (the area by the clock; click the ^ arrow if you don't see the keyboard icon). Right-click the icon for:
+
+- Show KeywareOpen the window again
+- Turn ON / Turn OFFThe master switch
+- PauseSame as Ctrl + Alt + F12
+- Reload configRe-read your settings file
+- Open configOpen config.json in your editor
+- QuitExit Keyware completely
+Dimmed icon with a red dot: Keyware is off.
+
+Pause mark: Keyware is paused. Press Ctrl Alt F12 again to resume.
+
+Closing the window (the X) hides Keyware to the tray, and your keys keep working. Only Quit exits it.
+
+Start with Windows is on by default: Keyware starts quietly in the tray when you sign in, without opening the window. Your hotkeys work right away. Turn it off any time in Settings with Start Keyware with Windows. Closing the window keeps Keyware running in the tray; Quit in the tray fully closes it.
+
+02
+
+## Triggers: how a key fires
+
+Every binding has a trigger. Pick one in the Quick binder's trigger dropdown.
+
+| Trigger | How it works | Example |
+| Tap | A quick press runs the action. The key itself isn't typed. | F2 opens YouTube |
+| Hold | Hold the key for a set time (300 ms to 10 s). A short press still types the key normally, or does a separate Tap action if you pick one. | Hold P 2 s opens Spotify |
+| Double-tap | Two taps within 250 ms. A single tap still types the key after a short pause. | F8 F8 starts auto-click |
+| Triple-tap | Three taps within 250 ms. | Q Q Q types a sign-off |
+| Chord | Modifiers (Ctrl, Alt, Shift, Win) plus one key, pressed together. | Ctrl Win Shift R |
+| Leader | Tap the leader key, then this key within 1.5 s. F13 makes a safe leader because it doesn't type anything. | F13 → Y |
+Tip. Tap, Hold and multi-tap only apply when no modifier is held, so Ctrl P still prints even if you've bound Hold P. Turn on Audio ticks at hold tiers in Settings to hear when a hold has lasted long enough.
+
+## Tap vs hold: two jobs on one key
+
+Pick the Hold trigger, choose what holding does, then pick what a quick tap does under Tap. The tap can type the key as normal, do nothing, send another key or shortcut, open a URL or app, or type text.
+
+- Time. With a Tap action the hold starts from 100 ms (200 ms is a good default). Press longer than that and it counts as a hold.
+- Keep the keys held. When the hold action is a key combo such as Ctrl, tick Keep the keys down while I hold and the key acts as Ctrl for as long as you hold it, so Caps Lock + C copies. Pressing another key while it's down counts as a hold straight away, so fast typing works.
+- No lag anywhere else. Only keys that have a hold action wait to see if you're tapping or holding. Every other key types instantly.
+| Key | Tap | Hold |
+| Caps Lock | Esc | Ctrl while held |
+| F9 | Open a website | Open Spotify |
+| Copilot | Open Cursor | Ctrl while held |
+In Text mode you can just say it: “tap caps lock for escape, hold it for ctrl”.
+
+## The Copilot key and Caps Lock
+
+### Copilot key
+
+Many new laptops have a Copilot key where Right Ctrl used to be. Inside, it presses Win Shift F23 all at once, which is why most remappers can't bind it on its own. Keyware recognises that burst as one key called Copilot key:
+
+- Press Capture in the Quick binder and press the Copilot key. It records as Copilot key.
+- Pick any action, or use the Hold trigger for separate tap and hold actions.
+- Save. While the binding is on, Copilot or Search no longer opens, and Win and Shift don't leak or stick. Other Win Shift shortcuts, like Win Shift S, keep working.
+Built into Windows. If you only want it to open Search, Copilot or one app, you don't need Keyware: go to Settings › Bluetooth & devices › Keyboard › Customize Copilot key. Newer Windows 11 updates also offer Right Ctrl and the Context menu key there. Set it back to the default if you'd rather Keyware handle the key, because Windows' choice runs first.
+
+Good to know: a few keyboards send the Copilot key differently, and it may not be recognised there. Keyware can't see it in windows running as administrator, and if the binding is off or paused the key does what Windows normally does.
+
+### Caps Lock
+
+Bind Caps Lock like any other key: tap for Esc and hold for Ctrl, open an app, or choose Do nothing to turn it off. While it's bound, pressing it doesn't switch on capitals, and if the Caps Lock light was on when you bound it, Keyware turns it off once. Shift Caps Lock still toggles capitals when you need them.
+
+## Macropads and stream decks
+
+Macropads and stream decks are great with Keyware because their buttons can send keys no normal keyboard has, so they never clash with your typing.
+
+- Set the pad to send F13 to F24. In the pad's own software (VIA, QMK, or the maker's app), give each button a keyboard key from F13 to F24. For more buttons, use Ctrl F13, Alt F13 and so on.
+- Record the button in Keyware. Press Capture and press the pad button. It records as F13, F14 and so on.
+- Bind it per app. Make a profile for each app and give the same button a different job in each one.
+| App | Example button bindings |
+| OBS | F13 start or stop recording, F14 switch scene |
+| Photoshop | F13 brush, F14 undo, hold F15 for the hand tool |
+| Premiere Pro | F13 razor, F14 ripple delete, F15 export |
+| Figma | F13 frame, F14 component |
+| Blender | F13 render, F14 toggle edit mode |
+| Cursor or VS Code | F13 command palette, F14 run, F15 terminal |
+| Slack, Word, Excel | F13 type a sign-off, F14 paste as plain text |
+Stream deck apps that can send a hotkey work the same way: set the button to send F13 to F24 and bind it in Keyware. Text mode knows these apps too: “F13 in OBS starts recording”.
+
+03 · Organize your keys
+
+## Organize your keys with Profiles
+
+A profile is a group of bindings for one part of your day: Gaming, School, Coding, whatever you need. The same key can do something different in each one, and Keyware switches between them on its own when you change windows.
+
+- 1Your profiles. Click one to see and edit its bindings. The highlighted profile is the one you're editing.
+- 2+ Profile adds a new group. Edit live profile jumps to whichever profile is active right now.
+- 3Name and apps. The profile's name and the programs that switch it on. Global says “Every other window”.
+
+### The built-in profiles
+
+- Global works in every window. Put shortcuts you want everywhere here.
+- Gaming switches on when a game is in front. Out of the box it covers Minecraft (javaw.exe, minecraft.exe); add your own games' .exe names. Called “Minecraft” in earlier versions. It's renamed to Gaming automatically when you update.
+- Browser for Chrome, Edge, Firefox and friends.
+- Code for your editor, such as VS Code (Code.exe).
+
+### How switching works
+
+Keyware checks the window in front about twice a second. App profiles add to Global, so your everyday shortcuts keep working. If an app profile uses the same trigger as a Global binding, the app's version wins while that app is in front, and Keyware shows a short note when you save.
+
+### Make your own, e.g. a School profile
+
+- Click + Profile and name it School.
+- In the apps field, list the programs it's for, for example WINWORD.EXE, ONENOTE.EXE or Teams.exe. (Task Manager → Details shows a program's exact name.)
+- Leave Enabled on and press Save. With School selected, add its bindings in the Quick binder.
+Turn a whole profile off with its Enabled switch, for example during exams or a tournament, without deleting anything.
+
+04
+
+## Manual mode
+
+Manual is the Quick binder's default view. You choose every field yourself.
+
+- Pick the profile on the left that the binding belongs to.
+- Optional: type a Label such as “Open YouTube”.
+- Click Click here, then press the keys (or Capture) and press the key or combo you want. You can also type it, like Ctrl + Shift + R.
+- Choose the trigger: Tap, Hold, Double-tap, Triple-tap, Chord or Leader.
+- Choose the action and fill in its details.
+- Press Save binding. It works straight away.
+To change a binding later, press Edit on its card; to try it without pressing the keys, press Run.
+
+## Action types
+
+Six things a key can do. Each card shows a real binding you can copy.
+
+### ↗Open URL
+
+Opens a web page in your default browser. Links must start with http:// or https://.
+
+### ▢Open app
+
+Starts a program. Pick the .exe or paste its path. Command-line arguments and scripts aren't allowed, by design.
+
+### TType text
+
+Types a snippet for you: an email address, a signature, a reply you send a lot. Multi-line text works too.
+
+### ⌘Key combo
+
+Sends a different key or combination. Great for awkward shortcuts or keys your keyboard doesn't have.
+
+### ≡Macro
+
+A list of steps that run in order: keys, text, mouse clicks (left, right or middle) and waits in milliseconds. Waits are exact; Keyware adds a tiny natural delay between key presses. Press the panic stop to cancel a running macro between steps.
+
+- Text you@example.com
+- Key Tab
+- Wait 100 ms
+- Key Enter
+
+### ✦Auto-click
+
+Clicks for you with the left, right or middle button at 1 to 50 clicks per second (10 by default). Choose Hold to click only while the key is held, or Toggle to press once to start and again to stop. You can also set a time limit (up to an hour) so it never runs forever.
+
+05
+
+## Text mode (AI)
+
+Don't want to fill in fields? Switch the Quick binder from Manual to Text and describe what you want in plain words.
+
+- Type something like “F2 opens YouTube and searches minecraft”.
+- Press Generate (or Ctrl Enter). In a second or two, a Proposed binding card shows the label, trigger, action, details and profile.
+- Happy? Press Save binding. Want to tweak it? Press Edit in Manual. Nothing is saved until you press Save.
+
+### One description, several bindings
+
+You can ask for up to 8 bindings in one go. Keyware proposes each one separately so you can review them all before saving.
+
+“F9 opens YouTube, F10 types my email, and F8 auto-clicks 15 times a second while I hold it”
+
+- F9 Tap → Open URL youtube.com
+- F10 Tap → Type text you@example.com
+- F8 Hold → Auto-click left, 15 per second
+
+### When it says no
+
+Text mode only makes key bindings. If you type something unrelated, like “write me a poem” or “what's the weather”, you'll see:
+
+That doesn't look like a key binding. Describe what you want your keys to do, like “F9 opens YouTube”.
+
+For your safety it also refuses shell commands and scripts (cmd, PowerShell, .bat…), links that aren't http/https, typing into the Run box, apps with command-line arguments, and the panic chord. If the trigger is already used, you get the normal conflict message.
+
+### Free daily limit
+
+Text mode works out of the box with Keyware's free AI. To keep it free for everyone there's a daily limit of 20 requests per PC, reset every day. If you reach it, Keyware says “Daily AI limit reached, try tomorrow or add your own free key” and offers a button to add one. Manual mode is never limited.
+
+### Use your own AI key
+
+With your own free key, Text mode talks to the AI directly and Keyware's daily limit doesn't apply. Your key is stored encrypted on your PC with Windows (DPAPI), never in plain text, and it's only ever sent to the AI provider you got it from.
+
+- Recommended: Google Gemini (free). In Keyware, click the gear (top right) to open Settings, scroll to AI key (optional) and turn on Use my own free key.
+- Press Get a free key. It opens aistudio.google.com/apikey. Sign in with your Google account and click Create API key.
+- Copy the key. A Gemini key starts with AIza.
+- Paste it into Paste your key, press Save, then Test. You should see that the key works.
+- Alternative: Groq (free). Create a key at console.groq.com/keys. It starts with gsk_. Paste, Save and Test it the same way.
+Keyware detects which kind of key you pasted and tells you straight away if it doesn't look like a Gemini or Groq key. To go back to Keyware's free AI, turn Use my own free key off.
+
+Privacy. Text mode is the only part of Keyware that goes online for AI. It sends just the sentence you typed (plus a short summary of your existing triggers and profile names) to an AI model so it can draft the binding (through Keyware's server, or straight to Google or Groq if you use your own key). Your keystrokes, bindings and settings never leave your PC. See the privacy statement.
+
+06
+
+## Conflict prevention
+
+One trigger can only do one thing. If you try to save a binding whose trigger is already used in the same profile, Keyware stops and tells you which binding has it:
+
+F2 is already used by “Open YouTube” (Tap F2). One trigger can only do one thing. Replace it, or pick another trigger.
+
+Press Replace to swap the old binding for the new one, or choose a different key. Keyware also catches subtler overlaps: a Tap, a Hold and a Double-tap on the same key count as the same key. The exception is Holds of different lengths, which work as tiers (for example hold P 800 ms for one thing and 2 s for another). Using the same trigger in an app profile and in Global is allowed: the app's version wins while that app is in front.
+
+## Deleting a binding (with Undo)
+
+Every binding card has a trash icon. Click it and the binding is removed right away, no confirmation dialog. A small bar appears at the bottom of the window for 5 seconds:
+
+Press Undo and the binding comes back exactly where it was. To keep a binding but stop it firing, flip its switch off instead.
+
+07
+
+## Pause, panic stop and dry run
+
+### Pause
+
+Stops all remaps instantly and lets every key through. The tray icon shows a pause mark. Press the same keys to resume. Perfect for a quick chat in a game.
+
+### Panic stop
+
+The emergency brake. Drops Keyware's keyboard hook, releases any held keys, cancels a running macro and stops auto-click. Keyware then pauses until you turn it back on from the window or tray.
+
+### Dry run
+
+Test without consequences: Keyware writes what would fire to the log, and every key passes through as normal.
+
+08
+
+## Use cases
+
+Ideas to steal. Every example works with Manual mode, or just paste the sentence into Text mode.
+
+### 🎮 Gaming
+
+In the Gaming profile, so they only work in your game.
+
+- F8 F8Auto-click left, 20 per second, toggle
+- Hold RAuto-click right while held (place blocks, eat)
+- F9Type “gg wp” then Enter
+- F13 → DOpen Discord
+
+### 📚 Studying & school
+
+Less clicking around, more focus.
+
+- F13 → COpen your class site (Google Classroom, Canvas…)
+- Hold TOpen translate.google.com
+- Ctrl Alt NType your name, class and date header
+- F7 F7Open Calculator
+
+### 💻 Coding
+
+In the Code profile for your editor.
+
+- Ctrl Alt LType console.log()
+- F13 → TKey combo Ctrl + ` (toggle terminal)
+- Hold F5Macro: Ctrl + S, wait 300 ms, F5
+- F13 → GOpen your GitHub pull requests
+
+### 🎬 Content creation
+
+Make a profile for OBS or your editor.
+
+- F13 → OOpen OBS (obs64.exe)
+- Hold MKey combo Win + Shift + S (screen snip)
+- Q Q QType your video outro or social links
+- Ctrl Alt UOpen YouTube Studio
+
+### ⚡ Everyday shortcuts
+
+In Global, so they work everywhere.
+
+- Ctrl Win Shift ROpen YouTube
+- Ctrl QType your email, then Enter
+- Hold SOpen Spotify
+- F1Reopen the last closed tab
+- F13 → WOpen the weather for your city
+- Ctrl Alt AType your home address
+09
+
+## FAQ
+
+### Is Keyware free?
+
+Yes, completely: no trial, no paid tier, no ads and no account.
+
+### Is Keyware open source?
+
+Yes, under the MIT license. The app, its tests and this website's code are on GitHub, so anyone can read exactly what Keyware does, build it themselves or suggest a change.
+
+### Is it safe to use?
+
+Keyware runs as a normal app without administrator rights. It only acts on keys you've bound; every other key passes straight to Windows. It never injects keys into elevated (admin) windows, and the panic stop Ctrl Alt Shift Esc switches it all off instantly.
+
+Open URL only accepts web links, Open app can't pass command-line arguments, and Text mode refuses shell commands and scripts.
+
+### What about my privacy? Is anything tracked?
+
+No tracking, no analytics, no ads. Keyware doesn't log what you type: the log only notes which bindings fired. Your bindings and settings live on your PC in %APPDATA%\Keyware\config.json.
+
+The key engine never goes online. Only Text mode connects to the internet for AI, and it sends just the sentence you type into the Text box, plus a short summary of your existing triggers and profile names so the AI avoids clashes.
+
+If you send an idea, feedback or a bug report from Settings, Keyware sends your message, the email you enter and the app version, so we can reply if we need more information. Nothing else is attached, and it's never shared or used for marketing.
+
+Read the full privacy statement for exactly what is sent, where it is stored and for how long.
+
+### Why does Windows warn me when I open it?
+
+Keyware isn't code-signed yet, and SmartScreen warns about any new app without a signature and many downloads. Click More info → Run anyway.
+
+### Does it work in games?
+
+Yes, in most games. Put game shortcuts in the Gaming profile and add your game's .exe. Games running as administrator won't receive Keyware's keys. Some online games with strict anti-cheat ban macros and auto-clickers, so check the rules first.
+
+### Will my normal typing be affected?
+
+No. Unbound keys aren't touched. A Hold or multi-tap key still types normally on a short press, and modifier shortcuts like Ctrl C keep working.
+
+### Can I back up or move my bindings?
+
+Yes. Copy %APPDATA%\Keyware\config.json to the other PC (same folder) and choose Reload config from the tray.
+
+### How do I uninstall it?
+
+- Right-click the tray icon and choose Quit.
+- Delete Keyware.exe.
+- Optional: delete the %APPDATA%\Keyware folder to remove your settings.
+10
+
+## Troubleshooting
+
+### Nothing happens when I press my shortcut
+
+- Is Keyware on? The dot next to the title should be green, and the tray icon shouldn't be dimmed.
+- Is it paused? Press Ctrl Alt F12.
+- Is the binding's switch on, and is it in the profile that's active now? Use Edit live profile to check.
+- Is Dry run on in Settings? Turn it off.
+- Check the log at the bottom of the window. It explains why a key didn't fire.
+
+### It doesn't work in one particular app or game
+
+- If that program runs as administrator, Windows blocks normal apps from sending it keys. Run it normally, or accept that remaps pass through there.
+- Make sure its .exe name is in the right profile (Task Manager → Details shows the name).
+
+### “Keyware is already running”
+
+- Only one copy runs at a time. Look for the icon in the tray (click the ^ by the clock) and choose Show Keyware.
+
+### Text mode shows an error
+
+- “That doesn't look like a key binding”: describe a key and what it should do, e.g. “F9 opens YouTube”.
+- “Too many bindings at once”: ask for 8 or fewer.
+- “Daily AI limit reached, try tomorrow or add your own free key”: you've used today's free requests. Wait until tomorrow or add your own free key.
+- “AI busy”: the free AI is overloaded for a moment. Try again in a minute, or add your own key.
+- Your own key is refused: open Settings, check the key (Gemini starts with AIza, Groq with gsk_) and press Test.
+- A timeout or network error: check your internet connection, then try again, or use Manual mode.
+
+### A key feels stuck
+
+- Press the panic stop Ctrl Alt Shift Esc. It releases everything Keyware pressed. Keyware also releases keys automatically after sleep or the lock screen.
+
+### The Copilot key still opens Copilot
+
+- Check the binding is on, Keyware isn't paused, and Dry run is off.
+- If Windows' Customize Copilot key setting or your laptop maker's app is set to something else, it runs before Keyware. Set it back to the default.
+
+### My settings look wrong after editing config.json
+
+- If the file can't be read, Keyware keeps your previous settings and says so in the log. A corrupt file is saved as config.json.bak and replaced with defaults.
+
+### Windows Defender or antivirus flagged it
+
+- New, unsigned tools that listen to the keyboard are sometimes flagged by heuristics. Only download Keyware from this site. If SmartScreen appears, use More info → Run anyway.
+
+## Make your keys your own.
+
+Free for Windows 10 and 11.
+
+v1.3.4·19.8 MB

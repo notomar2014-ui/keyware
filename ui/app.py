@@ -56,7 +56,25 @@ CARD = ("#fafafa", "#18181b")
 ACTIONS = (
     "Open URL", "Open app", "Type text", "Key combo", "Macro", "Auto-click",
     "Open file or folder", "Media / volume", "Play music / video", "Lock screen", "Screenshot", "Run command",
+    "Do nothing",
 )
+# Tap side of a Hold binding (v1.3.5). "Type the key" keeps the classic long press.
+TAP_CHOICES = ("Type the key", "Do nothing", "Key or shortcut", "Open URL", "Open app", "Type text")
+TAP_PLACEHOLDERS = {
+    "Key or shortcut": "Click here, then press the key, e.g. Esc",
+    "Open URL": "https://…",
+    "Open app": "spotify.exe, cursor.exe…",
+    "Type text": "Text to type",
+}
+KEY_HINTS = {
+    "copilot": (
+        "Copilot key: while this binding is on, Keyware takes the key over, so Copilot or Search does not open. "
+        "Windows also has Settings › Bluetooth & devices › Keyboard › Customize Copilot key. Leave that on its "
+        "default while Keyware handles the key. If Keyware never sees the key, that setting or your laptop "
+        "maker's keyboard app is remapping it first."
+    ),
+    "caps_lock": "Caps Lock stops toggling while it is bound. Shift + Caps Lock still turns Caps Lock on and off.",
+}
 # Macro step types in the Manual editor. AI-made steps open here unchanged and can be edited.
 STEP_OPS = (
     "Key", "Combo", "Text", "Delay", "Mouse", "Open URL", "Open app", "Open file/folder", "Media",
@@ -83,7 +101,7 @@ CLICK_STOPS_NOTE = "Always stops on Ctrl + Alt + F12, panic, Keyware off, or a p
 UNDO_SECONDS = 5
 MODE_HINTS = {
     "Tap": "A quick press runs the action. The physical key is not typed.",
-    "Hold": "A short press still types the key, in order with the next key when they overlap. Holding runs the action. Ctrl, Alt, Shift, or Win plus this key is left alone.",
+    "Hold": "Holding past the time below runs the action. A short tap types the key, or does what you pick under Tap. Ctrl, Alt, Shift, or Win plus this key is left alone.",
     "Double-tap": "Two taps within 250 ms. One tap types the key after a short pause. A long press types it.",
     "Triple-tap": "Three taps within 250 ms. One tap types the key after a short pause. A long press types it.",
     "Chord": "Modifiers plus one key. Ctrl + Win + Shift + R opens YouTube in the sample profile.",
@@ -113,6 +131,16 @@ def _mode_label(binding: Binding) -> str:
     return "Tap"
 
 
+def _row_action_text(binding: Binding) -> str:
+    main = f"{action_type_label(binding.action.type)}   ·   {action_summary(binding.action)}"
+    if not binding.is_tap_hold():
+        return main
+    hold = f"Hold: {'keeps ' if binding.hold_press else ''}{action_summary(binding.action)}"
+    tap = binding.tap_action
+    tap_text = "types the key" if tap is None else "nothing" if tap.type == "none" else action_summary(tap)
+    return f"{hold}   ·   Tap: {tap_text}"
+
+
 def _action_label(action_type: str) -> str:
     return {
         "open_url": "Open URL",
@@ -127,6 +155,7 @@ def _action_label(action_type: str) -> str:
         "lock_screen": "Lock screen",
         "screenshot": "Screenshot",
         "run_command": "Run command",
+        "none": "Do nothing",
     }.get(action_type, "Open URL")
 
 
@@ -461,6 +490,8 @@ class KeywareApp(ctk.CTk):
         self._recorder_field(self.trigger, "trigger")
         self.capture_button = self._ghost(trigger_row, "Capture", self._capture)
         self.capture_button.grid(row=0, column=1)
+        self.key_hint = ctk.CTkLabel(trigger_row, text="", text_color=MUTED, font=self._font(12), anchor="w",
+                                     justify="left", wraplength=360)
 
         self.mode = ctk.CTkOptionMenu(form, values=list(MODES), command=self._on_mode)
         self.mode.grid(row=3, column=0, sticky="ew", pady=(0, 4))
@@ -472,13 +503,28 @@ class KeywareApp(ctk.CTk):
         self.hold_box.grid_columnconfigure(0, weight=1)
         self.hold_readout = ctk.CTkLabel(self.hold_box, text="800 ms", anchor="w")
         self.hold_readout.grid(row=0, column=0, sticky="w")
-        self.hold = ctk.CTkSlider(self.hold_box, from_=300, to=5000, number_of_steps=470, command=self._on_hold)
+        self.hold = ctk.CTkSlider(self.hold_box, from_=100, to=5000, number_of_steps=490, command=self._on_hold)
         self.hold.grid(row=1, column=0, sticky="ew", pady=(4, 6))
         self.hold.set(800)
         presets = ctk.CTkFrame(self.hold_box, fg_color="transparent", border_width=0)
         presets.grid(row=2, column=0, sticky="w")
-        for milliseconds in (800, 2000, 5000):
-            self._ghost(presets, f"{milliseconds} ms", lambda ms=milliseconds: self._set_hold(ms), width=96).pack(side="left", padx=(0, 6))
+        for milliseconds in (200, 800, 2000, 5000):
+            self._ghost(presets, f"{milliseconds} ms", lambda ms=milliseconds: self._set_hold(ms), width=76).pack(side="left", padx=(0, 6))
+        tap_row = ctk.CTkFrame(self.hold_box, fg_color="transparent", border_width=0)
+        tap_row.grid(row=3, column=0, sticky="ew", pady=(8, 0))
+        tap_row.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(tap_row, text="Tap", text_color=MUTED, width=40, anchor="w").grid(row=0, column=0, sticky="w")
+        self.tap_choice = ctk.CTkOptionMenu(tap_row, values=list(TAP_CHOICES), command=self._on_tap_choice)
+        self.tap_choice.grid(row=0, column=1, sticky="ew")
+        self.tap_choice.set("Type the key")
+        self.tap_value = ctk.CTkEntry(self.hold_box, placeholder_text="")
+        self._recorder_field(self.tap_value, "combo", when=lambda: self.tap_choice.get() == "Key or shortcut")
+        self.keep_held = ctk.CTkCheckBox(self.hold_box, text="Keep the keys down while I hold (for Ctrl, Shift…)",
+                                         command=self._on_keep_held)
+        self.tap_hint = ctk.CTkLabel(self.hold_box, text="", text_color=MUTED, font=self._font(12), anchor="w",
+                                     justify="left", wraplength=360)
+        ctk.CTkLabel(self.hold_box, text="Hold does", text_color=MUTED, anchor="w").grid(
+            row=7, column=0, sticky="w", pady=(10, 0))
 
         self.action = ctk.CTkOptionMenu(form, values=list(ACTIONS), command=self._on_action)
         self.action.grid(row=6, column=0, sticky="ew", pady=(0, 8))
@@ -1170,9 +1216,11 @@ class KeywareApp(ctk.CTk):
         self.mode.set(_mode_label(binding))
         self._on_mode(self.mode.get())
         self._set_hold(binding.hold_ms if binding.mode == "hold" else 800)
+        self._fill_tap_hold(binding)
         self.action.set(_action_label(binding.action.type))
         self._fill_action(binding.action)
         self._show_action_fields()
+        self._update_key_hint(binding.keys)
         self.form_error.configure(text="")
         self._ai_proposal = proposal
 
@@ -1855,7 +1903,7 @@ class KeywareApp(ctk.CTk):
         ctk.CTkLabel(card, text=label + extra, anchor="w", text_color=MUTED).grid(row=1, column=0, columnspan=3, sticky="w", padx=12)
         ctk.CTkLabel(
             card,
-            text=f"{action_type_label(binding.action.type)}   ·   {action_summary(binding.action)}",
+            text=_row_action_text(binding),
             anchor="w",
         ).grid(row=2, column=0, columnspan=3, sticky="w", padx=12, pady=(2, 0))
         actions = ctk.CTkFrame(card, fg_color="transparent", border_width=0)
@@ -1887,9 +1935,11 @@ class KeywareApp(ctk.CTk):
         self.mode.set(_mode_label(binding))
         self._on_mode(self.mode.get())
         self._set_hold(binding.hold_ms if binding.mode == "hold" else 800)
+        self._fill_tap_hold(binding)
         self.action.set(_action_label(binding.action.type))
         self._fill_action(binding.action)
         self._on_action(self.action.get())
+        self._update_key_hint(binding.keys)
         self.form_error.configure(text="")
 
     def _delete_binding(self, binding: Binding) -> None:
@@ -1949,7 +1999,11 @@ class KeywareApp(ctk.CTk):
             self.simple_note.configure(text="Locks Windows, like Win + L.")
         elif value == "Screenshot":
             self.simple_note.configure(text="Takes a full-screen screenshot (Win + Print Screen). It is saved to Pictures › Screenshots.")
+        elif value == "Do nothing":
+            self.simple_note.configure(text="Turns the key off. Nothing is typed and nothing runs. "
+                                            "For Caps Lock, Shift + Caps Lock still toggles it.")
         widget.grid(**options)
+        self._sync_keep_held()
         if value == "Macro" and not self._macro_rows:
             self._add_macro_step("Key", "1")
             self._add_macro_step("Delay", "50")
@@ -1970,6 +2024,7 @@ class KeywareApp(ctk.CTk):
             "Run command": (self.command_box, {"row": 8, **place}),
             "Lock screen": (self.simple_note, {"row": 8, **place}),
             "Screenshot": (self.simple_note, {"row": 8, **place}),
+            "Do nothing": (self.simple_note, {"row": 8, **place}),
         }
 
     def _action_widgets(self) -> list:
@@ -1983,9 +2038,101 @@ class KeywareApp(ctk.CTk):
         self.hold_readout.configure(text=f"{int(round(float(value)))} ms")
 
     def _set_hold(self, milliseconds: int) -> None:
-        clamped = min(5000, max(300, int(milliseconds)))
+        clamped = min(5000, max(100, int(milliseconds)))
         self.hold.set(clamped)
         self.hold_readout.configure(text=f"{clamped} ms")
+
+    # --- Tap / hold (v1.3.5) ---------------------------------------------
+
+    def _on_tap_choice(self, value: str) -> None:
+        if value in TAP_PLACEHOLDERS:
+            self.tap_value.configure(placeholder_text=TAP_PLACEHOLDERS[value])
+            self.tap_value.grid(row=4, column=0, sticky="ew", pady=(6, 0))
+        else:
+            self.tap_value.grid_remove()
+        if value != "Type the key" and int(round(float(self.hold.get()))) == 800:
+            self._set_hold(200)  # tap vs hold wants a short threshold
+        self._sync_tap_hint()
+
+    def _on_keep_held(self) -> None:
+        if self.keep_held.get() and int(round(float(self.hold.get()))) == 800:
+            self._set_hold(200)
+        self._sync_tap_hint()
+
+    def _sync_keep_held(self) -> None:
+        if self.action.get() == "Key combo":
+            self.keep_held.grid(row=5, column=0, sticky="w", pady=(8, 0))
+        else:
+            self.keep_held.deselect()
+            self.keep_held.grid_remove()
+
+    def _sync_tap_hint(self) -> None:
+        choice = self.tap_choice.get()
+        if choice == "Type the key" and not self.keep_held.get():
+            text = "Classic long press: a tap types the key. 300 ms or longer."
+        elif self.keep_held.get():
+            text = "Hold: the keys stay down until you let go, so Hold + C works like Ctrl + C. Another key pressed " \
+                   "before the time is up counts as a hold too."
+        else:
+            text = "Tap and hold do different things. Keys without a hold action are never delayed."
+        self.tap_hint.configure(text=text)
+        self.tap_hint.grid(row=6, column=0, sticky="ew", pady=(6, 0))
+
+    def _fill_tap_hold(self, binding: Binding) -> None:
+        tap = binding.tap_action if binding.mode == "hold" else None
+        value = ""
+        if tap is None:
+            choice = "Type the key"
+        elif tap.type == "none":
+            choice = "Do nothing"
+        elif tap.type == "key_combo":
+            choice, value = "Key or shortcut", format_keys(tap.keys)
+        elif tap.type == "open_url":
+            choice, value = "Open URL", tap.url
+        elif tap.type == "open_app":
+            choice, value = "Open app", tap.app
+        elif tap.type == "type_text":
+            choice, value = "Type text", tap.text
+        else:
+            choice = "Type the key"
+        self.tap_choice.set(choice)
+        self._set_entry(self.tap_value, value)
+        self._on_tap_choice(choice)
+        if binding.mode == "hold":
+            self._set_hold(binding.hold_ms)
+        if binding.mode == "hold" and binding.hold_press:
+            self.keep_held.select()
+        else:
+            self.keep_held.deselect()
+        self._sync_tap_hint()
+
+    def _collect_tap_action(self) -> Action | None:
+        choice = self.tap_choice.get()
+        value = self.tap_value.get().strip()
+        if choice == "Do nothing":
+            return Action(type="none")
+        if choice == "Key or shortcut":
+            return Action(type="key_combo", keys=parse_key_expression(value))
+        if choice == "Open URL":
+            return Action(type="open_url", url=value)
+        if choice == "Open app":
+            return Action(type="open_app", app=value)
+        if choice == "Type text":
+            return Action(type="type_text", text=value)
+        return None
+
+    def _update_key_hint(self, keys=None) -> None:
+        if keys is None:
+            try:
+                keys = parse_key_expression(self.trigger.get())
+            except ValueError:
+                keys = []
+        hint = next((KEY_HINTS[key] for key in keys if key in KEY_HINTS), "")
+        if hint:
+            self.key_hint.configure(text=hint)
+            self.key_hint.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        else:
+            self.key_hint.grid_remove()
 
     def _add_macro_step(self, op: str = "Delay", value: str = "50", extra: str = "", fallback: str = "") -> dict:
         """One editable step: type menu, value, optional second line (app links / fallback, wait timeout).
@@ -2193,6 +2340,10 @@ class KeywareApp(ctk.CTk):
         self._set_entry(entry, format_keys(keys))
         note = f"Recorded {format_keys(keys)}."
         if kind == "trigger":
+            self._update_key_hint(keys)
+            if "copilot" in keys:
+                note = "Recorded the Copilot key."
+        if kind == "trigger":
             current = self.mode.get()
             if message.mode == "hold":
                 self.mode.set("Hold")
@@ -2261,6 +2412,9 @@ class KeywareApp(ctk.CTk):
                 label=self.label.get().strip(),
                 action=self._collect_action(),
             )
+            if mode == "hold":
+                binding.tap_action = self._collect_tap_action()
+                binding.hold_press = bool(self.keep_held.get()) and binding.action.type == "key_combo"
             if self._editing_id:
                 current = next((item for item in self.service.bindings(self.selected_id) if item.id == self._editing_id), None)
                 if current is not None:
@@ -2314,6 +2468,8 @@ class KeywareApp(ctk.CTk):
             return Action(type="macro", steps=self._collect_steps())
         if kind == "Auto-click":
             return self._autoclick_action()
+        if kind == "Do nothing":
+            return Action(type="none")
         raise ValueError("Choose an action.")
 
     def _collect_steps(self) -> list[MacroStep]:
@@ -2444,6 +2600,11 @@ class KeywareApp(ctk.CTk):
         self.action.set("Open URL")
         self._on_action("Open URL")
         self._set_hold(800)
+        self.tap_choice.set("Type the key")
+        self._set_entry(self.tap_value, "")
+        self._on_tap_choice("Type the key")
+        self.keep_held.deselect()
+        self.key_hint.grid_remove()
         self._clear_macro_steps()
         self._reset_autoclick()
         self.form_error.configure(text="")

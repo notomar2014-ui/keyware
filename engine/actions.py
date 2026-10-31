@@ -138,6 +138,8 @@ class ActionExecutor:
             self._run_command(action.command)
         elif action.type == "play":
             self._play(action.service, action.text)
+        elif action.type == "none":
+            return  # the trigger key is turned off: swallowed, nothing runs
         else:
             raise ValueError(f"Unknown action '{action.type}'.")
 
@@ -510,6 +512,11 @@ _KNOWN_APP_PATHS = {
                r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"],
     "firefox": [r"%ProgramFiles%\Mozilla Firefox\firefox.exe"],
     "steam": [r"%ProgramFiles(x86)%\Steam\steam.exe"],
+    "cursor": [r"%LOCALAPPDATA%\Programs\cursor\Cursor.exe", r"%ProgramFiles%\cursor\Cursor.exe"],
+    "slack": [r"%LOCALAPPDATA%\slack\slack.exe"],
+    "figma": [r"%LOCALAPPDATA%\Figma\Figma.exe"],
+    "obs64": [r"%ProgramFiles%\obs-studio\bin\64bit\obs64.exe"],
+    "blender": [r"%ProgramFiles%\Blender Foundation\Blender\blender.exe"],
 }
 # Store apps register a link protocol instead of a path.
 _PROTOCOL_APPS = {"spotify": "spotify"}
@@ -554,7 +561,11 @@ def resolve_installed_app(app: str) -> str | None:
 
 
 _SHORTCUT_NAMES = {"code": "visual studio code", "msedge": "microsoft edge", "chrome": "google chrome",
-                   "obs64": "obs studio", "winword": "word", "excel": "excel", "powerpnt": "powerpoint"}
+                   "obs64": "obs studio", "winword": "word", "excel": "excel", "powerpnt": "powerpoint",
+                   "cursor": "cursor", "slack": "slack", "figma": "figma"}
+# Versioned Start menu names ("Adobe Photoshop 2026", "Blender 4.5").
+_SHORTCUT_PREFIXES = {"photoshop": "adobe photoshop", "adobe premiere pro": "adobe premiere pro",
+                      "afterfx": "adobe after effects", "blender": "blender"}
 
 
 def _start_menu_shortcut(stem: str) -> str | None:
@@ -568,7 +579,11 @@ def _start_menu_shortcut(stem: str) -> str | None:
         for folder, _dirs, files in os.walk(root):
             for name in files:
                 base, ext = os.path.splitext(name)
-                if ext.lower() == ".lnk" and base.lower() in wanted:
+                if ext.lower() != ".lnk":
+                    continue
+                lowered = base.lower()
+                prefix = _SHORTCUT_PREFIXES.get(stem)
+                if lowered in wanted or (prefix and lowered.startswith(prefix)):
                     return os.path.join(folder, name)
     return None
 

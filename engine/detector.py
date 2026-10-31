@@ -72,6 +72,21 @@ class _Down:
 
 
 @dataclass
+class _TapHold:
+    """One press of a key whose hold binding also has a tap side (v1.3.5).
+
+    state: "pending" until the threshold or another key decides it,
+    "held" while hold keys are kept down, "fired" after a one-shot hold
+    action, "tapped" after another key made it a tap early.
+    """
+
+    binding: Binding
+    at: float
+    state: str = "pending"
+    keys: tuple[str, ...] = ()
+
+
+@dataclass
 class _Dance:
     key: str
     count: int
@@ -102,6 +117,11 @@ class InputDetector:
         # Trigger key -> binding id of a "while held" auto-click it started.
         self.autoclick_keys: dict[str, str] = {}
         self.active_binding_ids: frozenset[str] = frozenset()
+        # Tap / hold presses in progress, by trigger key.
+        self.tap_holds: dict[str, _TapHold] = {}
+        # True when an active binding uses the Copilot key (or Caps Lock).
+        self.copilot_bound = False
+        self.caps_bound = False
 
     def set_enabled(self, enabled: bool) -> list[Effect]:
         enabled = bool(enabled)
@@ -132,6 +152,7 @@ class InputDetector:
             return []
         effects = self.release_replayed()
         self.held.clear()
+        self.tap_holds.clear()
         self.autoclick_keys.clear()
         self.dance = None
         self.leader_until = None
@@ -153,6 +174,7 @@ class InputDetector:
             "dance": copy.deepcopy(self.dance),
             "leader_until": self.leader_until,
             "right_alt": self.right_alt,
+            "tap_holds": copy.copy(self.tap_holds),
         }
 
     def restore_state(self, state: dict) -> None:
@@ -169,6 +191,7 @@ class InputDetector:
         self.dance = state["dance"]
         self.leader_until = state["leader_until"]
         self.right_alt = state["right_alt"]
+        self.tap_holds = dict(state.get("tap_holds", {}))
 
     def observe_passthrough(self, key: str, pressed: bool, now: float) -> list[Effect]:
         """Track a key while an elevated window has the foreground.
@@ -226,8 +249,19 @@ class InputDetector:
         effects.append(Effect(kind="panic", message="Panic switch pressed. Hooks released."))
         return effects
 
+    def forget(self, keys) -> None:
+        """Drop keys without any effect. Used when Win and Shift turn out to be
+        part of the Copilot key: the service releases them in the OS itself."""
+        for key in keys:
+            self.down_keys.discard(key)
+            self.modifiers.discard(key)
+            self.seen.pop(key, None)
+            self.held.pop(key, None)
+            self.swallow_release.discard(key)
+
     def disarm(self) -> None:
         """Drop replay bookkeeping after dry run so a later key-up is not injected."""
+        self.tap_holds.clear()
         for down in self.held.values():
             down.consumed = True
             down.suppressed = False
@@ -287,6 +321,9 @@ class InputDetector:
         effects: list[Effect] = []
         if not self.enabled or self.paused:
             return effects
+        for key, state in list(self.tap_holds.items()):
+            if state.state == "pending" and elapsed_ms(state.at, now) >= state.binding.hold_ms:
+                effects.extend(self._begin_hold(key, state))
         for key, down in self.held.items():
             if down.consumed and not down.fired_ids:
                 continue
@@ -371,7 +408,7 @@ class InputDetector:
         if self.capture:
             return self._capture_press(key, now)
 
-        pending: list[Effect] = []
+        pending: list[Effect] = self._settle_tap_holds(key)
         if self.dance is not None and self.dance.key != key:
             pending.extend(self._commit_dance())
         # A modifier must stay available for panic and for real shortcuts.
@@ -403,6 +440,12 @@ class InputDetector:
             return HandleResult(True, pending + self._fire(chord, key=key))
 
         if key not in MODIFIERS and not self._match_modifiers() and self._by_key.get(key):
+            tap_hold = self._tap_hold_binding(key)
+            if tap_hold is not None:
+                # Decided later: by the threshold, by the release, or by the next key.
+                self.held[key] = _Down(now, True, True, self.active_id)
+                self.tap_holds[key] = _TapHold(binding=tap_hold, at=now)
+                return HandleResult(True, pending)
             if any(effect.kind == "inject_down" for effect in pending):
                 self.held[key] = _Down(now, True, True, self.active_id, replayed=True)
                 self.replayed.add(key)
@@ -431,6 +474,11 @@ class InputDetector:
         self.down_keys.discard(key)
         self.modifiers.discard(key)
         self.seen.pop(key, None)
+        tap_hold = self.tap_holds.pop(key, None)
+        if tap_hold is not None:
+            self.held.pop(key, None)
+            self.swallow_release.discard(key)
+            return HandleResult(True, self._end_tap_hold(key, tap_hold, now))
         if key in self.swallow_release:
             self.swallow_release.discard(key)
             self.held.pop(key, None)
@@ -530,14 +578,14 @@ class InputDetector:
             return [Effect(kind="inject", key=dance.key)]
         return [Effect(kind="log", message=f"No action for {count} taps on {format_key(dance.key)}.")]
 
-    def _fire(self, binding: Binding, tier: int | None = None, key: str = "") -> list[Effect]:
-        if key and _clicks_while_held(binding):
+    def _fire(self, binding: Binding, tier: int | None = None, key: str = "", action: Action | None = None) -> list[Effect]:
+        if action is None and key and _clicks_while_held(binding):
             self.autoclick_keys[key] = binding.id
         effects = [
             Effect(
                 kind="fire",
                 binding_id=binding.id,
-                action=binding.action,
+                action=action if action is not None else binding.action,
                 message=self._fire_message(binding),
                 key=key,
             ),
@@ -644,6 +692,9 @@ class InputDetector:
             self.modifiers.discard(key)
             self.seen.pop(key, None)
             self.held.pop(key, None)
+            stuck = self.tap_holds.pop(key, None)
+            if stuck is not None:
+                effects.extend(self._release_hold_keys(stuck))
             if self.dance is not None and self.dance.key == key:
                 self.dance = None
             if key in self.replayed:
@@ -733,6 +784,85 @@ class InputDetector:
         self.capture = False
         self.right_alt = False
         self.autoclick_keys.clear()
+        self.tap_holds.clear()
+
+    # --- tap / hold (v1.3.5) ----------------------------------------------
+
+    def _tap_hold_binding(self, key: str) -> Binding | None:
+        for binding in self._by_key.get(key, []):
+            if binding.is_tap_hold():
+                return binding
+        return None
+
+    def _settle_tap_holds(self, new_key: str) -> list[Effect]:
+        """Another key went down while a tap / hold key is undecided.
+
+        With "keep held" (Caps Lock as Ctrl) it becomes a hold at once, so
+        Caps + C is Ctrl + C even when typed fast. A one-shot hold action
+        becomes a tap instead, so fast typing never runs the hold action.
+        The new key is replayed after these effects, in order.
+        """
+        effects: list[Effect] = []
+        for key, state in list(self.tap_holds.items()):
+            if key == new_key or state.state != "pending":
+                continue
+            if state.binding.hold_press:
+                effects.extend(self._begin_hold(key, state))
+            else:
+                state.state = "tapped"
+                effects.extend(self._tap_effects(key, state.binding))
+        return effects
+
+    def _begin_hold(self, key: str, state: _TapHold) -> list[Effect]:
+        binding = state.binding
+        if binding.hold_press:
+            keys = tuple(name for name in binding.action.keys if name)
+            state.state = "held"
+            state.keys = keys
+            effects = [Effect(kind="inject_down", key=name) for name in keys]
+            # Tracked as replayed so pause, panic, off and lost key-ups release them.
+            self.replayed.update(keys)
+            effects.append(Effect(kind="log", message=f"Hold {format_key(key)} → holding {format_keys(list(keys))}"))
+            return effects
+        state.state = "fired"
+        return self._fire(binding, key=key)
+
+    def _release_hold_keys(self, state: _TapHold) -> list[Effect]:
+        effects: list[Effect] = []
+        for name in reversed(state.keys):
+            if name in self.replayed:
+                self.replayed.discard(name)
+                effects.append(Effect(kind="inject_up", key=name))
+        state.keys = ()
+        return effects
+
+    def _end_tap_hold(self, key: str, state: _TapHold, now: float) -> list[Effect]:
+        effects: list[Effect] = []
+        if state.state == "pending":
+            if elapsed_ms(state.at, now) >= state.binding.hold_ms:
+                # The tick did not run in time. Still a hold.
+                effects.extend(self._begin_hold(key, state))
+            else:
+                return self._tap_effects(key, state.binding)
+        if state.state == "held":
+            effects.extend(self._release_hold_keys(state))
+        return effects
+
+    def _tap_effects(self, key: str, binding: Binding) -> list[Effect]:
+        action = binding.tap_action
+        if action is None:
+            # Only "keep held" was set: a short press types the key as usual.
+            return [Effect(kind="inject", key=key)]
+        if action.type == "none":
+            return [Effect(kind="log", message=f"Tap {format_key(key)}: turned off.")]
+        if action.type == "key_combo" and action.keys:
+            # Replayed on the ordered queue so the next key cannot overtake it.
+            keys = list(action.keys)
+            effects = [Effect(kind="inject_down", key=name) for name in keys]
+            effects.extend(Effect(kind="inject_up", key=name) for name in reversed(keys))
+            effects.append(Effect(kind="log", message=f"Tap {format_key(key)} → {format_keys(keys)}"))
+            return effects
+        return self._fire(binding, key=key, action=action)
 
     def _reindex(self) -> None:
         bindings: list[Binding] = []
@@ -764,3 +894,8 @@ class InputDetector:
         self._by_key = by_key
         self._leaders = leaders
         self.active_binding_ids = frozenset(binding.id for binding in bindings)
+        self.copilot_bound = any("copilot" in binding.keys for binding in bindings)
+        self.caps_bound = any(
+            binding.keys and binding.keys[0] == "caps_lock" and binding.mode in ("tap", "hold", "tap_dance")
+            for binding in bindings
+        )

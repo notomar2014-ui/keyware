@@ -48,6 +48,8 @@ from engine.models import (
     MACRO_MAX_STEPS,
     MEDIA_MAX_COUNT,
     MOUSE_BUTTONS,
+    TAP_HOLD_DEFAULT_MS,
+    TAP_HOLD_MIN_MS,
     SERVICE_LABELS,
     WAIT_MAX_MS,
     WAIT_MIN_MS,
@@ -167,8 +169,18 @@ class Proposal:
 
     def summary_lines(self, leader_key: str | None = None) -> list[tuple[str, str]]:
         binding = self.binding
-        lines = [("Trigger", trigger_text(binding, leader_key)), ("Action", action_type_label(binding.action.type))]
+        hold_name = "Hold does" if binding.is_tap_hold() else "Action"
+        lines = [("Trigger", trigger_text(binding, leader_key)), (hold_name, action_type_label(binding.action.type))]
         lines.extend(_detail_lines(binding.action))
+        if binding.hold_press:
+            lines.append(("While held", f"keeps {format_keys(binding.action.keys)} down"))
+        if binding.is_tap_hold():
+            tap = binding.tap_action
+            if tap is None:
+                lines.append(("Tap does", f"types {format_keys(binding.keys)} as usual"))
+            else:
+                lines.append(("Tap does", action_type_label(tap.type)))
+                lines.extend(_detail_lines(tap))
         if self.profile_name:
             procs = ", ".join(self.process_names)
             lines.append(("Profile", f"{self.profile_name} ({procs})" if procs else self.profile_name))
@@ -275,7 +287,7 @@ def looks_like_binding(text: str) -> bool:
 
 # Shared with the proxy (site/api/_lib/prompt.js, written by tools/sync_prompt.py).
 # Bump PROMPT_VERSION whenever the prompt text changes.
-PROMPT_VERSION = "2026.10.31-1"
+PROMPT_VERSION = "2026.10.31-2"
 
 SYSTEM_PROMPT = r"""You are Keyware's binding builder. Keyware is a Windows key remapper. A user describes, in plain words, what a key should do. You reply with ONE JSON object describing a single binding. You never run anything; a human reviews your JSON in an editor and saves it.
 
@@ -286,6 +298,7 @@ SYSTEM_PROMPT = r"""You are Keyware's binding builder. Keyware is a Windows key 
   "profile": {"scope": "global"}  OR  {"scope": "app", "name": "Gaming", "process_names": ["javaw.exe", "minecraft.exe"]},
   "trigger": {"mode": "tap" | "hold" | "double_tap" | "triple_tap" | "chord" | "leader", "keys": ["..."], "hold_ms": 800},
   "action": { ...one of the action shapes below... },
+  "tap_action": { ...optional, only with mode "hold": what a SHORT tap does (see Tap vs hold) },
   "notes": "optional, one short sentence for the user (assumptions, placeholders)"
 }
 If the user asks for SEVERAL bindings in one description, reply instead with up to 8 items, each shaped like the single object above (without "ok"):
@@ -302,14 +315,20 @@ Letters a-z, digits 0-9, f1-f24, modifiers ctrl alt shift win,
 esc enter tab space backspace delete insert home end page_up page_down up down left right
 caps_lock print_screen menu, numpad0-numpad9 numpad_add numpad_subtract numpad_multiply numpad_divide numpad_decimal,
 semicolon equals comma minus period slash backtick bracket_left bracket_right backslash quote,
-media keys volume_mute volume_up volume_down media_play_pause media_next media_prev media_stop.
-"Control"→ctrl, "Windows"/"Win"→win, "Escape"→esc, "Return"→enter, "PgUp"→page_up, "Del"→delete.
+media keys volume_mute volume_up volume_down media_play_pause media_next media_prev media_stop,
+copilot = the Copilot key on newer Windows laptops ("Copilot key", "Copilot button", "co-pilot"). It is a TRIGGER only, never part of an action. Use mode tap/hold/double_tap/triple_tap with keys ["copilot"], never a chord, never ["win","shift","f23"].
+"Control"→ctrl, "Windows"/"Win"→win, "Escape"→esc, "Return"→enter, "PgUp"→page_up, "Del"→delete, "Caps"/"Caps Lock"→caps_lock.
+Macropads and stream decks usually send f13-f24 (often with ctrl/alt/shift); treat them like any other key.
 Never invent other names (no "mouse4", "fn").
 
 # Triggers (what the user presses)
 - "chord": one or more modifiers PLUS exactly one normal key. keys e.g. ["ctrl","shift","r"]. Use for anything written like "Ctrl+Q", "Ctrl + Alt + T", "Win+Shift+Y".
 - "tap": a single normal key pressed quickly, e.g. "F2 opens YouTube" → mode tap, keys ["f2"]. The key's normal function is replaced. Modifiers alone are NOT allowed as a trigger.
 - "hold": hold one normal key for hold_ms (300-5000, default 800). A short press still types the key. "hold P for 2 seconds" → mode hold, keys ["p"], hold_ms 2000. Holds of different lengths on the same key are separate tiers.
+- Tap vs hold on ONE key ("tap X does A, hold X does B", "Caps Lock: Esc when tapped, Ctrl when held", "dual role"): mode "hold", "action" = the HOLD side, "tap_action" = the TAP side, hold_ms = the threshold (100-5000, default 200 for tap vs hold).
+  When the hold side should act like a held-down modifier or key (hold = Ctrl, Shift, Alt, Win, or "holds space"), use action key_combo with those keys and add "keep_held": true to the trigger: the keys stay down while the key is held, so hold Caps + C = Ctrl+C.
+  Without "keep_held" the hold action runs once when the threshold passes. If the user gives only a hold side with keep_held, leave tap_action out: a tap then types the key itself.
+- Turning a key off ("disable Caps Lock", "Caps Lock does nothing", "turn off the Copilot key"): mode tap, action {"type":"none"}. Caps Lock that is bound or turned off no longer toggles; Shift+Caps Lock still toggles it.
 - "double_tap" / "triple_tap": tap one normal key 2 or 3 times quickly. keys ["f8"].
 - "leader": the user taps their leader key (set in Settings, e.g. F13) then this ONE follow-up key. "leader then Y" → mode leader, keys ["y"]. Do NOT put the leader key itself in keys.
 - Exactly one key for tap/hold/double_tap/triple_tap/leader. A chord must have ≥1 modifier and exactly 1 non-modifier.
@@ -321,7 +340,7 @@ Never invent other names (no "mouse4", "fn").
    Searches: YouTube https://www.youtube.com/results?search_query=WORDS ; Google https://www.google.com/search?q=WORDS ;
    Wikipedia https://en.wikipedia.org/w/index.php?search=WORDS ; Amazon https://www.amazon.com/s?k=WORDS ; Spotify web https://open.spotify.com/search/WORDS .
    Plain sites: "open gmail" → https://mail.google.com , "open YouTube" → https://www.youtube.com .
-2. "open_app": {"type":"open_app","app":"notepad.exe"} — an exe name on PATH or a full path. Common: notepad.exe, calc.exe, mspaint.exe, explorer.exe, code (VS Code), chrome.exe, msedge.exe, spotify.exe, discord.exe, steam.exe, obs64.exe. No command-line arguments. NEVER cmd, powershell, pwsh, wscript, cscript, mshta, rundll32, regsvr32, reg, regedit, bcdedit, diskpart, shutdown, taskkill, schtasks, netsh, certutil, or any .bat/.cmd/.ps1/.vbs/.js/.hta/.msi/.reg file.
+2. "open_app": {"type":"open_app","app":"notepad.exe"} — an exe name on PATH or a full path. Common: notepad.exe, calc.exe, mspaint.exe, explorer.exe, code (VS Code), cursor.exe (Cursor), chrome.exe, msedge.exe, spotify.exe, discord.exe, slack.exe, steam.exe, obs64.exe, winword.exe (Word), excel.exe, figma.exe, blender.exe, photoshop.exe. No command-line arguments. NEVER cmd, powershell, pwsh, wscript, cscript, mshta, rundll32, regsvr32, reg, regedit, bcdedit, diskpart, shutdown, taskkill, schtasks, netsh, certutil, or any .bat/.cmd/.ps1/.vbs/.js/.hta/.msi/.reg file.
 3. "type_text": {"type":"type_text","text":"exact text"} — types literal text (max 8000 chars). Use only when there are no extra key presses.
 4. "key_combo": {"type":"key_combo","keys":["ctrl","shift","t"]} — sends one shortcut once (also a single key like ["enter"] or ["f5"]).
 5. "macro": {"type":"macro","steps":[...]} — ordered steps, 1-64 of them. Use whenever more than one thing happens (text then Enter, several keys, clicks, waits). Step shapes:
@@ -350,11 +369,12 @@ Never invent other names (no "mouse4", "fn").
 9. "lock_screen": {"type":"lock_screen"}   10. "screenshot": {"type":"screenshot"}
 11. "run_command": {"type":"run_command","command":"code C:\\projects\\site"} — only when the user explicitly asks to run a command or script. One line, max 500 chars. Keyware asks the user to confirm the first time it runs. NEVER shutdown/restart/sign-out, deleting files, formatting, registry/boot/disk changes, changing the audio device, or downloading code: refuse those (ok:false).
 12. "play": {"type":"play","service":"spotify","query":"Du bist genug"} — play music or a video by name (spotify | youtube). "play X on YouTube/Spotify" always uses play, never a search URL. Use a macro with a "play" step when other things happen too.
+13. "none": {"type":"none"} — the key does nothing (turned off). Also valid as a tap_action ("tap does nothing, hold opens X").
 Prefer the simplest shape: one thing → a single action; several things → one macro.
 
 # Profiles
 - Global (default): works in every app. Use {"scope":"global"} unless the user names an app/game where it should apply.
-- App profile: only while that app is in front. The user's games profile is called "Gaming": "in gaming", "in games", "while gaming", "in Minecraft" → {"scope":"app","name":"Gaming","process_names":["javaw.exe","minecraft.exe"]}. Other apps: Chrome chrome.exe, Edge msedge.exe, Firefox firefox.exe, VS Code code.exe, Discord discord.exe, Spotify spotify.exe, Notepad notepad.exe, Roblox robloxplayerbeta.exe, Valorant valorant.exe, Fortnite fortniteclient-win64-shipping.exe.
+- App profile: only while that app is in front. The user's games profile is called "Gaming": "in gaming", "in games", "while gaming", "in Minecraft" → {"scope":"app","name":"Gaming","process_names":["javaw.exe","minecraft.exe"]}. Other apps: Chrome chrome.exe, Edge msedge.exe, Firefox firefox.exe, VS Code code.exe, Cursor cursor.exe, Discord discord.exe, Slack slack.exe, Spotify spotify.exe, Notepad notepad.exe, Word winword.exe, Excel excel.exe, PowerPoint powerpnt.exe, Photoshop photoshop.exe, Premiere Pro "adobe premiere pro.exe", After Effects afterfx.exe, OBS obs64.exe, Figma figma.exe, Blender blender.exe, Roblox robloxplayerbeta.exe, Valorant valorant.exe, Fortnite fortniteclient-win64-shipping.exe.
 - An app profile may intentionally override a Global binding on the same key.
 
 # Conflict rules (Keyware enforces these; you just produce the binding)
@@ -408,6 +428,24 @@ User: ctrl+alt+n opens notepad and types hello when it's open
 
 User: F7 locks my pc
 {"ok":true,"label":"Lock PC","profile":{"scope":"global"},"trigger":{"mode":"tap","keys":["f7"]},"action":{"type":"lock_screen"},"notes":""}
+
+User: caps lock is esc when tapped and ctrl when held
+{"ok":true,"label":"Caps: Esc / Ctrl","profile":{"scope":"global"},"trigger":{"mode":"hold","keys":["caps_lock"],"hold_ms":200,"keep_held":true},"action":{"type":"key_combo","keys":["ctrl"]},"tap_action":{"type":"key_combo","keys":["esc"]},"notes":"Shift+Caps Lock still toggles Caps Lock."}
+
+User: turn off caps lock
+{"ok":true,"label":"Caps Lock off","profile":{"scope":"global"},"trigger":{"mode":"tap","keys":["caps_lock"]},"action":{"type":"none"},"notes":"Shift+Caps Lock still toggles Caps Lock."}
+
+User: make the copilot key open cursor
+{"ok":true,"label":"Copilot key: Cursor","profile":{"scope":"global"},"trigger":{"mode":"tap","keys":["copilot"]},"action":{"type":"open_app","app":"cursor.exe"},"notes":""}
+
+User: copilot key acts as right ctrl
+{"ok":true,"label":"Copilot key = Ctrl","profile":{"scope":"global"},"trigger":{"mode":"hold","keys":["copilot"],"hold_ms":200,"keep_held":true},"action":{"type":"key_combo","keys":["ctrl"]},"notes":"Keyware sends Ctrl (it does not tell left and right Ctrl apart)."}
+
+User: tap F9 to play/pause, hold it to open spotify
+{"ok":true,"label":"F9: play / Spotify","profile":{"scope":"global"},"trigger":{"mode":"hold","keys":["f9"],"hold_ms":400},"action":{"type":"open_app","app":"spotify.exe"},"tap_action":{"type":"media","media":"media_play_pause","count":1},"notes":""}
+
+User: in OBS, F13 starts recording with ctrl shift r
+{"ok":true,"label":"OBS: record","profile":{"scope":"app","name":"OBS","process_names":["obs64.exe"]},"trigger":{"mode":"tap","keys":["f13"]},"action":{"type":"key_combo","keys":["ctrl","shift","r"]},"notes":"Set the same shortcut in OBS Settings › Hotkeys."}
 
 User: F12 shuts down my computer
 {"ok":false,"error":"Keyware won't shut down, restart or sign out."}
@@ -542,8 +580,8 @@ _DANGEROUS_TEXT = re.compile(
     re.IGNORECASE,
 )
 _BLOCKED_COMBOS = (frozenset({"ctrl", "alt", "delete"}),)
-_ALLOWED_TOP = {"ok", "label", "profile", "trigger", "action", "notes", "error", "not_binding", "bindings"}
-_ALLOWED_ITEM = {"label", "profile", "trigger", "action", "notes", "ok"}
+_ALLOWED_TOP = {"ok", "label", "profile", "trigger", "action", "notes", "error", "not_binding", "bindings", "tap_action"}
+_ALLOWED_ITEM = {"label", "profile", "trigger", "action", "notes", "ok", "tap_action"}
 
 
 def _strip_fences(text: str) -> str:
@@ -616,7 +654,7 @@ def _parse_action(raw: Any) -> Action:
     if kind == "media":
         return _checked(Action(type=kind, media=_media_name(raw.get("media") or raw.get("key")),
                                count=_count(raw.get("count"))))
-    if kind in ("lock_screen", "screenshot"):
+    if kind in ("lock_screen", "screenshot", "none"):
         return Action(type=kind)
     if kind == "run_command":
         command = str(raw.get("command", "") or "")
@@ -896,15 +934,30 @@ def _parse_item(data: dict, config: Config | None) -> Proposal:
         # "Ctrl" missing but several normal keys is a model slip; one plain key means tap.
         if len(keys) == 1:
             mode = "tap"
+    if "copilot" in keys:
+        # The Copilot key is one key: never a chord, never with modifiers.
+        keys = ["copilot"]
+        if mode == "chord":
+            mode = "tap"
+    tap_raw = data.get("tap_action")
+    if tap_raw is None and isinstance(trigger.get("tap_action"), dict):
+        tap_raw = trigger.get("tap_action")
+    keep_held = trigger.get("keep_held") in (True, "true", 1)
+    tap_hold = mode == "hold" and (isinstance(tap_raw, dict) or keep_held)
     hold_ms = 800
     if mode == "hold":
+        default = TAP_HOLD_DEFAULT_MS if tap_hold else 800
         try:
-            hold_ms = int(trigger.get("hold_ms", 800) or 800)
+            hold_ms = int(trigger.get("hold_ms", default) or default)
         except (TypeError, ValueError):
-            hold_ms = 800
-        hold_ms = min(5000, max(300, hold_ms))
+            hold_ms = default
+        hold_ms = min(5000, max(TAP_HOLD_MIN_MS if tap_hold else 300, hold_ms))
 
     action = _parse_action(data.get("action"))
+    tap_action = _parse_action(tap_raw) if mode == "hold" and isinstance(tap_raw, dict) else None
+    hold_press = bool(mode == "hold" and keep_held and action.type == "key_combo")
+    if mode == "hold" and tap_action is None and not hold_press:
+        hold_ms = max(300, hold_ms)  # a plain long press
     clamp_note = ""
     if action.type == "auto_click":
         if mode == "hold" and action.click_mode == "hold" and "hold_ms" not in trigger:
@@ -918,7 +971,7 @@ def _parse_item(data: dict, config: Config | None) -> Proposal:
             clamp_note = f"Speed limited to {action.cps} clicks per second (Keyware allows 1-50)."
     label = " ".join(str(data.get("label", "") or "").split())[:40]
     binding = Binding(id=new_id("bind"), enabled=True, mode=mode, keys=keys, hold_ms=hold_ms, taps=taps,
-                      label=label, action=action)
+                      label=label, action=action, tap_action=tap_action, hold_press=hold_press)
     try:
         validate_binding(binding, config or Config(), check_leader=False)
     except ValueError as exc:
