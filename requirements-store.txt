@@ -1,0 +1,7 @@
+# Extra packages for the Microsoft Store (MSIX) build only.
+# The MSIX build drives the manifest's startup task through the WinRT StartupTask API.
+-r requirements-dev.txt
+winrt-runtime>=3.0; platform_system == "Windows"
+winrt-Windows.ApplicationModel>=3.0; platform_system == "Windows"
+winrt-Windows.ApplicationModel.Activation>=3.0; platform_system == "Windows"
+winrt-Windows.Foundation>=3.0; platform_system == "Windows"

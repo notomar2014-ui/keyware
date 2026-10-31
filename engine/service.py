@@ -781,7 +781,8 @@ class KeywareService:
             self._log("Leader key cleared.")
 
     def set_start_with_windows(self, enabled: bool) -> bool:
-        """Adds or removes the HKCU Run value (Keyware --background). Returns what Windows now has."""
+        """Adds or removes the HKCU Run value (Keyware --background), or in the MSIX build turns the
+        manifest startup task on or off. Returns what Windows now has."""
         try:
             self.startup.set_enabled(bool(enabled))
         except OSError as exc:

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Keyware MSIX manifest TEMPLATE.
+
+  
+   PLACEHOLDERS: fill these from Partner Center after the app name is reserved   
+   (Partner Center > Apps and games > Keyware > Product management >             
+    Product identity). Copy the values exactly, character for character.         
+                                                                                
+     @@IDENTITY_NAME@@            Package/Identity/Name   e.g. 12345Name.Keyware 
+     @@IDENTITY_PUBLISHER@@       Package/Identity/Publisher  e.g. CN=1A2B3C4D-…  
+     @@PUBLISHER_DISPLAY_NAME@@   Package/Properties/PublisherDisplayName         
+     @@DISPLAY_NAME@@             the reserved app name (must match exactly)     
+     @@VERSION@@                  four-part version, last part 0: 1.3.4.0        
+                                                                                
+   store/build_msix.ps1 fills them in for you (-IdentityName, -Publisher, ...).   
+   Do not edit them by hand in this template.                                   
+  
+
+  Start with Windows: the windows.startupTask extension below replaces the HKCU Run value used by
+  the plain Keyware.exe. Enabled="true" keeps the default ON; uap10:Parameters passes the background switch
+  so the sign-in launch is silent (tray only). TaskId must equal STARTUP_TASK_ID in engine/startup.py.
+  The user can turn it off in Keyware Settings, Windows Settings > Apps > Startup, or Task Manager.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 uap10 desktop rescap">
+
+  <Identity
+    Name="@@IDENTITY_NAME@@"
+    Publisher="@@IDENTITY_PUBLISHER@@"
+    Version="@@VERSION@@"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>@@DISPLAY_NAME@@</DisplayName>
+    <PublisherDisplayName>@@PUBLISHER_DISPLAY_NAME@@</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Remap keys and build hotkeys, macros and per-app profiles for Windows.</Description>
+  </Properties>
+
+  <Dependencies>
+    <!-- 19041 (Windows 10 2004) is the first build that honours uap10:Parameters. -->
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="Keyware" Executable="Keyware.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="@@DISPLAY_NAME@@"
+        Description="Remap keys and build hotkeys, macros and per-app profiles for Windows."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          ShortName="Keyware"
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square71x71Logo="Assets\SmallTile.png"
+          Square310x310Logo="Assets\LargeTile.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo" />
+            <uap:ShowOn Tile="wide310x150Logo" />
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+      </uap:VisualElements>
+
+      <Extensions>
+        <!-- Start with Windows, silently in the tray (replaces HKCU\...\Run in the Store build). -->
+        <desktop:Extension
+          Category="windows.startupTask"
+          Executable="Keyware.exe"
+          EntryPoint="Windows.FullTrustApplication"
+          uap10:Parameters="--background">
+          <desktop:StartupTask TaskId="KeywareStartup" Enabled="true" DisplayName="Keyware" />
+        </desktop:Extension>
+
+        <!-- "keyware" from Run / a terminal. Also used by the CI smoke test (keyware.exe (startup-status switch)). -->
+        <uap3:Extension
+          Category="windows.appExecutionAlias"
+          Executable="Keyware.exe"
+          EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="keyware.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <!-- Required for every packaged Win32 desktop app. Justification in STORE_LISTING.md. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

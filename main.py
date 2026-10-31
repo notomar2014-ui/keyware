@@ -48,6 +48,33 @@ def set_app_user_model_id(shell32=None) -> bool:
         return False
 
 
+def run_startup_status(args: list[str]) -> int:
+    """Write {"packaged", "backend", "enabled"} as JSON to the path after --startup-status.
+
+    Used by the MSIX CI smoke test. Reads state only; it never turns startup on or off.
+    """
+    import json
+
+    from engine.startup import StartupManager
+
+    index = args.index("--startup-status")
+    target = args[index + 1] if index + 1 < len(args) else None
+    manager = StartupManager()
+    report = {"packaged": manager.packaged, "backend": type(manager.registry).__name__}
+    try:
+        report["enabled"] = manager.is_enabled()
+    except OSError as exc:
+        report["enabled"] = None
+        report["error"] = str(exc)
+    text = json.dumps(report)
+    if target:
+        with open(target, "w", encoding="utf-8") as handle:
+            handle.write(text)
+    else:
+        print(text)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     set_app_user_model_id()
@@ -55,6 +82,8 @@ def main(argv: list[str] | None = None) -> int:
         from engine.selftest import run
 
         return run()
+    if "--startup-status" in args:
+        return run_startup_status(args)
     if "--diag" in args:
         from engine.diag import run_diag
 
@@ -74,6 +103,11 @@ def main(argv: list[str] | None = None) -> int:
         from ui.app import run
 
         background = "--background" in args
+        if not background and not args:
+            # MSIX build: the startup task normally passes --background itself (uap10:Parameters).
+            from engine.startup import is_packaged, launched_by_startup_task
+
+            background = is_packaged() and launched_by_startup_task()
         run(minimized=background or "--minimized" in args, background=background)
         return 0
     finally:
