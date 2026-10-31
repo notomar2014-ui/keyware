@@ -34,6 +34,18 @@ jobs:
       - name: Build Keyware.exe
         run: python build.py
 
+      - name: Smoke-test the exe (no window, no hook)
+        shell: pwsh
+        run: |
+          $v = Start-Process dist/Keyware.exe -ArgumentList '--version','--out','version.txt' -Wait -PassThru
+          if ($v.ExitCode -ne 0) { throw "--version exited $($v.ExitCode)" }
+          $want = python -c "from engine import __version__; print(__version__)"
+          $got = (Get-Content version.txt -Raw).Trim()
+          if ($got -ne $want) { throw "exe reports $got, source is $want" }
+          $s = Start-Process dist/Keyware.exe -ArgumentList '--self-test' -Wait -PassThru
+          if ($s.ExitCode -ne 0) { throw "--self-test exited $($s.ExitCode)" }
+          Write-Host "Keyware.exe $got: --version and --self-test passed"
+
       - name: SHA-256
         shell: pwsh
         run: (Get-FileHash dist/Keyware.exe -Algorithm SHA256).Hash | Tee-Object dist/Keyware.exe.sha256

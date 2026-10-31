@@ -457,3 +457,14 @@ def test_ai_tap_hold_one_shot_and_prompt_knows_the_new_words():
                  "photoshop.exe", "figma.exe", "blender.exe", "slack.exe", "winword.exe", "excel.exe",
                  "adobe premiere pro.exe", "f13-f24"):
         assert word in SYSTEM_PROMPT
+
+
+def test_version_flag_prints_and_writes_the_version(tmp_path, capsys):
+    import main
+    from engine import __version__
+
+    out = tmp_path / "v.txt"
+    assert main.main(["--version", "--out", str(out)]) == 0
+    assert __version__ == "1.3.5"
+    assert out.read_text(encoding="utf-8").strip() == "1.3.5"
+    assert "1.3.5" in capsys.readouterr().out

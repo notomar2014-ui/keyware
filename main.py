@@ -51,6 +51,8 @@ def set_app_user_model_id(shell32=None) -> bool:
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     set_app_user_model_id()
+    if "--version" in args:
+        return print_version(args)
     if "--self-test" in args:
         from engine.selftest import run
 
@@ -78,6 +80,18 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     finally:
         lock.release()
+
+
+def print_version(args: list[str]) -> int:
+    """Keyware.exe --version [--out file]. The exe is windowed, so --out lets a build check read it."""
+    from engine import __version__
+
+    print(__version__)
+    if "--out" in args and args.index("--out") + 1 < len(args):
+        from pathlib import Path
+
+        Path(args[args.index("--out") + 1]).write_text(__version__ + "\n", encoding="utf-8")
+    return 0
 
 
 def run_action_file(args: list[str]) -> int:
