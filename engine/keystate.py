@@ -30,6 +30,8 @@ def key_down_from(get_async, name: str) -> bool:
     no virtual-key mapping is reported down, which makes a reconcile a no-op.
     """
     vks = _SIDES.get(name)
+    if name == "copilot":
+        vks = (0x86,)  # F23 is the part of the Copilot key that stays down
     if not vks:
         vk = NAME_TO_VK.get(name)
         vks = (vk,) if vk is not None else ()

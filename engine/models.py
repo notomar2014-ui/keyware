@@ -11,6 +11,7 @@ import uuid
 from engine.keys import (
     ALLOWED_KEYS,
     MODIFIERS,
+    TRIGGER_ONLY_KEYS,
     canonicalize,
     format_key,
     format_keys,
@@ -36,7 +37,15 @@ ACTION_TYPES = (
     "open_url", "open_app", "type_text", "key_combo", "macro", "auto_click",
     # v1.3.3 single actions
     "open_path", "media", "lock_screen", "screenshot", "run_command", "play",
+    # v1.3.5: swallow the key and do nothing (turn Caps Lock or the Copilot key off)
+    "none",
 )
+# Hold bindings with a separate tap action, or that keep keys held, may use a
+# shorter threshold than a plain hold. 200 ms is the usual tap/hold split.
+TAP_HOLD_DEFAULT_MS = 200
+TAP_HOLD_MIN_MS = 100
+HOLD_MIN_MS = 300
+HOLD_MAX_MS = 10_000
 TRIGGER_MODES = ("tap", "hold", "tap_dance", "chord", "leader")
 MACRO_OPS = (
     "key", "delay", "text", "mouse", "combo",
@@ -256,6 +265,15 @@ class Binding:
     hold_ms: int = 800
     taps: int = 2
     label: str = ""
+    # v1.3.5 tap vs hold, an extension of mode "hold" (never a separate mode):
+    # tap_action runs on a press shorter than hold_ms (instead of typing the key),
+    # hold_press keeps the Key combo keys down for as long as the trigger is held
+    # (Caps Lock: tap = Esc, hold = Ctrl).
+    tap_action: Action | None = None
+    hold_press: bool = False
+
+    def is_tap_hold(self) -> bool:
+        return self.mode == "hold" and (self.tap_action is not None or bool(self.hold_press))
 
     def signature(self) -> tuple[Any, ...]:
         trigger = tuple(ordered_keys(self.keys))
@@ -275,6 +293,8 @@ class Binding:
             "taps": int(self.taps),
             "label": self.label,
             "action": self.action.to_dict(),
+            **({"tap_action": self.tap_action.to_dict()} if self.tap_action is not None else {}),
+            **({"hold_press": True} if self.hold_press else {}),
         }
 
     @staticmethod
@@ -291,6 +311,8 @@ class Binding:
             taps=int(raw.get("taps", 2) or 2),
             label=str(raw.get("label", "") or ""),
             action=Action.from_dict(action_raw),
+            tap_action=Action.from_dict(raw["tap_action"]) if isinstance(raw.get("tap_action"), dict) else None,
+            hold_press=bool(raw.get("hold_press", False)),
         )
 
 
@@ -613,6 +635,8 @@ def default_config() -> Config:
 def trigger_text(binding: Binding, leader_key: str | None) -> str:
     if binding.mode == "chord":
         return format_keys(binding.keys)
+    if binding.mode == "hold" and binding.is_tap_hold():
+        return f"Tap / hold {format_key(binding.keys[0])} · {int(binding.hold_ms)} ms"
     if binding.mode == "hold":
         return f"Hold {format_key(binding.keys[0])} · {int(binding.hold_ms)} ms"
     if binding.mode == "tap":
@@ -641,6 +665,7 @@ def action_type_label(action_type: str) -> str:
         "screenshot": "Screenshot",
         "run_command": "Run command",
         "play": "Play music / video",
+        "none": "Do nothing",
     }.get(action_type, action_type)
 
 
@@ -728,6 +753,8 @@ def action_summary(action: Action) -> str:
         return compact[:61] + "..." if len(compact) > 64 else compact
     if action.type == "play":
         return f"“{action.text}” on {SERVICE_LABELS.get(action.service, action.service)}"
+    if action.type == "none":
+        return "Key turned off"
     return action.type
 
 
@@ -837,13 +864,15 @@ def _validate_args(args: list[str]) -> list[str]:
     return cleaned
 
 
-def _require_keys(keys: list[str]) -> list[str]:
+def _require_keys(keys: list[str], *, sending: bool = False) -> list[str]:
     if not keys:
         raise ValueError("Choose a key.")
     canonical: list[str] = []
     for key in keys:
         if key not in ALLOWED_KEYS:
             raise ValueError(f"Unknown key '{key}'.")
+        if sending and key in TRIGGER_ONLY_KEYS:
+            raise ValueError(f"{format_key(key)} can be a trigger, but Keyware cannot send it.")
         if key not in canonical:
             canonical.append(key)
     return ordered_keys(canonical)
@@ -873,7 +902,7 @@ def validate_action(action: Action) -> None:
         if len(action.text) > 8000:
             raise ValueError("Text is limited to 8000 characters.")
     elif action.type == "key_combo":
-        action.keys = _require_keys(list(action.keys))
+        action.keys = _require_keys(list(action.keys), sending=True)
     elif action.type == "macro":
         if not action.steps:
             raise ValueError("Add at least one macro step.")
@@ -897,9 +926,9 @@ def validate_action(action: Action) -> None:
 def validate_step(step: MacroStep) -> None:
     """Validate one macro step in place. Raises ValueError with a friendly message."""
     if step.op == "key":
-        step.key = _require_keys([step.key])[0]
+        step.key = _require_keys([step.key], sending=True)[0]
     elif step.op == "combo":
-        step.keys = _require_keys(list(step.keys))
+        step.keys = _require_keys(list(step.keys), sending=True)
     elif step.op == "delay":
         if step.ms < 0 or step.ms > 60_000:
             raise ValueError("Delay must be between 0 and 60000 ms.")
@@ -969,6 +998,9 @@ def validate_binding(binding: Binding, config: Config, *, check_leader: bool = T
     if binding.mode not in TRIGGER_MODES:
         raise ValueError("Choose a trigger mode.")
     binding.keys = _require_keys(list(binding.keys))
+    if binding.mode == "chord" and set(binding.keys) == {"win", "shift", "f23"}:
+        # Win + Shift + F23 is what the Copilot key sends. Bind the key itself.
+        binding.mode, binding.keys = "tap", ["copilot"]
     if set(binding.keys) == set(PANIC_KEYS):
         raise ValueError("Ctrl + Alt + Shift + Esc is the panic switch and cannot be bound.")
     validate_action(binding.action)
@@ -986,9 +1018,21 @@ def validate_binding(binding: Binding, config: Config, *, check_leader: bool = T
     elif binding.mode in ("tap", "hold", "tap_dance", "leader"):
         if len(binding.keys) != 1 or binding.keys[0] in MODIFIERS:
             raise ValueError("Pick one non-modifier key for this mode.")
+    if binding.mode != "hold":
+        binding.tap_action = None
+        binding.hold_press = False
     if binding.mode == "hold":
-        if binding.hold_ms < 300 or binding.hold_ms > 10_000:
+        if binding.is_tap_hold():
+            if binding.hold_ms < TAP_HOLD_MIN_MS or binding.hold_ms > HOLD_MAX_MS:
+                raise ValueError(f"Tap / hold threshold must be between {TAP_HOLD_MIN_MS} and {HOLD_MAX_MS} ms.")
+        elif binding.hold_ms < HOLD_MIN_MS or binding.hold_ms > HOLD_MAX_MS:
             raise ValueError("Hold duration must be between 300 and 10000 ms.")
+        if binding.hold_press and binding.action.type != "key_combo":
+            raise ValueError("“Keep held” needs a Key combo hold action, e.g. Ctrl.")
+        if binding.tap_action is not None:
+            validate_action(binding.tap_action)
+            if binding.tap_action.type == "auto_click" and binding.tap_action.click_mode == "hold":
+                raise ValueError("A tap cannot start a “While held” auto-click. Use Toggle.")
     if binding.mode == "tap_dance":
         if binding.taps not in (2, 3):
             raise ValueError("Tap-dance supports double-tap or triple-tap.")
@@ -1087,7 +1131,9 @@ def sanitize_config(config: Config) -> list[str]:
                     warnings.append(f"Disabled “{label}” because a trigger key is unknown.")
                 continue
             binding.keys = cleaned
-            if not _clean_action_keys(binding.action):
+            if not _clean_action_keys(binding.action) or (
+                binding.tap_action is not None and not _clean_action_keys(binding.tap_action)
+            ):
                 if binding.enabled:
                     binding.enabled = False
                     warnings.append(f"Disabled “{label}” because an action key is unknown.")

@@ -116,9 +116,19 @@ _VK_ALIASES = {
 VK_TO_NAME: dict[int, str] = {vk: name for name, vk in NAME_TO_VK.items()}
 VK_TO_NAME.update(_VK_ALIASES)
 
-ALLOWED_KEYS = frozenset(NAME_TO_VK)
+# Trigger-only keys. They have no single virtual-key code, so Keyware can
+# record and bind them but never sends them.
+# "copilot": the Copilot key on Windows 11 keyboards. The hardware sends
+# Left Win + Left Shift + F23 (scan code 0x6E) in about a millisecond and
+# releases F23, Left Shift, Left Win. engine/copilot.py folds that into one key.
+TRIGGER_ONLY_KEYS = frozenset({"copilot"})
+COPILOT_PARTS = ("win", "shift", "f23")
+
+ALLOWED_KEYS = frozenset(NAME_TO_VK) | TRIGGER_ONLY_KEYS
+SENDABLE_KEYS = frozenset(NAME_TO_VK)
 
 _PRETTY = {
+    "copilot": "Copilot key",
     "ctrl": "Ctrl",
     "alt": "Alt",
     "shift": "Shift",
@@ -167,6 +177,12 @@ _PRETTY = {
 }
 
 _ALIASES = {
+    "copilot": "copilot",
+    "copilot key": "copilot",
+    "co-pilot": "copilot",
+    "co-pilot key": "copilot",
+    "copilot button": "copilot",
+    "win shift f23": "copilot",
     "mute": "volume_mute",
     "vol up": "volume_up",
     "vol down": "volume_down",

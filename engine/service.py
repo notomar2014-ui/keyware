@@ -8,6 +8,7 @@ key replay never run inside the hook callback.
 from __future__ import annotations
 
 import queue
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -139,6 +140,13 @@ class KeywareService:
         self._suspended = False
         self._hook_failures = 0
         self._hook_altgr = False
+        # Copilot key: Win + Shift + F23 folded into one key (engine/copilot.py).
+        from engine.copilot import CopilotFolder
+
+        self._copilot = CopilotFolder()
+        # Caps Lock light probe (GetKeyState). Tests replace it.
+        self._caps_probe = _caps_lock_on
+        self._caps_bound_before = False
         self._config_mtime = self._config_mtime_value()
         self._elevation_at = -1.0
         self._detector = InputDetector(self.config)
@@ -180,6 +188,7 @@ class KeywareService:
         self.executor.cancel()
         with self._lock:
             effects = self._detector.set_enabled(False)
+            self._copilot.reset()
         self._dispatch(effects, from_hook=False)
         try:
             self.hook.stop()
@@ -211,6 +220,62 @@ class KeywareService:
     ) -> bool:
         """Return True when this one event must be swallowed."""
         moment = self._clock() if now is None else now
+        folded = self._fold_copilot(key, pressed, moment, from_hook=from_hook)
+        if folded is not None:
+            return folded
+        return self._handle_key(key, pressed, moment, from_hook=from_hook, altgr=altgr)
+
+    def _copilot_wanted(self) -> bool:
+        if self._recorder is not None:
+            return True
+        if self._elevated or self.config.dry_run or self.hook_status != "on":
+            return False
+        detector = self._detector
+        return detector.copilot_bound and detector.enabled and not detector.paused
+
+    def _fold_copilot(self, key: str, pressed: bool, moment: float, *, from_hook: bool) -> bool | None:
+        """None: handle the key as usual. True/False: the Copilot key decided."""
+        from engine import copilot
+        from engine.keys import canonicalize
+
+        name = canonicalize(key)
+        if name is None:
+            return None
+        folder = self._copilot
+        folder.enabled = self._copilot_wanted()
+        try:
+            decision = folder.feed(name, pressed, moment)
+        except Exception:
+            folder.reset()
+            return None
+        if decision == copilot.PASS:
+            return None
+        if decision == copilot.SWALLOW:
+            self.physical.observe(name, pressed, moment)
+            return True
+        if decision == copilot.DOWN:
+            parts = ("win", "shift")
+            self.physical.forget(parts)
+            recorder = self._recorder
+            if recorder is not None:
+                # The recorder swallowed Win and Shift, so Windows never saw them.
+                recorder.forget(parts)
+            else:
+                with self._lock:
+                    self._detector.forget(parts)
+                # Windows saw Win and Shift go down. Let them go now, with a mask
+                # key so the Start menu does not open. F23 is swallowed, so the
+                # Copilot / Search hotkey never fires.
+                self._replay("up", "shift")
+                self._replay("mask", "")
+                self._replay("up", "win")
+            self._handle_key("copilot", True, moment, from_hook=from_hook)
+            return True
+        # copilot_repeat / copilot_up
+        self._handle_key("copilot", decision == copilot.REPEAT, moment, from_hook=from_hook)
+        return True
+
+    def _handle_key(self, key: str, pressed: bool, moment: float, *, from_hook: bool, altgr: bool = False) -> bool:
         self.physical.observe(key, pressed, moment)
         if self._recorder is not None:
             # Recording a trigger: every key is swallowed and no binding runs.
@@ -262,6 +327,9 @@ class KeywareService:
         with self._lock:
             moment = self._clock() if now is None else now
             effects = self._detector.tick(moment)
+            if self._copilot.tick(moment):
+                effects.append(Effect(kind="log", message="Copilot key: a key-up never came. Released it."))
+            effects.extend(self._caps_check())
             if self._key_down is not None and self.hook_status == "on" and self._detector.enabled:
                 try:
                     effects.extend(self._detector.reconcile(self._key_down, moment))
@@ -278,6 +346,31 @@ class KeywareService:
             if pause:
                 self.toggle_pause()
         self._dispatch(effects, from_hook=False)
+
+    def _caps_check(self) -> list[Effect]:
+        """When Caps Lock becomes a bound key, make sure its light is not stuck on.
+
+        Only on the change from unbound to bound, so Shift + Caps Lock (which
+        still toggles real Caps Lock) is never undone.
+        """
+        detector = self._detector
+        bound = bool(
+            detector.caps_bound and detector.enabled and not detector.paused
+            and self.hook_status == "on" and not self.config.dry_run
+        )
+        before, self._caps_bound_before = self._caps_bound_before, bound
+        if not bound or before:
+            return []
+        try:
+            lit = bool(self._caps_probe())
+        except Exception:
+            return []
+        if not lit:
+            return []
+        return [
+            Effect(kind="inject", key="caps_lock"),
+            Effect(kind="log", message="Caps Lock is bound, so Keyware turned the Caps Lock light off. Shift + Caps Lock still toggles it."),
+        ]
 
     def set_foreground(self, name: str) -> None:
         with self._lock:
@@ -956,6 +1049,7 @@ class KeywareService:
             if clear_master:
                 self.config.enabled = False
             effects = self._detector.set_enabled(False)
+            self._copilot.reset()
         self._dispatch(effects, from_hook=False)
         try:
             self.hook.stop()
@@ -973,6 +1067,7 @@ class KeywareService:
         with self._lock:
             effects = self._detector.release_replayed()
             self._detector.suspend_tracking()
+            self._copilot.reset()
         self._dispatch(effects, from_hook=False)
         try:
             self.hook.stop()
@@ -1370,6 +1465,18 @@ def _clock_sleeper(clock):
     if advance is None:
         return _zero_sleep
     return lambda seconds: advance(seconds * 1000.0)
+
+
+def _caps_lock_on() -> bool:
+    """True when the Caps Lock toggle (the light) is on. False off Windows."""
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+
+        return bool(ctypes.windll.user32.GetKeyState(0x14) & 1)
+    except Exception:
+        return False
 
 
 def _split_dry(effects: list[Effect]) -> tuple[list[Effect], list[str], bool]:

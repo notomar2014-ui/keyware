@@ -31,6 +31,11 @@ class PhysicalKeys:
             return
         self._down.pop(name, None)
 
+    def forget(self, keys) -> None:
+        """Win and Shift that were really the Copilot key are not held by the user."""
+        for key in keys:
+            self._down.pop(key, None)
+
     def holding(self, key: str) -> bool:
         name = canonicalize(key)
         return name is not None and name in self._down

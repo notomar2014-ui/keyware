@@ -89,6 +89,12 @@ class KeyRecorder:
                     return [RecordEvent(kind="live", text=f"Hold {format_key(self.main)} · {_hold_ms(held_ms)} ms")]
         return []
 
+    def forget(self, keys) -> None:
+        """Win and Shift turned out to be part of the Copilot key: drop them."""
+        for key in keys:
+            self.down.pop(key, None)
+            self.mods_seen.discard(key)
+
     # ------------------------------------------------------------------
     def _held_mods(self) -> tuple[str, ...]:
         return tuple(name for name in ordered_keys(list(self.down)) if name in MODIFIERS)

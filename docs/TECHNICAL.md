@@ -104,7 +104,7 @@ py -3 -m venv .venv
 .venv\Scripts\pythonw.exe keyware.pyw
 ```
 
-`python main.py` and `python main.py --minimized` also work. `--minimized` starts in the tray when a tray backend is available. The **Start with Windows** entry (on by default in v1.3.4, off in Settings) launches Keyware the same silent, tray-only way.
+`python main.py` and `python main.py --minimized` also work. `--minimized` starts in the tray when a tray backend is available. The **Start with Windows** entry (on by default since v1.3.4, off in Settings) launches Keyware the same silent, tray-only way.
 
 Turn on **Active** in the header. The panic chord is always shown there. Pause is `Ctrl + Alt + F12`.
 
