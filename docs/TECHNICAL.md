@@ -23,7 +23,7 @@ Everything in the log is also written to `%APPDATA%\Keyware\keyware.log`.
 - **Wait for window.** A macro can wait (up to 30 s) for an app's window to appear and come to the front before it types, instead of a fixed sleep.
 - **Auto-click.** Left, right or middle, 1–50 clicks per second, while the key is held or toggled, with an optional safety stop. It stops on pause, panic, Keyware off, or a profile switch.
 - **Trash and undo.** The trash icon deletes a binding at once; **Undo** in the toast brings it back for 5 seconds.
-- **Active switch and tray.** Closing the window leaves Keyware in the tray. The tray can pause, reload the config, open the config file, or quit. Keyware does not add itself to Windows startup.
+- **Active switch and tray.** Closing the window leaves Keyware in the tray. The tray can pause, reload the config, open the config file, or quit. Quit in the tray fully closes Keyware. **Start with Windows** is on by default: Keyware starts silently in the tray at sign-in, with no window and hotkeys working; turn it off in Settings.
 - **Pause.** `Ctrl + Alt + F12` pauses remaps and leaves the hook installed, so the same chord resumes. The tray icon switches to a pause mark.
 - **Dry run.** Settings can log what would fire and let every key through.
 - **Profiles.** Global bindings stay active everywhere. Gaming (`javaw.exe`, `minecraft.exe`), Browser, and Code add or replace them by the foreground executable. The foreground process is checked every 500 ms.
@@ -39,7 +39,7 @@ Win and Alt chords also tap an unassigned key (virtual key `0xE8`) so the Start 
 
 Panic clears timers, releases keys Keyware replayed (not a modifier you are still holding), and cancels a macro between steps. A key that stays logically down for 30 seconds with no repeat is released. On Windows, the timer also drops keys the system says are already up, which covers a missed key-up after locking the screen. One process per session holds the mutex `Local\Keyware.single`. A second launch prints `Keyware is already running.` and exits. Shutdown releases replayed keys and the hook.
 
-URLs must be `http` or `https` (or `spotify:` links, which become web-player links when the app isn't installed). Application launches do not go through a shell. **Run command** is the one exception: it runs through `cmd.exe /c` with no window, only after you confirm that exact command once (the confirmation is stored as a SHA-256 hash in the config; any edit asks again). Keyware never runs commands that shut down, restart, sign out, delete files, format or partition disks, edit the registry, download code, or change the default audio device; it never offers shutdown or sign-out actions. Media keys act on the whole system and never switch audio devices. **Open file or folder** refuses programs and scripts (`.exe`, `.bat`, `.ps1`, `.lnk` ...). Keyware does not register itself to start with Windows.
+URLs must be `http` or `https` (or `spotify:` links, which become web-player links when the app isn't installed). Application launches do not go through a shell. **Run command** is the one exception: it runs through `cmd.exe /c` with no window, only after you confirm that exact command once (the confirmation is stored as a SHA-256 hash in the config; any edit asks again). Keyware never runs commands that shut down, restart, sign out, delete files, format or partition disks, edit the registry, download code, or change the default audio device; it never offers shutdown or sign-out actions. Media keys act on the whole system and never switch audio devices. **Open file or folder** refuses programs and scripts (`.exe`, `.bat`, `.ps1`, `.lnk` ...).
 
 ## Describe it (Text mode)
 
@@ -104,7 +104,7 @@ py -3 -m venv .venv
 .venv\Scripts\pythonw.exe keyware.pyw
 ```
 
-`python main.py` and `python main.py --minimized` also work. `--minimized` starts in the tray when a tray backend is available. Nothing in this project adds a Windows startup entry.
+`python main.py` and `python main.py --minimized` also work. `--minimized` starts in the tray when a tray backend is available. The **Start with Windows** entry (on by default in v1.3.4, off in Settings) launches Keyware the same silent, tray-only way.
 
 Turn on **Active** in the header. The panic chord is always shown there. Pause is `Ctrl + Alt + F12`.
 

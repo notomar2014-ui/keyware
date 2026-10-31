@@ -343,7 +343,7 @@
           <div class="safe__item reveal"><h3>Unbound keys pass straight through</h3><p>Keyware only acts on keys you've bound. Everything else reaches Windows untouched.</p></div>
           <div class="safe__item reveal"><h3>Panic chord</h3><p><span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Esc</span> drops the keyboard hook immediately and releases every key.</p></div>
           <div class="safe__item reveal"><h3>No admin rights</h3><p>Runs as a normal app. It won't touch elevated windows, so nothing gets stuck.</p></div>
-          <div class="safe__item reveal"><h3>Off until you say so</h3><p>Nothing fires until you turn Keyware on, and it never adds itself to Windows startup.</p></div>
+          <div class="safe__item reveal"><h3>Quiet in the tray</h3><p><strong>Start with Windows</strong> is on by default: Keyware starts silently in the system tray when you sign in, with no window and your hotkeys working. Turn it off any time in Settings. Closing the window keeps it running in the tray; <strong>Quit</strong> in the tray fully closes it.</p></div>
         </div>
       </div>
     </section>
@@ -411,11 +411,12 @@
             <div class="faq__a">
               <p>There's no installer, so there's nothing to uninstall:</p>
               <ol>
+                <li>In Settings, turn off <strong>Start Keyware with Windows</strong> (it is on by default).</li>
                 <li>Right-click the Keyware icon in the system tray and choose <strong>Quit</strong>.</li>
                 <li>Delete <code>Keyware.exe</code>.</li>
                 <li>Optional: to remove your settings too, press <span class="kbd kbd--sm">Win</span> <span class="kbd kbd--sm">R</span>, type <code>%APPDATA%\Keyware</code> and delete that folder.</li>
               </ol>
-              <p>Keyware doesn't add itself to Windows startup, so nothing is left behind.</p>
+              <p>With Start with Windows turned off first, nothing is left behind.</p>
             </div>
           </details>
           <details class="reveal">
