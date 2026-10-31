@@ -44,7 +44,7 @@ jobs:
           if ($got -ne $want) { throw "exe reports $got, source is $want" }
           $s = Start-Process dist/Keyware.exe -ArgumentList '--self-test' -Wait -PassThru
           if ($s.ExitCode -ne 0) { throw "--self-test exited $($s.ExitCode)" }
-          Write-Host "Keyware.exe $got: --version and --self-test passed"
+          Write-Host "Keyware.exe ${got}: --version and --self-test passed"
 
       - name: SHA-256
         shell: pwsh
