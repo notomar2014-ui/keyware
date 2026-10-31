@@ -4,7 +4,7 @@ window.KEYWARE_CONFIG = {
   DONATE_URL: "",
   // Current download. /download/Keyware.exe is counted by /api/download, which sends the file
   // from /download/<VERSION>/Keyware.exe (see api/_lib/release.js). Update both together.
-  VERSION: "1.3.4",
+  VERSION: "1.3.5",
   DOWNLOAD_URL: "/download/Keyware.exe",
-  FILE_SIZE: "19.8 MB"
+  FILE_SIZE: "20.2 MB"
 };
