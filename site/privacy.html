@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Privacy statement · Keyware</title>
+  <meta name="description" content="What Keyware and keyware-app.vercel.app collect, why, where it is stored and for how long. No accounts, no ads, no analytics, no tracking cookies.">
+  <meta name="theme-color" content="#0b0b0c">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="https://keyware-app.vercel.app/privacy">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Keyware">
+  <meta property="og:title" content="Keyware privacy statement">
+  <meta property="og:description" content="No accounts, no ads, no analytics, no tracking cookies. Here is exactly what Keyware sends and stores.">
+  <meta property="og:url" content="https://keyware-app.vercel.app/privacy">
+  <meta property="og:image" content="https://keyware-app.vercel.app/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://keyware-app.vercel.app/og.png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/assets/img/logo-small.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <script src="/assets/js/config.js" defer></script>
+  <script src="/assets/js/main.js" defer></script>
+</head>
+<body class="guide-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="nav" id="top">
+    <div class="container container--guide nav__inner">
+      <a class="brand" href="/" aria-label="Keyware home">
+        <img src="/assets/img/logo.svg" alt="" width="28" height="28">
+        <span>Keyware</span><span class="brand__tag">Privacy</span>
+      </a>
+      <nav class="nav__links nav__links--keep" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/guide">Guide</a>
+        <a href="/privacy" aria-current="page" class="hide-sm">Privacy</a>
+      </nav>
+      <a class="btn btn--sm btn--light" href="/download/Keyware.exe" data-download download>Download</a>
+    </div>
+  </header>
+
+  <div class="guide-hero">
+    <div class="hero__glow" aria-hidden="true"></div>
+    <div class="container container--guide">
+      <p class="eyebrow">Privacy statement</p>
+      <h1>Your keys stay yours</h1>
+      <p class="lead">Keyware has no accounts, no ads, no analytics and no tracking cookies. This page explains exactly what the Keyware app and this website (keyware-app.vercel.app) send, what is stored, where, and for how long.</p>
+      <p class="lead"><strong>Last updated: 31 October 2026.</strong></p>
+    </div>
+  </div>
+
+  <div class="container container--guide guide">
+    <button class="toc__toggle" type="button" aria-expanded="false" aria-controls="toc">
+      <span>On this page</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <aside class="toc" id="toc" aria-label="Privacy contents">
+      <p class="toc__title">On this page</p>
+      <ol>
+        <li><a href="#summary">In short</a></li>
+        <li><a href="#app">The Keyware app</a></li>
+        <li><a href="#text-mode">Text mode (AI)</a></li>
+        <li><a href="#limits">Rate limits &amp; download counts</a></li>
+        <li><a href="#feedback">Feedback</a></li>
+        <li><a href="#website">This website &amp; cookies</a></li>
+        <li><a href="#storage">Storage &amp; retention</a></li>
+        <li><a href="#third-parties">Other services</a></li>
+        <li><a href="#rights">Your choices</a></li>
+        <li><a href="#contact">Contact &amp; changes</a></li>
+      </ol>
+    </aside>
+
+    <main id="main" class="doc">
+
+      <section id="summary" class="doc__section">
+        <p class="doc__kicker">01</p>
+        <h2>In short</h2>
+        <ul>
+          <li>No accounts, no sign-up, no ads, no analytics and no tracking cookies, in the app or on this website.</li>
+          <li>The key engine works offline. Your bindings and settings stay on your PC in <code>%APPDATA%\Keyware</code>.</li>
+          <li>Only <em>Text mode</em> sends anything for AI: the sentence you type plus a short summary of your existing setup, so the AI doesn't suggest a clashing key.</li>
+          <li>A random install ID and your IP address are used, only in salted, hashed form, to apply fair daily limits and to count downloads.</li>
+          <li>Feedback you choose to send (message, email, app version) is used only to reply to you. It is never shared or sold.</li>
+          <li>We never sell, rent or share personal information for marketing.</li>
+          <li>Keyware is open source (MIT). You can check every point on this page in the code on <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>.</li>
+        </ul>
+      </section>
+
+      <section id="app" class="doc__section">
+        <p class="doc__kicker">02</p>
+        <h2>The Keyware app</h2>
+        <p>Keyware listens to your keyboard on your PC so it can run the bindings you create. Keys you haven't bound pass straight to Windows. Keystrokes are never recorded, uploaded or sent anywhere. The local log only notes which binding fired, not what you typed.</p>
+        <p>Your bindings, profiles and settings are saved in <code>%APPDATA%\Keyware\config.json</code> on your PC. If you add your own AI key, it is saved there too, encrypted with Windows' built-in data protection (DPAPI) so only your Windows account can read it.</p>
+        <p>The app only goes online in these cases:</p>
+        <ul>
+          <li><b>Text mode</b>, when you press the button to draft a binding (see below).</li>
+          <li><b>Feedback</b>, when you press Send in Settings → Suggestions &amp; feedback.</li>
+          <li><b>Actions you create</b>, when you trigger them. For example, Open URL opens the page in your browser, and a “play” action looks up the song or video name you entered on YouTube, Spotify, DuckDuckGo or Bing to find it. Those sites receive the request directly, under their own privacy policies.</li>
+        </ul>
+        <p>The app has no telemetry, no crash reporting and no automatic update checks.</p>
+      </section>
+
+      <section id="text-mode" class="doc__section">
+        <p class="doc__kicker">03</p>
+        <h2>Text mode (AI)</h2>
+        <p>When you describe a binding in plain words, Keyware sends:</p>
+        <ul>
+          <li>the sentence you typed (up to 500 characters);</li>
+          <li>a short context summary: your leader key, the profile you're editing, your profile names with the app names (<code>.exe</code>) they apply to, and the triggers you already use, so the AI avoids clashes;</li>
+          <li>the app version and the random install ID (see <a href="#limits">rate limits</a>).</li>
+        </ul>
+        <p><b>By default</b> this goes to Keyware's server (<code>keyware-app.vercel.app/api/bind</code>), which forwards the sentence and context, but not the install ID or your IP address, to an AI provider: <b>Google Gemini</b> or <b>Groq</b>. Keyware's server does not store or log your sentence or the AI's reply. Its logs only note the result, the model used, the time taken and the sentence length.</p>
+        <p><b>If you use your own AI key</b>, the app sends the sentence and context directly from your PC to Google or Groq, and Keyware's server is not involved at all.</p>
+        <p>The AI providers process the text under their own terms. Free AI plans may let the provider keep or review inputs to improve their services, so don't type passwords or other private details into Text mode. See <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">Google's Gemini API terms</a> and <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener">Groq's privacy policy</a>.</p>
+      </section>
+
+      <section id="limits" class="doc__section">
+        <p class="doc__kicker">04</p>
+        <h2>Rate limits &amp; download counts</h2>
+        <p><b>Install ID.</b> The first time you use Text mode or send feedback, Keyware creates a random ID (a UUID) and saves it in your config file. It is not linked to your name, email, Windows account or hardware.</p>
+        <p><b>Daily AI limit.</b> To keep the free AI fair (20 requests per install and 60 per IP address a day), the server combines the install ID and your IP address with a secret salt and keeps only a shortened SHA-256 hash of each, never the raw values. These counters are held in the server's memory for the current day only and are discarded after about a day or when the server restarts.</p>
+        <p><b>Download counts.</b> When you download Keyware from this site, the server creates a salted hash of your IP address and browser name for 10 minutes, so a double click counts once. The saved download record contains only the date and a random ID, with no IP address, hash or browser details. Bots and link previews are not counted.</p>
+        <p>Similar salted hashes limit how much feedback one install or network can send per day.</p>
+      </section>
+
+      <section id="feedback" class="doc__section">
+        <p class="doc__kicker">05</p>
+        <h2>Feedback</h2>
+        <p>Sending an idea, feedback or a bug report from Settings → Suggestions &amp; feedback is optional. It sends:</p>
+        <ul>
+          <li>the type (Idea, Feedback or Bug) and your message;</li>
+          <li>the email address you enter;</li>
+          <li>the app version.</li>
+        </ul>
+        <p>The server also stores a short salted hash of the install ID with it, so repeated reports from one install can be grouped. Nothing else is attached: no logs, settings, bindings or screenshots.</p>
+        <p>We use feedback only to understand and fix problems and to reply to you if we need more information. It is never shared, sold or used for marketing, and you won't be added to any mailing list.</p>
+      </section>
+
+      <section id="website" class="doc__section">
+        <p class="doc__kicker">06</p>
+        <h2>This website &amp; cookies</h2>
+        <p>This website uses no analytics, no ads, no trackers and no third-party scripts, fonts or embeds. It sets <b>no cookies</b> for visitors and doesn't use local storage.</p>
+        <p>The only cookie on the site is a sign-in cookie for the private admin dashboard (<code>/admin</code>). It is set only after the admin password is entered, is limited to the <code>/admin</code> pages, can't be read by scripts and expires after 8 hours. Visitors never receive it.</p>
+        <p>Like any website, the hosting provider receives standard request data, such as your IP address and browser name, to deliver pages and protect against abuse (see <a href="#third-parties">Other services</a>).</p>
+      </section>
+
+      <section id="storage" class="doc__section">
+        <p class="doc__kicker">07</p>
+        <h2>Storage &amp; retention</h2>
+        <p>Keyware's server and storage are hosted on <b>Vercel</b> (functions in the United States, Vercel Blob for files). Only the admin can see stored data.</p>
+        <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr><th scope="col">Data</th><th scope="col">Where</th><th scope="col">Kept for</th></tr></thead>
+          <tbody>
+            <tr><td>Your bindings, settings, install ID, own AI key (encrypted)</td><td>Your PC, <code>%APPDATA%\Keyware</code></td><td>Until you delete them</td></tr>
+            <tr><td>Text mode sentence and AI reply</td><td>Not stored by Keyware (only passed to the AI provider)</td><td>Not kept</td></tr>
+            <tr><td>Rate-limit counters (salted hashes)</td><td>Server memory</td><td>Up to about 26 hours</td></tr>
+            <tr><td>Download de-duplication (salted hash)</td><td>Server memory</td><td>10 minutes</td></tr>
+            <tr><td>Download records (date + random ID)</td><td>Vercel Blob (no personal data)</td><td>Until deleted</td></tr>
+            <tr><td>Feedback (message, email, app version, hashed install ID)</td><td>Vercel Blob (private)</td><td>Until deleted</td></tr>
+            <tr><td>Usage totals (AI requests, active installs, per-model counts)</td><td>Server memory</td><td>Until a server restart</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p>Feedback is not deleted automatically: it is kept until the admin deletes it. If you want your feedback removed, ask through the feedback form and it will be deleted.</p>
+      </section>
+
+      <section id="third-parties" class="doc__section">
+        <p class="doc__kicker">08</p>
+        <h2>Other services</h2>
+        <ul>
+          <li><b>Vercel</b> hosts the website, the Text mode server and storage. <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">Vercel privacy policy</a>.</li>
+          <li><b>Google (Gemini API)</b> and <b>Groq</b> process Text mode requests. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google privacy policy</a> · <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener">Groq privacy policy</a>.</li>
+          <li><b>Ko-fi</b> handles payments if you choose to support Keyware. Keyware only receives the amount, currency, whether it's one-time or monthly, and the date. It does not receive your name, email or message.</li>
+        </ul>
+        <p>None of these receive any information from Keyware for advertising.</p>
+      </section>
+
+      <section id="rights" class="doc__section">
+        <p class="doc__kicker">09</p>
+        <h2>Your choices</h2>
+        <ul>
+          <li>Use Manual mode only: Keyware then never contacts Keyware's server or any AI provider.</li>
+          <li>Use your own AI key to send Text mode requests straight to Google or Groq.</li>
+          <li>Delete <code>%APPDATA%\Keyware</code> to remove everything Keyware stored on your PC, including the install ID.</li>
+          <li>Ask for your feedback to be deleted at any time.</li>
+        </ul>
+      </section>
+
+      <section id="contact" class="doc__section">
+        <p class="doc__kicker">10</p>
+        <h2>Contact &amp; changes</h2>
+        <p>For any privacy question or deletion request, use the feedback form in the app: <b>Settings (gear icon) → Suggestions &amp; feedback</b>. Include the email address we should reply to.</p>
+        <p>If these practices change, this page will be updated and the date at the top will change.</p>
+        <p><a href="/guide#faq">Back to the FAQ</a></p>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container container--guide footer__inner">
+      <div class="footer__brand">
+        <a class="brand" href="/" aria-label="Keyware home">
+          <img src="/assets/img/logo.svg" alt="" width="24" height="24" loading="lazy">
+          <span>Keyware</span>
+        </a>
+        <p>Make your keys your own.</p>
+      </div>
+      <nav class="footer__links" aria-label="Footer">
+        <a href="/">Home</a>
+        <a href="/guide">Guide</a>
+        <a href="/download/Keyware.exe" data-download download>Download</a>
+        <a href="/privacy">Privacy</a>
+        <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>
+        <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>
+      </nav>
+      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.3.4</span> · Windows is a trademark of Microsoft.</p>
+    </div>
+  </footer>
+</body>
+</html>

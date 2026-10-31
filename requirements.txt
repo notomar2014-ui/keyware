@@ -1,0 +1,5 @@
+customtkinter>=5.2.2
+pynput>=1.7.6
+pywin32>=306; platform_system == "Windows"
+pystray>=0.19.5
+pillow>=10.0.0

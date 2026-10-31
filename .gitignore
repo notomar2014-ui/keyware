@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Build output
+dist/
+build/
+*.spec.bak
+error.log
+uploads/
+
+# Secrets and local config: never commit these
+.env
+.env.*
+*.pem
+*.key
+.admin_password
+/config.json
+
+# Website deploy state and large binaries
+.vercel/
+.netlify
+node_modules/
+site/download/
+site/preview_*.png
+site/peek_*.png
+*.exe

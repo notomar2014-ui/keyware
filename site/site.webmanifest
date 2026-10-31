@@ -1,0 +1,14 @@
+{
+  "name": "Keyware",
+  "short_name": "Keyware",
+  "description": "Make your keys your own. Free key remapper for Windows.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0b0b0c",
+  "theme_color": "#0b0b0c",
+  "icons": [
+    { "src": "/assets/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/img/icon-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "/assets/img/logo.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

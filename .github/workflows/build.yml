@@ -1,0 +1,62 @@
+name: Test and build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Tests and Keyware.exe (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt
+
+      - name: Headless tests
+        # No DISPLAY is set, so the window tests skip; the rest use fakes and never install a real hook.
+        run: python -m pytest -q
+
+      - name: Build Keyware.exe
+        run: python build.py
+
+      - name: SHA-256
+        shell: pwsh
+        run: (Get-FileHash dist/Keyware.exe -Algorithm SHA256).Hash | Tee-Object dist/Keyware.exe.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Keyware-exe-unsigned
+          path: |
+            dist/Keyware.exe
+            dist/Keyware.exe.sha256
+          if-no-files-found: error
+
+  site:
+    name: Website tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --no-audit --no-fund
+      - run: npm test

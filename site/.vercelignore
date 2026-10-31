@@ -1,0 +1,6 @@
+test
+tools
+node_modules
+preview_*.png
+peek_*.png
+.admin_password
