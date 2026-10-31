@@ -5,7 +5,7 @@
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11, 64-bit. A single portable Keyware.exe (about 20 MB), no installer. Current version: 1.3.4.
+- Platform: Windows 10 and Windows 11, 64-bit. A single portable Keyware.exe (about 20 MB), no installer. Current version: 1.3.5.
 - Download: https://keyware-app.vercel.app/download/Keyware.exe
 - License: MIT, open source.
 - Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. Only Text mode goes online, and it sends just the sentence typed plus a short summary of existing triggers.
@@ -147,7 +147,7 @@ Source: https://keyware-app.vercel.app/guide
 
 Keyware is a single program file. There's no installer and nothing to sign up for.
 
-- Download Click Download for Windows and save Keyware.exe (v1.3.4, 19.8 MB) somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11.
+- Download Click Download for Windows and save Keyware.exe (v1.3.5, 20.2 MB) somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11.
 
 ### Download
 
@@ -552,4 +552,4 @@ Yes. Copy %APPDATA%\Keyware\config.json to the other PC (same folder) and choose
 
 Free for Windows 10 and 11.
 
-v1.3.4·19.8 MB
+v1.3.5·20.2 MB
