@@ -30,9 +30,13 @@ test('pages: canonical, Open Graph, Twitter and description tags; verification p
     assert.ok(html.includes(`<meta property="og:url" content="${url}">`), file);
     for (const tag of ['og:title', 'og:description', 'og:image', 'og:image:alt']) assert.ok(html.includes(`property="${tag}"`), `${file} ${tag}`);
     for (const tag of ['twitter:card', 'twitter:title', 'twitter:image', 'description']) assert.ok(html.includes(`name="${tag}"`), `${file} ${tag}`);
-    assert.ok(/<!--[^>]*?[\s\S]*?google-site-verification[\s\S]*?msvalidate\.01[\s\S]*?-->/.test(html), `${file} placeholders`);
     const live = html.replace(/<!--[\s\S]*?-->/g, '');
-    assert.ok(!/google-site-verification|msvalidate/.test(live), `${file} placeholder is not live`);
+    assert.ok(/<!--[\s\S]*?google-site-verification[\s\S]*?-->/.test(html), `${file} google placeholder`);
+    assert.ok(!/google-site-verification|PASTE_/.test(live), `${file} placeholder is not live`);
+    if (file === 'index.html') {
+      assert.ok(live.includes('<meta name="msvalidate.01" content="1FCA120FB893FCD9A02C1D392DBF036D" />'), 'Bing verification meta is live on the home page');
+      assert.equal(read('BingSiteAuth.xml'), '<?xml version="1.0"?>\n<users>\n\t<user>1FCA120FB893FCD9A02C1D392DBF036D</user>\n</users>\n');
+    }
     ldOf(html); // parses
   }
 });
