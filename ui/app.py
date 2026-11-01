@@ -2256,6 +2256,20 @@ class KeywareApp(ctk.CTk):
                 self.service.feed_recording(name, pressed)
             return "break"  # never type the key name into the field
 
+        def on_mouse(event, button: str, pressed: bool):
+            # While recording, Middle/X1/X2 record as triggers; Left/Right only with a modifier held.
+            if self._record_target is not entry:
+                return None
+            if button in ("mouse_left", "mouse_right") and not (int(event.state) & 0x2000D):
+                return None
+            self.service.feed_recording(button, pressed)
+            return "break"
+
+        x_buttons = (4, 5) if sys.platform == "win32" else (8, 9)
+        for number, button in ((1, "mouse_left"), (3, "mouse_right"), (2, "mouse_middle"),
+                               (x_buttons[0], "mouse_x1"), (x_buttons[1], "mouse_x2")):
+            inner.bind(f"<ButtonPress-{number}>", lambda e, b=button: on_mouse(e, b, True), add="+")
+            inner.bind(f"<ButtonRelease-{number}>", lambda e, b=button: on_mouse(e, b, False), add="+")
         inner.bind("<FocusIn>", on_focus, add="+")
         inner.bind("<Button-1>", on_click, add="+")
         inner.bind("<FocusOut>", on_blur, add="+")
@@ -2287,7 +2301,7 @@ class KeywareApp(ctk.CTk):
         self._set_entry(entry, "")
         if kind == "trigger":
             self.capture_button.configure(text="Listening…")
-        self._note_for(kind, "Recording. Press the keys (hold a key to record a hold). Esc cancels, Backspace clears. Keyware bindings are paused meanwhile.")
+        self._note_for(kind, "Recording. Press the keys or a mouse button: Middle, Back/Forward, or Ctrl/Alt/Shift + Left/Right (hold to record a hold). Esc cancels, Backspace clears. Keyware bindings are paused meanwhile.")
 
     def _stop_recording(self, *, cancel: bool) -> None:
         entry = self._record_target
@@ -2870,7 +2884,7 @@ def run(minimized: bool = False, background: bool = False) -> None:
     from assist.web_lookup import fetch_text
     from engine.config_store import ConfigStore, default_config_path
     from engine.context_tracker import ContextTracker, windows_foreground_name
-    from engine.hook_engine import HookEngine
+    from engine.hook_engine import CombinedHook, HookEngine, MouseHookEngine
     from engine.hook_health import windows_input_probe
     from engine.integrity import windows_foreground_elevated
     from engine.keystate import windows_key_down
@@ -2895,7 +2909,10 @@ def run(minimized: bool = False, background: bool = False) -> None:
         window_probe=_foreground_window if on_windows else None,
         input_probe=windows_input_probe(),
     )
-    service.attach_hook(HookEngine(service.hook_event))
+    service.attach_hook(CombinedHook(
+        HookEngine(service.hook_event),
+        MouseHookEngine(service.hook_event, wants=service.wants_mouse),
+    ))
     if on_windows:
         service.command_confirmer = confirm_command_dialog
     from engine import nudge

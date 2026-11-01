@@ -121,7 +121,11 @@ VK_TO_NAME.update(_VK_ALIASES)
 # "copilot": the Copilot key on Windows 11 keyboards. The hardware sends
 # Left Win + Left Shift + F23 (scan code 0x6E) in about a millisecond and
 # releases F23, Left Shift, Left Win. engine/copilot.py folds that into one key.
-TRIGGER_ONLY_KEYS = frozenset({"copilot"})
+# Mouse buttons are trigger-only too. Left/Right must be bound with a modifier
+# (models.validate_binding enforces that) so plain clicks are never swallowed.
+MOUSE_TRIGGERS = frozenset({"mouse_left", "mouse_right", "mouse_middle", "mouse_x1", "mouse_x2"})
+MOUSE_NEEDS_MODIFIER = frozenset({"mouse_left", "mouse_right"})
+TRIGGER_ONLY_KEYS = frozenset({"copilot"}) | MOUSE_TRIGGERS
 COPILOT_PARTS = ("win", "shift", "f23")
 
 ALLOWED_KEYS = frozenset(NAME_TO_VK) | TRIGGER_ONLY_KEYS
@@ -238,6 +242,14 @@ _ALIASES = {
 }
 
 
+_ALIASES.update({
+    "middle click": "mouse_middle", "middle mouse": "mouse_middle", "mouse 3": "mouse_middle",
+    "mouse 4": "mouse_x1", "mouse back": "mouse_x1", "xbutton1": "mouse_x1", "x1": "mouse_x1",
+    "mouse 5": "mouse_x2", "mouse forward": "mouse_x2", "xbutton2": "mouse_x2", "x2": "mouse_x2",
+    "left click": "mouse_left", "right click": "mouse_right",
+})
+
+
 def canonicalize(name: str | None) -> str | None:
     """Return the canonical key name, or None if it is not a known key."""
     if name is None:
@@ -261,11 +273,19 @@ def canonicalize(name: str | None) -> str | None:
     return None
 
 
+_MOUSE_PRETTY = {
+    "mouse_left": "Left Click", "mouse_right": "Right Click", "mouse_middle": "Middle Click",
+    "mouse_x1": "Mouse Back (X1)", "mouse_x2": "Mouse Forward (X2)",
+}
+
+
 def vk_to_name(vk_code: int) -> str | None:
     return VK_TO_NAME.get(int(vk_code))
 
 
 def format_key(name: str) -> str:
+    if name in _MOUSE_PRETTY:
+        return _MOUSE_PRETTY[name]
     if name in _PRETTY:
         return _PRETTY[name]
     if name.startswith("numpad") and name[6:].isdigit():

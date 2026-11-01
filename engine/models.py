@@ -878,6 +878,14 @@ def _require_keys(keys: list[str], *, sending: bool = False) -> list[str]:
     return ordered_keys(canonical)
 
 
+def _require_mouse_modifier(keys: list[str]) -> None:
+    from engine.keys import MODIFIERS, MOUSE_NEEDS_MODIFIER
+
+    clicks = [key for key in keys if key in MOUSE_NEEDS_MODIFIER]
+    if clicks and not any(key in MODIFIERS for key in keys):
+        raise ValueError(f"{format_key(clicks[0])} needs a modifier (Ctrl, Alt, Shift or Win) so normal clicks keep working.")
+
+
 def validate_action(action: Action) -> None:
     if action.type not in ACTION_TYPES:
         raise ValueError("Choose an action.")
@@ -998,6 +1006,7 @@ def validate_binding(binding: Binding, config: Config, *, check_leader: bool = T
     if binding.mode not in TRIGGER_MODES:
         raise ValueError("Choose a trigger mode.")
     binding.keys = _require_keys(list(binding.keys))
+    _require_mouse_modifier(binding.keys)
     if binding.mode == "chord" and set(binding.keys) == {"win", "shift", "f23"}:
         # Win + Shift + F23 is what the Copilot key sends. Bind the key itself.
         binding.mode, binding.keys = "tap", ["copilot"]

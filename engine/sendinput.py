@@ -200,7 +200,14 @@ def build_mouse_click(button: str, *, extra: int = KEYWARE_EXTRA) -> list[InputE
     ]
 
 
+_XBUTTONS = {"x1": 1, "x2": 2}
+
+
 def build_mouse_button(button: str, *, up: bool, extra: int = KEYWARE_EXTRA) -> InputEvent:
+    if button in _XBUTTONS:
+        # MOUSEEVENTF_XDOWN / XUP with XBUTTON1/2 in mouseData.
+        return InputEvent(kind="mouse", extra=int(extra) & 0xFFFFFFFF,
+                          mouse_flags=0x0100 if up else 0x0080, mouse_data=_XBUTTONS[button])
     pair = _MOUSE_DOWN_UP.get(button)
     if pair is None:
         raise ValueError(f"Unknown mouse button '{button}'.")
@@ -306,6 +313,9 @@ class TaggedInjector:
     def press(self, key: str) -> None:
         from engine.keys import NAME_TO_VK
 
+        if key.startswith("mouse_"):  # replay of a passed-through mouse trigger
+            self._send([build_mouse_button(key[6:], up=False)])
+            return
         vk = NAME_TO_VK.get(key)
         if vk is None:
             raise ValueError(f"Unknown key '{key}'.")
@@ -314,6 +324,9 @@ class TaggedInjector:
     def release(self, key: str) -> None:
         from engine.keys import NAME_TO_VK
 
+        if key.startswith("mouse_"):  # replay of a passed-through mouse trigger
+            self._send([build_mouse_button(key[6:], up=True)])
+            return
         vk = NAME_TO_VK.get(key)
         if vk is None:
             raise ValueError(f"Unknown key '{key}'.")

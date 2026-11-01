@@ -203,6 +203,21 @@ class KeywareService:
             self._actions.put(None)
             self._replay_queue.put(None)
 
+    def wants_mouse(self, button: str) -> bool:
+        """Mouse-hook filter: Middle/X1/X2 always (cheap, unbound ones pass through);
+        Left/Right only when some enabled binding uses them."""
+        from engine.keys import MOUSE_NEEDS_MODIFIER
+
+        if button not in MOUSE_NEEDS_MODIFIER:
+            return True
+        if self.recording:
+            return False
+        try:
+            return any(b.enabled and button in b.keys
+                       for p in self.config.profiles for b in p.bindings)
+        except Exception:
+            return False
+
     def hook_event(self, key: str, pressed: bool) -> bool:
         """Hook-thread entry. Never runs macros or disk writes on this thread."""
         altgr = self._hook_altgr
