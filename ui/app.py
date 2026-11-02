@@ -2270,6 +2270,18 @@ class KeywareApp(ctk.CTk):
                                (x_buttons[0], "mouse_x1"), (x_buttons[1], "mouse_x2")):
             inner.bind(f"<ButtonPress-{number}>", lambda e, b=button: on_mouse(e, b, True), add="+")
             inner.bind(f"<ButtonRelease-{number}>", lambda e, b=button: on_mouse(e, b, False), add="+")
+        def on_wheel(event):
+            # Wheel up/down record as triggers only with a modifier held (plain scrolling stays normal).
+            if self._record_target is not entry or not (int(event.state) & 0x2000D):
+                return None
+            delta = int(getattr(event, "delta", 0) or 0) or (120 if getattr(event, "num", 0) == 4 else -120)
+            name = "mouse_wheel_up" if delta > 0 else "mouse_wheel_down"
+            self.service.feed_recording(name, True)
+            self.service.feed_recording(name, False)
+            return "break"
+
+        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            inner.bind(sequence, on_wheel, add="+")
         inner.bind("<FocusIn>", on_focus, add="+")
         inner.bind("<Button-1>", on_click, add="+")
         inner.bind("<FocusOut>", on_blur, add="+")

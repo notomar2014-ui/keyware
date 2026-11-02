@@ -113,7 +113,8 @@ class HookEngine:
             vk = int(getattr(data, "vkCode", -1))
             flags = int(getattr(data, "flags", 0) or 0)
             extra = int(getattr(data, "dwExtraInfo", 0) or 0)
-            event = classify_hook_event(msg, vk, flags, extra, already_down=vk in self._down)
+            scan = int(getattr(data, "scanCode", 0) or 0)
+            event = classify_hook_event(msg, vk, flags, extra, already_down=vk in self._down, scan=scan)
         except Exception:
             return False
         if event.kind != "key":
@@ -160,6 +161,24 @@ _MOUSE_MSGS = {
     0x0207: ("mouse_middle", True), 0x0208: ("mouse_middle", False),
     0x020B: (None, True), 0x020C: (None, False),
 }
+WM_MOUSEWHEEL, WM_MOUSEHWHEEL = 0x020A, 0x020E
+
+
+def _signed16(value: int) -> int:
+    value &= 0xFFFF
+    return value - 0x10000 if value & 0x8000 else value
+
+
+def classify_wheel(msg: int, mouse_data: int) -> str | None:
+    """Wheel notch direction for WM_MOUSEWHEEL / WM_MOUSEHWHEEL, else None."""
+    delta = _signed16(int(mouse_data) >> 16)
+    if not delta:
+        return None
+    if msg == WM_MOUSEWHEEL:
+        return "mouse_wheel_up" if delta > 0 else "mouse_wheel_down"
+    if msg == WM_MOUSEHWHEEL:
+        return "mouse_wheel_right" if delta > 0 else "mouse_wheel_left"
+    return None
 
 
 def classify_mouse_event(msg: int, mouse_data: int, extra: int) -> tuple[str, bool] | None:
@@ -174,9 +193,9 @@ def classify_mouse_event(msg: int, mouse_data: int, extra: int) -> tuple[str, bo
     name, pressed = hit
     if name is None:
         x = (int(mouse_data) >> 16) & 0xFFFF
-        name = {1: "mouse_x1", 2: "mouse_x2"}.get(x)
-        if name is None:
+        if not 1 <= x <= 16:
             return None
+        name = f"mouse_x{x}"  # X1/X2 plus any extra button the hook reports
     return name, pressed
 
 
@@ -227,8 +246,12 @@ class MouseHookEngine:
     def _filter(self, msg: int, data) -> bool:
         self.events_seen += 1
         try:
-            hit = classify_mouse_event(msg, getattr(data, "mouseData", 0) or 0,
-                                       getattr(data, "dwExtraInfo", 0) or 0)
+            mouse_data = getattr(data, "mouseData", 0) or 0
+            extra = getattr(data, "dwExtraInfo", 0) or 0
+            wheel = None if (int(extra) & 0xFFFFFFFF) == _keyware_extra() else classify_wheel(msg, mouse_data)
+            if wheel is not None:
+                return self._wheel(wheel)
+            hit = classify_mouse_event(msg, mouse_data, extra)
             if hit is None:
                 return False
             name, pressed = hit
@@ -250,6 +273,28 @@ class MouseHookEngine:
             if listener is not None:
                 listener.suppress_event()
         return False
+
+
+    def _wheel(self, name: str) -> bool:
+        """A notch is an instant press+release. Only bound wheels are forwarded."""
+        if self._wants is not None and not self._wants(name):
+            return False
+        try:
+            suppress = bool(self._on_event(name, True))
+            self._on_event(name, False)
+        except Exception as exc:
+            if type(exc).__name__ == "SuppressException":
+                raise
+            return False
+        if suppress and self._listener is not None:
+            self._listener.suppress_event()
+        return False
+
+
+def _keyware_extra() -> int:
+    from engine.sendinput import KEYWARE_EXTRA
+
+    return KEYWARE_EXTRA
 
 
 class CombinedHook:

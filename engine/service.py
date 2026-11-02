@@ -206,9 +206,10 @@ class KeywareService:
     def wants_mouse(self, button: str) -> bool:
         """Mouse-hook filter: Middle/X1/X2 always (cheap, unbound ones pass through);
         Left/Right only when some enabled binding uses them."""
-        from engine.keys import MOUSE_NEEDS_MODIFIER
+        from engine.keys import MOUSE_ONLY_WHEN_BOUND as MOUSE_NEEDS_MODIFIER
 
-        if button not in MOUSE_NEEDS_MODIFIER:
+        extra_button = button.startswith("mouse_x") and button not in ("mouse_x1", "mouse_x2")
+        if button not in MOUSE_NEEDS_MODIFIER and not extra_button:
             return True
         if self.recording:
             return False

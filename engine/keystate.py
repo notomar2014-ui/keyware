@@ -33,7 +33,9 @@ def key_down_from(get_async, name: str) -> bool:
     if name == "copilot":
         vks = (0x86,)  # F23 is the part of the Copilot key that stays down
     if not vks:
-        vk = NAME_TO_VK.get(name)
+        from engine.keys import name_to_vk
+
+        vk = name_to_vk(name)
         vks = (vk,) if vk is not None else ()
     if not vks:
         return True

@@ -129,3 +129,94 @@ def test_service_mouse_bindings(tmp_path):
     with pytest.raises(ValueError):
         created.add_binding("global", Binding(id="bad", enabled=True, mode="tap", keys=["mouse_right"],
                                               action=Action(type="open_app", app="x.exe")))
+
+
+# --- any-button: wheel, tilt, extra buttons, every VK, unknown VK / scan code ---
+from engine.hook_engine import classify_wheel
+from engine.keys import is_allowed, name_to_vk, vk_to_name
+from engine.sendinput import classify_hook_event
+
+
+def test_wheel_and_tilt_classify():
+    assert classify_wheel(0x20A, 120 << 16) == "mouse_wheel_up"
+    assert classify_wheel(0x20A, (-120 & 0xFFFF) << 16) == "mouse_wheel_down"
+    assert classify_wheel(0x20E, 120 << 16) == "mouse_wheel_right"
+    assert classify_wheel(0x20E, (-120 & 0xFFFF) << 16) == "mouse_wheel_left"
+    assert classify_wheel(0x200, 120 << 16) is None
+
+
+def test_extra_mouse_buttons():
+    assert classify_mouse_event(0x20B, 3 << 16, 0) == ("mouse_x3", True)
+    assert classify_mouse_event(0x20B, 0, 0) is None
+    assert canonicalize("mouse_x7") == "mouse_x7" and format_key("mouse_x3") == "Mouse Button 6"
+
+
+def test_wheel_hook_only_when_bound(monkeypatch):
+    eng, seen = make(monkeypatch, wants=lambda n: n == "mouse_wheel_left")
+    eng._filter(0x20A, ev(120 << 16))
+    assert seen == []
+    eng._filter(0x20E, ev((-120 & 0xFFFF) << 16))
+    assert seen == [("mouse_wheel_left", True), ("mouse_wheel_left", False)]
+    assert eng._listener.suppressed == 1
+    eng._filter(0x20E, ev((-120 & 0xFFFF) << 16, KEYWARE_EXTRA))  # own replay ignored
+    assert len(seen) == 2
+
+
+def test_wheel_needs_modifier_tilt_does_not():
+    with pytest.raises(ValueError):
+        _require_mouse_modifier(["mouse_wheel_up"])
+    _require_mouse_modifier(["ctrl", "mouse_wheel_down"])
+    _require_mouse_modifier(["mouse_wheel_left"])
+    assert canonicalize("scroll up") == "mouse_wheel_up" and canonicalize("tilt right") == "mouse_wheel_right"
+
+
+@pytest.mark.parametrize("name,vk", [("f13", 0x7C), ("f24", 0x87), ("browser_back", 0xA6),
+                                     ("launch_mail", 0xB4), ("launch_app2", 0xB7), ("media_play_pause", 0xB3),
+                                     ("num_lock", 0x90), ("pause", 0x13), ("sleep", 0x5F)])
+def test_every_vk_named(name, vk):
+    assert vk_to_name(vk) == name and name_to_vk(name) == vk and canonicalize(name) == name
+
+
+def test_every_vk_has_a_name():
+    for vk in range(1, 0xFF):
+        if vk in (1, 2, 4, 5, 6):
+            assert vk_to_name(vk) is None
+        else:
+            assert is_allowed(vk_to_name(vk)), hex(vk)
+
+
+def test_unknown_vk_and_scan_code():
+    assert vk_to_name(0xE8) == "vk_e8" and name_to_vk("vk_e8") == 0xE8
+    assert canonicalize("vk_0xE8") == "vk_e8" and canonicalize("vk_7c") == "f13"
+    assert format_key("vk_e8") == "Key 0xE8"
+    assert _require_keys(["vk_e8"], sending=True) == ["vk_e8"]
+    ev_ = classify_hook_event(0x100, 0xFF, 0x01, 0, already_down=False, scan=0x6E)
+    assert ev_.kind == "key" and ev_.name == "sc_e06e"
+    assert classify_hook_event(0x100, 0xFF, 0, 0, already_down=False).kind == "ignore"
+    with pytest.raises(ValueError):
+        _require_keys(["sc_e06e"], sending=True)
+    assert _require_keys(["sc_e06e"]) == ["sc_e06e"]
+    assert canonicalize("copilot") == "copilot"
+
+
+def test_replay_wheel_and_scan():
+    sent = []
+    inj = TaggedInjector(send=sent.extend, scan_for=lambda vk: 0)
+    inj.press("mouse_wheel_down"); inj.release("mouse_wheel_down")
+    inj.press("sc_e06e"); inj.release("vk_e8")
+    assert (sent[0].mouse_flags, sent[0].mouse_data) == (0x0800, (-120) & 0xFFFFFFFF)
+    assert sent[1].scan == 0x6E and sent[1].flags & 0x0008 and sent[2].vk == 0xE8
+    inj.press("mouse_x3")  # cannot be synthesised: no-op
+    assert len(sent) == 3
+
+
+def test_service_wheel_and_extra_only_when_bound(tmp_path):
+    from engine.models import Action, Binding
+    from tests.fakes import service
+
+    created, opener, *_ = service(tmp_path)
+    created.set_enabled(True)
+    assert not created.wants_mouse("mouse_wheel_up") and not created.wants_mouse("mouse_x3")
+    created.add_binding("global", Binding(id="w", enabled=True, mode="chord", keys=["ctrl", "mouse_wheel_up"],
+                                          action=Action(type="open_app", app="notepad.exe")))
+    assert created.wants_mouse("mouse_wheel_up") and not created.wants_mouse("mouse_wheel_down")

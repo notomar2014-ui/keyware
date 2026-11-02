@@ -10,6 +10,8 @@ import uuid
 
 from engine.keys import (
     ALLOWED_KEYS,
+    is_allowed,
+    is_trigger_only,
     MODIFIERS,
     TRIGGER_ONLY_KEYS,
     canonicalize,
@@ -869,9 +871,9 @@ def _require_keys(keys: list[str], *, sending: bool = False) -> list[str]:
         raise ValueError("Choose a key.")
     canonical: list[str] = []
     for key in keys:
-        if key not in ALLOWED_KEYS:
+        if not is_allowed(key):
             raise ValueError(f"Unknown key '{key}'.")
-        if sending and key in TRIGGER_ONLY_KEYS:
+        if sending and is_trigger_only(key):
             raise ValueError(f"{format_key(key)} can be a trigger, but Keyware cannot send it.")
         if key not in canonical:
             canonical.append(key)
@@ -1159,7 +1161,7 @@ def sanitize_config(config: Config) -> list[str]:
 def validate_leader_key(key: str | None, config: Config) -> str | None:
     if key is None or key == "":
         return None
-    if key not in ALLOWED_KEYS or key in MODIFIERS or key == "esc":
+    if not is_allowed(key) or key in MODIFIERS or key == "esc":
         raise ValueError("Leader key must be a normal key. F13 is a safe choice.")
     for profile in config.profiles:
         for binding in profile.bindings:
