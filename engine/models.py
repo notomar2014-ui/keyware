@@ -36,7 +36,7 @@ DEFAULT_PULSE_HOTKEYS = [
 ]
 
 ACTION_TYPES = (
-    "open_url", "open_app", "type_text", "key_combo", "macro", "auto_click",
+    "open_url", "open_app", "type_text", "key_combo", "macro", "auto_click","open_calculator",
     # v1.3.3 single actions
     "open_path", "media", "lock_screen", "screenshot", "run_command", "play",
     # v1.3.5: swallow the key and do nothing (turn Caps Lock or the Copilot key off)
@@ -86,9 +86,9 @@ MOUSE_BUTTONS = ("left", "right", "middle")
 # one press and stops on the next.
 AUTOCLICK_MODES = ("hold", "toggle")
 AUTOCLICK_MIN_CPS = 1
-AUTOCLICK_MAX_CPS = 50
-AUTOCLICK_DEFAULT_CPS = 10
-AUTOCLICK_MAX_SECONDS = 3600
+AUTOCLICK_MAX_CPS = 100
+AUTOCLICK_DEFAULT_CPS = 15
+AUTOCLICK_MAX_SECONDS = 7200
 # "While held" needs a trigger that has a clear key-down and key-up.
 AUTOCLICK_HOLD_TRIGGERS = ("tap", "hold", "chord")
 # Profile renamed in v1.3.3. Old configs are migrated once by ConfigStore.
@@ -667,6 +667,7 @@ def action_type_label(action_type: str) -> str:
         "screenshot": "Screenshot",
         "run_command": "Run command",
         "play": "Play music / video",
+        "open_calculator": "Open Calculator",
         "none": "Do nothing",
     }.get(action_type, action_type)
 

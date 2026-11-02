@@ -57,7 +57,7 @@ AI_PLACEHOLDER = "Describe what this key should do…\n\ne.g. F2 opens YouTube a
 CARD = ("#fafafa", "#18181b")
 ACTIONS = (
     "Open URL", "Open app", "Type text", "Key combo", "Macro", "Auto-click",
-    "Open file or folder", "Media / volume", "Play music / video", "Lock screen", "Screenshot", "Run command",
+    "Open file or folder", "Media / volume", "Play music / video", "Lock screen", "Screenshot", "Run command", "Open Calculator",
     "Do nothing",
 )
 # Tap side of a Hold binding (v1.3.5). "Type the key" keeps the classic long press.
@@ -155,6 +155,7 @@ def _action_label(action_type: str) -> str:
         "media": "Media / volume",
         "play": "Play music / video",
         "lock_screen": "Lock screen",
+        "open_calculator": "Open Calculator",
         "screenshot": "Screenshot",
         "run_command": "Run command",
         "none": "Do nothing",
@@ -2016,6 +2017,8 @@ class KeywareApp(ctk.CTk):
             self.simple_note.configure(text="Locks Windows, like Win + L.")
         elif value == "Screenshot":
             self.simple_note.configure(text="Takes a full-screen screenshot (Win + Print Screen). It is saved to Pictures › Screenshots.")
+        elif value == "Open Calculator":
+            self.simple_note.configure(text="Opens Calculator quicker")
         elif value == "Do nothing":
             self.simple_note.configure(text="Turns the key off. Nothing is typed and nothing runs. "
                                             "For Caps Lock, Shift + Caps Lock still toggles it.")
@@ -2041,6 +2044,7 @@ class KeywareApp(ctk.CTk):
             "Run command": (self.command_box, {"row": 8, **place}),
             "Lock screen": (self.simple_note, {"row": 8, **place}),
             "Screenshot": (self.simple_note, {"row": 8, **place}),
+            "Open Calculator": (self.simple_note,{"row": 8, **place}),
             "Do nothing": (self.simple_note, {"row": 8, **place}),
         }
 
@@ -2499,6 +2503,8 @@ class KeywareApp(ctk.CTk):
             return Action(type="play", service=service, text=self.play_query.get())
         if kind == "Lock screen":
             return Action(type="lock_screen")
+        if kind == "Open Calculator":
+            return Action(type="open_calculator")
         if kind == "Screenshot":
             return Action(type="screenshot")
         if kind == "Run command":

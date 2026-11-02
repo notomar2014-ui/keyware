@@ -138,7 +138,9 @@ class ActionExecutor:
             self._run_command(action.command)
         elif action.type == "play":
             self._play(action.service, action.text)
-        elif action.type == "none":
+        elif action.type == "open_calculator":
+            self._open_app("calc.exe",[],"")
+        elif action.type == "none": 
             return  # the trigger key is turned off: swallowed, nothing runs
         else:
             raise ValueError(f"Unknown action '{action.type}'.")
