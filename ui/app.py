@@ -16,7 +16,9 @@ from engine import __version__
 DONATE_URL = "https://ko-fi.com/keyware_donate"
 from engine.keys import format_keys, parse_key_expression
 from engine.models import (
+    APP_RULE_LABELS,
     AUTOCLICK_DEFAULT_CPS,
+    parse_app_rules,
     AUTOCLICK_MAX_CPS,
     AUTOCLICK_MIN_CPS,
     Action,
@@ -596,6 +598,7 @@ class KeywareApp(ctk.CTk):
         self._ghost(self.macro_box, "Add step", self._add_macro_step).grid(row=2, column=0, sticky="w", pady=(6, 0))
         self._build_autoclick(form)
         self._build_ai_panel(form)
+        self._build_app_rules(form)
 
         self.form_error = ctk.CTkLabel(form, text="", text_color=INK, anchor="w", justify="left", wraplength=420)
         self.form_error.grid(row=12, column=0, sticky="ew", pady=(0, 8))
@@ -608,6 +611,65 @@ class KeywareApp(ctk.CTk):
             buttons, text="Replace it", height=36, fg_color=OFF_RED, hover_color=("#991b1b", "#ef4444"),
             text_color="#ffffff", command=lambda: self._save_binding(replace=True),
         )
+
+    # --- Per-app rules ------------------------------------------------------
+    def _build_app_rules(self, form) -> None:
+        box = ctk.CTkFrame(form, fg_color=CARD, border_width=1, border_color=LINE, corner_radius=10)
+        box.grid(row=11, column=0, sticky="ew", pady=(0, 8))
+        box.grid_columnconfigure(0, weight=1)
+        self.app_rules_box = box
+        ctk.CTkLabel(box, text="PER-APP RULES", text_color=MUTED, font=self._font(11), anchor="w").grid(
+            row=0, column=0, sticky="w", padx=12, pady=(10, 0))
+        ctk.CTkLabel(box, text="Default for all other apps: Keyware only", text_color=MUTED, font=self._font(12),
+                     anchor="w").grid(row=1, column=0, sticky="w", padx=12, pady=(0, 6))
+        self.app_rule_list = ctk.CTkFrame(box, fg_color="transparent", border_width=0)
+        self.app_rule_list.grid(row=2, column=0, sticky="ew", padx=12)
+        self.app_rule_list.grid_columnconfigure(0, weight=1)
+        self._ghost(box, "+ Add app", lambda: self._add_app_rule("", "keyware")).grid(
+            row=3, column=0, sticky="w", padx=12, pady=(6, 0))
+        ctk.CTkLabel(box, text="Match by exe name. App only: the app's own shortcut works. Both: run the action and pass the key.",
+                     text_color=MUTED, font=self._font(11), anchor="w", justify="left", wraplength=360).grid(
+            row=4, column=0, sticky="w", padx=12, pady=(4, 10))
+        self._app_rule_rows: list = []
+
+    def _add_app_rule(self, app: str, mode: str) -> None:
+        row = ctk.CTkFrame(self.app_rule_list, fg_color="transparent", border_width=0)
+        row.grid(row=len(self._app_rule_rows), column=0, sticky="ew", pady=(0, 6))
+        row.grid_columnconfigure(0, weight=1)
+        entry = ctk.CTkEntry(row, placeholder_text="Cursor.exe")
+        entry.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        if app:
+            entry.insert(0, app)
+        menu = ctk.CTkOptionMenu(row, values=list(APP_RULE_LABELS.values()), width=130)
+        menu.set(APP_RULE_LABELS.get(mode, APP_RULE_LABELS["keyware"]))
+        menu.grid(row=0, column=1, padx=(0, 6))
+        item = (row, entry, menu)
+        ctk.CTkButton(row, text="x", width=28, height=28, fg_color="transparent", border_width=1, border_color=LINE,
+                      text_color=MUTED, hover_color=LINE, command=lambda: self._remove_app_rule(item)).grid(row=0, column=2)
+        self._app_rule_rows.append(item)
+
+    def _remove_app_rule(self, item) -> None:
+        if item in self._app_rule_rows:
+            self._app_rule_rows.remove(item)
+            item[0].destroy()
+            for index, (row, _entry, _menu) in enumerate(self._app_rule_rows):
+                row.grid(row=index, column=0, sticky="ew", pady=(0, 6))
+
+    def _set_app_rules(self, rules: dict) -> None:
+        for item in list(self._app_rule_rows):
+            item[0].destroy()
+        self._app_rule_rows = []
+        for app, mode in (rules or {}).items():
+            self._add_app_rule(app, mode)
+
+    def _collect_app_rules(self) -> dict:
+        by_label = {label: mode for mode, label in APP_RULE_LABELS.items()}
+        rules: dict = {}
+        for _row, entry, menu in self._app_rule_rows:
+            app = entry.get().strip()
+            if app:
+                rules[app] = by_label.get(menu.get(), "keyware")
+        return parse_app_rules(rules)
 
     # --- Auto-click fields -------------------------------------------------
 
@@ -1220,6 +1282,7 @@ class KeywareApp(ctk.CTk):
         self._stop_recording(cancel=True)
         self._hide_conflict()
         self._editing_id = None
+        self._set_app_rules(binding.app_rules)
         self.form_title.configure(text="New binding")
         self._set_entry(self.label, proposal.label)
         self._set_entry(self.trigger, format_keys(binding.keys))
@@ -1946,6 +2009,7 @@ class KeywareApp(ctk.CTk):
             self._set_binder_mode("Manual")
         self._stop_recording(cancel=True)
         self._editing_id = binding.id
+        self._set_app_rules(binding.app_rules)
         self.form_title.configure(text="Edit binding")
         self._set_entry(self.label, binding.label)
         self._set_entry(self.trigger, format_keys(binding.keys))
@@ -2454,6 +2518,7 @@ class KeywareApp(ctk.CTk):
                 taps=taps,
                 label=self.label.get().strip(),
                 action=self._collect_action(),
+                app_rules=self._collect_app_rules(),
             )
             if mode == "hold":
                 binding.tap_action = self._collect_tap_action()
@@ -2630,6 +2695,7 @@ class KeywareApp(ctk.CTk):
 
     def _clear_form(self) -> None:
         self._stop_recording(cancel=True)
+        self._set_app_rules({})
         self._hide_conflict()
         self._editing_id = None
         self.form_title.configure(text="New binding")

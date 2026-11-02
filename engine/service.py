@@ -23,7 +23,7 @@ from engine.detector import Effect, InputDetector
 from engine.hook_engine import HookUnavailable
 from engine.models import Binding, Profile, new_id, validate_binding, validate_leader_key
 from engine.physical import GuardedInjector, PhysicalKeys
-from engine.profiles import match_profile, process_basename
+from engine.profiles import app_rule_mode, apply_app_rules, match_profile, process_basename
 from engine.session import SessionMonitor
 from engine.startup import StartupManager
 from engine.watchdog import decide_hook
@@ -320,6 +320,11 @@ class KeywareService:
             self._lock.release()
         effects = result.effects
         suppress = result.suppress
+        if any(effect.kind == "fire" and effect.binding_id for effect in effects):
+            effects, suppress, passed = self._apply_app_rules(effects, suppress)
+            if passed and pressed:
+                # The down goes to the app, so its key-up must too.
+                self._detector.swallow_release.discard(key)
         if self.config.dry_run:
             effects, logs, pause = _split_dry(effects)
             for message in logs:
@@ -332,6 +337,28 @@ class KeywareService:
         except Exception:
             self._log("Could not dispatch an input event.")
         return suppress
+
+    def _binding_rules(self, binding_id: str) -> dict[str, str]:
+        for profile in self.config.profiles:
+            for binding in profile.bindings:
+                if binding.id == binding_id:
+                    return binding.app_rules
+        return {}
+
+    def _apply_app_rules(self, effects: list[Effect], suppress: bool):
+        """Per-app rules (keyware / app / both) for the bindings that just fired."""
+        rules = {e.binding_id: self._binding_rules(e.binding_id) for e in effects if e.kind == "fire" and e.binding_id}
+        if not any(rules.values()):
+            return effects, suppress, False
+        name = self.foreground_name
+        if self.context is not None:
+            # Fresh read at key time (one OpenProcess call, only for bindings with rules);
+            # the 500 ms cache could still name the previous window after an Alt+Tab.
+            try:
+                name = process_basename(self.context.read()) or name
+            except Exception:
+                pass
+        return apply_app_rules(effects, suppress, lambda binding_id: app_rule_mode(rules.get(binding_id), name))
 
     def tick(self, now: float | None = None) -> None:
         if self._recorder is not None:

@@ -342,6 +342,27 @@ const LABEL_FALLBACK = {
   screenshot: 'Screenshot', run_command: 'Run command', play: 'Play', none: 'Key off',
 };
 
+// Per-app rules: exe -> keyware | app | both. Dict or [{app, mode}]; bad modes are a schema error.
+const APP_RULE_MODES = new Set(['keyware', 'app', 'both']);
+function cleanAppRules(raw) {
+  if (raw === undefined || raw === null) return null;
+  let items;
+  if (Array.isArray(raw)) items = raw.filter(isObj).map((r) => [r.app, r.mode]);
+  else if (isObj(raw)) items = Object.entries(raw);
+  else throw new Bad('app_rules');
+  const out = {};
+  for (const [app, mode] of items.slice(0, 20)) {
+    let name = str(app).trim().replace(/\\/g, '/').split('/').pop().trim().toLowerCase();
+    if (!name) continue;
+    if (!name.endsWith('.exe')) name += '.exe';
+    if (!/^[a-z0-9 _.\-]{1,60}\.exe$/.test(name)) throw new Bad('app_rules app');
+    const m = str(mode || 'keyware').trim().toLowerCase();
+    if (!APP_RULE_MODES.has(m)) throw new Bad('app_rules mode');
+    out[name] = m;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 function cleanBinding(b) {
   if (!isObj(b)) throw new Bad('binding');
   const t = isObj(b.trigger) ? b.trigger : {};
@@ -371,6 +392,8 @@ function cleanBinding(b) {
   const notes = str(b.notes).replace(/\s+/g, ' ').trim().slice(0, 300);
   const out = { label, profile, trigger, action, notes };
   if (tapAction) out.tap_action = tapAction;
+  const appRules = cleanAppRules(b.app_rules);
+  if (appRules) out.app_rules = appRules;
   return out;
 }
 

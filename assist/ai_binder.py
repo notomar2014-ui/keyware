@@ -65,6 +65,7 @@ from engine.models import (
     validate_step,
     trigger_text,
     validate_binding,
+    parse_app_rules,
 )
 from engine import PANIC_KEYS, __version__
 
@@ -172,6 +173,8 @@ class Proposal:
         hold_name = "Hold does" if binding.is_tap_hold() else "Action"
         lines = [("Trigger", trigger_text(binding, leader_key)), (hold_name, action_type_label(binding.action.type))]
         lines.extend(_detail_lines(binding.action))
+        for app, rule in binding.app_rules.items():
+            lines.append((app, {"keyware": "Keyware only", "app": "App only", "both": "Both"}.get(rule, rule)))
         if binding.hold_press:
             lines.append(("While held", f"keeps {format_keys(binding.action.keys)} down"))
         if binding.is_tap_hold():
@@ -287,7 +290,7 @@ def looks_like_binding(text: str) -> bool:
 
 # Shared with the proxy (site/api/_lib/prompt.js, written by tools/sync_prompt.py).
 # Bump PROMPT_VERSION whenever the prompt text changes.
-PROMPT_VERSION = "2026.10.31-2"
+PROMPT_VERSION = "2026.11.02-1"
 
 SYSTEM_PROMPT = r"""You are Keyware's binding builder. Keyware is a Windows key remapper. A user describes, in plain words, what a key should do. You reply with ONE JSON object describing a single binding. You never run anything; a human reviews your JSON in an editor and saves it.
 
@@ -299,6 +302,7 @@ SYSTEM_PROMPT = r"""You are Keyware's binding builder. Keyware is a Windows key 
   "trigger": {"mode": "tap" | "hold" | "double_tap" | "triple_tap" | "chord" | "leader", "keys": ["..."], "hold_ms": 800},
   "action": { ...one of the action shapes below... },
   "tap_action": { ...optional, only with mode "hold": what a SHORT tap does (see Tap vs hold) },
+  "app_rules": {"cursor.exe": "app"}  (optional, see Per-app rules),
   "notes": "optional, one short sentence for the user (assumptions, placeholders)"
 }
 If the user asks for SEVERAL bindings in one description, reply instead with up to 8 items, each shaped like the single object above (without "ok"):
@@ -377,6 +381,13 @@ Prefer the simplest shape: one thing → a single action; several things → one
 - App profile: only while that app is in front. The user's games profile is called "Gaming": "in gaming", "in games", "while gaming", "in Minecraft" → {"scope":"app","name":"Gaming","process_names":["javaw.exe","minecraft.exe"]}. Other apps: Chrome chrome.exe, Edge msedge.exe, Firefox firefox.exe, VS Code code.exe, Cursor cursor.exe, Discord discord.exe, Slack slack.exe, Spotify spotify.exe, Notepad notepad.exe, Word winword.exe, Excel excel.exe, PowerPoint powerpnt.exe, Photoshop photoshop.exe, Premiere Pro "adobe premiere pro.exe", After Effects afterfx.exe, OBS obs64.exe, Figma figma.exe, Blender blender.exe, Roblox robloxplayerbeta.exe, Valorant valorant.exe, Fortnite fortniteclient-win64-shipping.exe.
 - An app profile may intentionally override a Global binding on the same key.
 
+# Per-app rules (optional "app_rules": exe name -> mode)
+- "keyware" (default for every app not listed): Keyware runs the action and swallows the key.
+- "app": in that app Keyware does nothing and the key reaches the app, so the app's own shortcut works.
+- "both": Keyware runs the action AND the key reaches the app.
+Use it when the user says a shortcut should "work normally", "be left alone" or "still do its own thing" in an app, or should "also" reach an app. Keep the binding Global; do not make an app profile for this. Use exe names from the Profiles list.
+"make Ctrl+Shift+S work normally in Cursor" with no other action named: reply with the binding the user already has if they describe it, otherwise a key-off binding {"type":"none"} on that trigger with "app_rules": {"cursor.exe": "app"} and a note that the rule can be added to their existing binding instead.
+
 # Conflict rules (Keyware enforces these; you just produce the binding)
 In one profile, one trigger can do only one thing: two chords with the same keys clash, two leader shortcuts with the same follow-up clash, and tap/hold/double-tap/triple-tap on the same key clash — except holds of different lengths, which are tiers. Do not change the user's requested key to dodge a clash; Keyware will show the conflict.
 
@@ -446,6 +457,9 @@ User: tap F9 to play/pause, hold it to open spotify
 
 User: in OBS, F13 starts recording with ctrl shift r
 {"ok":true,"label":"OBS: record","profile":{"scope":"app","name":"OBS","process_names":["obs64.exe"]},"trigger":{"mode":"tap","keys":["f13"]},"action":{"type":"key_combo","keys":["ctrl","shift","r"]},"notes":"Set the same shortcut in OBS Settings › Hotkeys."}
+
+User: ctrl shift s saves all files, but let it work normally in Cursor
+{"ok":true,"label":"Save all","profile":{"scope":"global"},"trigger":{"mode":"chord","keys":["ctrl","shift","s"]},"action":{"type":"key_combo","keys":["ctrl","k","s"]},"app_rules":{"cursor.exe":"app"},"notes":"In Cursor the key goes straight to Cursor."}
 
 User: F12 shuts down my computer
 {"ok":false,"error":"Keyware won't shut down, restart or sign out."}
@@ -580,8 +594,8 @@ _DANGEROUS_TEXT = re.compile(
     re.IGNORECASE,
 )
 _BLOCKED_COMBOS = (frozenset({"ctrl", "alt", "delete"}),)
-_ALLOWED_TOP = {"ok", "label", "profile", "trigger", "action", "notes", "error", "not_binding", "bindings", "tap_action"}
-_ALLOWED_ITEM = {"label", "profile", "trigger", "action", "notes", "ok", "tap_action"}
+_ALLOWED_TOP = {"ok", "label", "profile", "trigger", "action", "notes", "error", "not_binding", "bindings", "tap_action", "app_rules"}
+_ALLOWED_ITEM = {"label", "profile", "trigger", "action", "notes", "ok", "tap_action", "app_rules"}
 
 
 def _strip_fences(text: str) -> str:
@@ -970,8 +984,10 @@ def _parse_item(data: dict, config: Config | None) -> Proposal:
         if asked != action.cps:
             clamp_note = f"Speed limited to {action.cps} clicks per second (Keyware allows 1-50)."
     label = " ".join(str(data.get("label", "") or "").split())[:40]
+    app_rules = parse_app_rules(data.get("app_rules"))
     binding = Binding(id=new_id("bind"), enabled=True, mode=mode, keys=keys, hold_ms=hold_ms, taps=taps,
-                      label=label, action=action, tap_action=tap_action, hold_press=hold_press)
+                      label=label, action=action, tap_action=tap_action, hold_press=hold_press,
+                      app_rules=app_rules)
     try:
         validate_binding(binding, config or Config(), check_leader=False)
     except ValueError as exc:

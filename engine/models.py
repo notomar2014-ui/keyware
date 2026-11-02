@@ -257,6 +257,47 @@ def _int_or(value: Any, default: int) -> int:
         return default  # "x", NaN, and inf from a hand-edited config
 
 
+APP_RULE_MODES = ("keyware", "app", "both")
+APP_RULE_LABELS = {"keyware": "Keyware only", "app": "App only", "both": "Both"}
+
+
+def app_rule_key(name: Any) -> str:
+    """Canonical exe key: lowercase file name with ".exe" ("Cursor" -> "cursor.exe")."""
+    text = str(name or "").strip().replace("\\", "/").rsplit("/", 1)[-1].strip().lower()
+    if not text:
+        return ""
+    return text if text.endswith(".exe") else text + ".exe"
+
+
+def parse_app_rules(raw: Any) -> dict[str, str]:
+    """dict exe->mode or list of {app, mode} -> dict. Modes are kept as written; validate_binding checks them."""
+    items: list[tuple[Any, Any]] = []
+    if isinstance(raw, dict):
+        items = list(raw.items())
+    elif isinstance(raw, list):
+        items = [(item.get("app"), item.get("mode")) for item in raw if isinstance(item, dict)]
+    rules: dict[str, str] = {}
+    for app, mode in items:
+        key = app_rule_key(app)
+        if key and key != ".exe":
+            rules[key] = str(mode or "keyware").strip().lower()
+    return rules
+
+
+def validate_app_rules(rules: dict[str, str]) -> dict[str, str]:
+    clean: dict[str, str] = {}
+    for app, mode in (rules or {}).items():
+        key = app_rule_key(app)
+        if not re.fullmatch(r"[^<>:\"/\\|?*\x00-\x1f]{1,60}\.exe", key or ""):
+            raise ValueError(f"Per-app rule: “{app}” is not an app name like Cursor.exe.")
+        if mode not in APP_RULE_MODES:
+            raise ValueError(f"Per-app rule for {key}: choose Keyware only, App only or Both.")
+        clean[key] = mode
+    if len(clean) > 50:
+        raise ValueError("Up to 50 per-app rules per binding.")
+    return clean
+
+
 @dataclass
 class Binding:
     id: str
@@ -273,6 +314,9 @@ class Binding:
     # (Caps Lock: tap = Esc, hold = Ctrl).
     tap_action: Action | None = None
     hold_press: bool = False
+    # Per-app rules: exe name (lowercase, e.g. "cursor.exe") -> "keyware" | "app" | "both".
+    # Apps not listed use "keyware" (run the action, swallow the key).
+    app_rules: dict[str, str] = field(default_factory=dict)
 
     def is_tap_hold(self) -> bool:
         return self.mode == "hold" and (self.tap_action is not None or bool(self.hold_press))
@@ -297,6 +341,7 @@ class Binding:
             "action": self.action.to_dict(),
             **({"tap_action": self.tap_action.to_dict()} if self.tap_action is not None else {}),
             **({"hold_press": True} if self.hold_press else {}),
+            **({"app_rules": dict(self.app_rules)} if self.app_rules else {}),
         }
 
     @staticmethod
@@ -315,6 +360,7 @@ class Binding:
             action=Action.from_dict(action_raw),
             tap_action=Action.from_dict(raw["tap_action"]) if isinstance(raw.get("tap_action"), dict) else None,
             hold_press=bool(raw.get("hold_press", False)),
+            app_rules=parse_app_rules(raw.get("app_rules")),
         )
 
 
@@ -1014,6 +1060,7 @@ def validate_binding(binding: Binding, config: Config, *, check_leader: bool = T
         binding.mode, binding.keys = "tap", ["copilot"]
     if set(binding.keys) == set(PANIC_KEYS):
         raise ValueError("Ctrl + Alt + Shift + Esc is the panic switch and cannot be bound.")
+    binding.app_rules = validate_app_rules(binding.app_rules)
     validate_action(binding.action)
     if (
         binding.action.type == "auto_click"
