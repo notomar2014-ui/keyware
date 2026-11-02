@@ -12,6 +12,8 @@ from pathlib import Path
 import customtkinter as ctk
 
 from engine import __version__
+
+DONATE_URL = "https://ko-fi.com/keyware_donate"
 from engine.keys import format_keys, parse_key_expression
 from engine.models import (
     AUTOCLICK_DEFAULT_CPS,
@@ -393,6 +395,14 @@ class KeywareApp(ctk.CTk):
             command=self._toggle_settings,
         )
         self.gear_button.grid(row=0, column=3, rowspan=2, sticky="e")
+        # Donate: heart + word, left of the gear; opens Ko-fi in the default browser.
+        self.donate_button = ctk.CTkButton(
+            header, text="\u2665 Donate", width=84, height=32, font=self._font(13),
+            fg_color="transparent", hover_color=HOVER, text_color="#e11d48", border_width=0, corner_radius=8,
+            command=self._open_donate,
+        )
+        self.donate_button.grid(row=0, column=2, rowspan=2, sticky="e", padx=(0, 6))
+        self.donate_tip = Tooltip(self.donate_button, "Support Keyware on Ko-fi")
         self.gear_tip = Tooltip(self.gear_button, "Settings")
 
         # Status text, master switch and theme button are no longer shown in the
@@ -1294,6 +1304,13 @@ class KeywareApp(ctk.CTk):
         feedback.grid(row=1, column=0, columnspan=2, sticky="new", padx=8, pady=(8, 12))
         feedback.grid_columnconfigure(1, weight=1)
         self._build_feedback(feedback)
+
+    def _open_donate(self) -> None:
+        import webbrowser
+        try:
+            webbrowser.open(DONATE_URL)
+        except Exception:
+            pass
 
     def _toggle_settings(self) -> None:
         if self._settings_open:
