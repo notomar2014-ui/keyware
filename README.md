@@ -8,9 +8,10 @@
 
 <p align="center">
   A free Windows key remapper and macro engine with plain-English AI bindings.<br>
-  <a href="https://keyware-app.vercel.app/download">Download for Windows</a> ·
-  <a href="https://keyware-app.vercel.app/guide">Guide</a> ·
-  <a href="https://keyware-app.vercel.app/privacy">Privacy</a> ·
+  <a href="https://keyware.site/download">Download for Windows</a> ·
+  <a href="https://keyware.site/guide">Guide</a> ·
+  <a href="https://keyware.site/privacy">Privacy</a> ·
+  <a href="https://ko-fi.com/keyware_donate">Donate</a> ·
   <a href="LICENSE">MIT License</a>
 </p>
 
@@ -36,14 +37,34 @@ bindings you review before saving. Nothing is ever saved automatically.
 
 ## Screenshots
 
-| Bindings | Describe it (Text mode) | Manual / Text |
-| --- | --- | --- |
-| ![Keyware bindings list](site/assets/img/app-bindings.webp) | ![Text mode](site/assets/img/app-textmode.webp) | ![Modes](site/assets/img/app-modes.webp) |
+<p align="center">
+  <img src="docs/screenshots/app-bindings.webp" alt="Keyware bindings list" width="100%">
+  <br><sub>The Keyware app: your key bindings at a glance</sub>
+</p>
+
+<table>
+<tr>
+<td width="50%" align="center"><img src="docs/screenshots/app-textmode.webp" alt="Text mode: describe a binding in plain words"><br><sub>Text mode: describe a binding in plain words</sub></td>
+<td width="50%" align="center"><img src="docs/screenshots/app-modes.webp" alt="Manual and Text modes"><br><sub>Manual and Text modes</sub></td>
+</tr>
+<tr>
+<td width="50%" align="center"><img src="docs/screenshots/02-features.webp" alt="Features at a glance"><br><sub>Features at a glance</sub></td>
+<td width="50%" align="center"><img src="docs/screenshots/03-ai-text-mode.webp" alt="AI Text mode"><br><sub>AI Text mode</sub></td>
+</tr>
+<tr>
+<td width="50%" align="center"><img src="docs/screenshots/04-per-app-profiles.webp" alt="Per-app profiles"><br><sub>Per-app profiles</sub></td>
+<td width="50%" align="center"><img src="docs/screenshots/06-always-works.webp" alt="Safe by design: always works"><br><sub>Safe by design: always works</sub></td>
+</tr>
+<tr>
+<td width="50%" align="center"><img src="docs/screenshots/08-guide-tap-hold.webp" alt="Guide: tap vs. hold"><br><sub>Guide: tap vs. hold</sub></td>
+<td width="50%" align="center"><img src="docs/screenshots/09-guide-copilot-capslock.webp" alt="Guide: remap Copilot / Caps Lock"><br><sub>Guide: remap Copilot / Caps Lock</sub></td>
+</tr>
+</table>
 
 ## Download
 
-Get the latest `Keyware.exe` from **https://keyware-app.vercel.app/download**.
-The [guide](https://keyware-app.vercel.app/guide)
+Get the latest `Keyware.exe` from **https://keyware.site/download**.
+The [guide](https://keyware.site/guide)
 walks through the first setup. Windows 10 or 11.
 
 ## Build from source
@@ -100,7 +121,7 @@ docs/TECHNICAL.md      safety model, config file, sample bindings
 
 Keyware keeps your bindings on your PC. What the optional Text mode, feedback form
 and download counter send is listed on the
-[privacy page](https://keyware-app.vercel.app/privacy).
+[privacy page](https://keyware.site/privacy).
 
 ## Contributing and security
 
@@ -110,7 +131,7 @@ Please report vulnerabilities privately as described in [SECURITY.md](SECURITY.m
 ## Support Keyware
 
 Keyware is free and has no ads. If it saves you time, you can support it on Ko-fi:
-[Support Keyware on Ko-fi](https://ko-fi.com/keyware)
+[Support Keyware on Ko-fi](https://ko-fi.com/keyware_donate)
 
 ## License
 

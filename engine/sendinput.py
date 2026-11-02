@@ -118,7 +118,7 @@ class InputEvent:
     mouse_data: int = 0
 
 
-def classify_hook_event(msg: int, vk: int, flags: int, extra: int, *, already_down: bool) -> HookEvent:
+def classify_hook_event(msg: int, vk: int, flags: int, extra: int, *, already_down: bool, scan: int = 0) -> HookEvent:
     """Decide what the hook callback is allowed to do with one event.
 
     ``ignore_own`` and ``pass_injected`` and ``ignore`` must not be remapped.
@@ -139,6 +139,10 @@ def classify_hook_event(msg: int, vk: int, flags: int, extra: int, *, already_do
     else:
         return HookEvent(kind="ignore", vk=vk, extended=extended)
     name = vk_to_name(vk) or ""
+    if not name and scan:
+        from engine.keys import scan_name
+
+        name = scan_name(scan, extended) or ""  # VK 0/0xFF: brand-new key, use its scan code
     if not name:
         return HookEvent(kind="ignore", vk=vk, extended=extended)
     altgr = name == "alt" and (vk == 0xA5 or (vk == 0x12 and extended))
@@ -200,7 +204,35 @@ def build_mouse_click(button: str, *, extra: int = KEYWARE_EXTRA) -> list[InputE
     ]
 
 
+_XBUTTONS = {"x1": 1, "x2": 2}
+# Wheel notches: (MOUSEEVENTF_WHEEL / HWHEEL, delta).
+_WHEELS = {"wheel_up": (0x0800, 120), "wheel_down": (0x0800, -120),
+           "wheel_right": (0x1000, 120), "wheel_left": (0x1000, -120)}
+
+
+def _replay_special(key: str, *, up: bool) -> list[InputEvent] | None:
+    """SendInput records replaying a passed-through mouse/scan-code trigger, or None for a VK key."""
+    if key.startswith("mouse_"):
+        button = key[6:]
+        if button in _WHEELS:  # a notch is one event: send it on the press only
+            flag, delta = _WHEELS[button]
+            return [] if up else [InputEvent(kind="mouse", extra=KEYWARE_EXTRA, mouse_flags=flag,
+                                             mouse_data=delta & 0xFFFFFFFF)]
+        if button.startswith("x") and button[1:].isdigit() and button not in _XBUTTONS:
+            return []  # buttons past X2 cannot be synthesised by SendInput
+        return [build_mouse_button(button, up=up)]
+    if key.startswith("sc_"):
+        sc = int(key[3:], 16)
+        flags = 0x0008 | (KEYEVENTF_KEYUP if up else 0) | (KEYEVENTF_EXTENDEDKEY if sc > 0xFF else 0)
+        return [InputEvent(kind="key", vk=0, scan=sc & 0xFF, flags=flags, extra=KEYWARE_EXTRA)]
+    return None
+
+
 def build_mouse_button(button: str, *, up: bool, extra: int = KEYWARE_EXTRA) -> InputEvent:
+    if button in _XBUTTONS:
+        # MOUSEEVENTF_XDOWN / XUP with XBUTTON1/2 in mouseData.
+        return InputEvent(kind="mouse", extra=int(extra) & 0xFFFFFFFF,
+                          mouse_flags=0x0100 if up else 0x0080, mouse_data=_XBUTTONS[button])
     pair = _MOUSE_DOWN_UP.get(button)
     if pair is None:
         raise ValueError(f"Unknown mouse button '{button}'.")
@@ -304,17 +336,25 @@ class TaggedInjector:
             return 0
 
     def press(self, key: str) -> None:
-        from engine.keys import NAME_TO_VK
+        from engine.keys import name_to_vk
 
-        vk = NAME_TO_VK.get(key)
+        special = _replay_special(key, up=False)
+        if special is not None:
+            self._send(special)
+            return
+        vk = name_to_vk(key)
         if vk is None:
             raise ValueError(f"Unknown key '{key}'.")
         self._send([build_keyboard_event(vk, key_up=False, scan=self._scan(vk))])
 
     def release(self, key: str) -> None:
-        from engine.keys import NAME_TO_VK
+        from engine.keys import name_to_vk
 
-        vk = NAME_TO_VK.get(key)
+        special = _replay_special(key, up=True)
+        if special is not None:
+            self._send(special)
+            return
+        vk = name_to_vk(key)
         if vk is None:
             raise ValueError(f"Unknown key '{key}'.")
         self._send([build_keyboard_event(vk, key_up=True, scan=self._scan(vk))])

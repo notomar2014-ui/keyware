@@ -10,6 +10,8 @@ import uuid
 
 from engine.keys import (
     ALLOWED_KEYS,
+    is_allowed,
+    is_trigger_only,
     MODIFIERS,
     TRIGGER_ONLY_KEYS,
     canonicalize,
@@ -869,13 +871,21 @@ def _require_keys(keys: list[str], *, sending: bool = False) -> list[str]:
         raise ValueError("Choose a key.")
     canonical: list[str] = []
     for key in keys:
-        if key not in ALLOWED_KEYS:
+        if not is_allowed(key):
             raise ValueError(f"Unknown key '{key}'.")
-        if sending and key in TRIGGER_ONLY_KEYS:
+        if sending and is_trigger_only(key):
             raise ValueError(f"{format_key(key)} can be a trigger, but Keyware cannot send it.")
         if key not in canonical:
             canonical.append(key)
     return ordered_keys(canonical)
+
+
+def _require_mouse_modifier(keys: list[str]) -> None:
+    from engine.keys import MODIFIERS, MOUSE_NEEDS_MODIFIER
+
+    clicks = [key for key in keys if key in MOUSE_NEEDS_MODIFIER]
+    if clicks and not any(key in MODIFIERS for key in keys):
+        raise ValueError(f"{format_key(clicks[0])} needs a modifier (Ctrl, Alt, Shift or Win) so normal clicks keep working.")
 
 
 def validate_action(action: Action) -> None:
@@ -998,6 +1008,7 @@ def validate_binding(binding: Binding, config: Config, *, check_leader: bool = T
     if binding.mode not in TRIGGER_MODES:
         raise ValueError("Choose a trigger mode.")
     binding.keys = _require_keys(list(binding.keys))
+    _require_mouse_modifier(binding.keys)
     if binding.mode == "chord" and set(binding.keys) == {"win", "shift", "f23"}:
         # Win + Shift + F23 is what the Copilot key sends. Bind the key itself.
         binding.mode, binding.keys = "tap", ["copilot"]
@@ -1150,7 +1161,7 @@ def sanitize_config(config: Config) -> list[str]:
 def validate_leader_key(key: str | None, config: Config) -> str | None:
     if key is None or key == "":
         return None
-    if key not in ALLOWED_KEYS or key in MODIFIERS or key == "esc":
+    if not is_allowed(key) or key in MODIFIERS or key == "esc":
         raise ValueError("Leader key must be a normal key. F13 is a safe choice.")
     for profile in config.profiles:
         for binding in profile.bindings:

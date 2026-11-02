@@ -157,13 +157,13 @@ def test_proxy_request_has_no_prompt_and_no_keys(monkeypatch):
     call = proxy.calls[0]
     assert call["url"] == "https://keyware-app.vercel.app/api/bind"
     assert call["headers"]["X-Keyware-Install"] == INSTALL
-    assert call["headers"]["User-Agent"].startswith("Keyware/1.3.5")
+    assert call["headers"]["User-Agent"].startswith("Keyware/1.3.6")
     assert "Authorization" not in call["headers"]
     body = call["body"]
     assert set(body) == {"description", "context"}
     assert body["description"] == "F2 opens YouTube"
     ctx = body["context"]
-    assert ctx["app_version"] == "1.3.5" and ctx["prompt_version"] == PROMPT_VERSION
+    assert ctx["app_version"] == "1.3.6" and ctx["prompt_version"] == PROMPT_VERSION
     assert ctx["current_profile"] == "Global" and ctx["leader_key"] == "F13"
     assert any(p["name"] == "Gaming" for p in ctx["profiles"])
     assert isinstance(ctx["triggers"], list) and ctx["triggers"]
