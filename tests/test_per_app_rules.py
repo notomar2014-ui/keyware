@@ -70,3 +70,33 @@ def test_ai_reply_with_app_rules():
     bad = reply.replace('"app"}', '"maybe"}')
     with pytest.raises(Exception):
         parse_reply(bad)
+
+
+def _rules_only(keys=("ctrl", "shift", "s")):
+    return Binding(id="new", enabled=True, mode="chord", keys=list(keys),
+                   action=Action(type="none"), app_rules={"cursor.exe": "app"})
+
+
+def test_rules_only_proposal_merges_into_existing():
+    from assist.ai_binder import Proposal, merge_rules_proposal
+    old = _binding(app_rules={"code.exe": "both", "cursor.exe": "keyware"})
+    merged = merge_rules_proposal(_rules_only(), [old])
+    assert merged.id == "b1"
+    assert merged.app_rules == {"code.exe": "both", "cursor.exe": "app"}
+    p = Proposal(binding=merged, label="", merged_into=merged.id)
+    assert ("Change", "Adds rule to existing Ctrl+Shift+S") in p.summary_lines() or any(
+        "Adds rule to existing" in v for _, v in p.summary_lines())
+
+
+def test_merge_keeps_existing_action():
+    from assist.ai_binder import merge_rules_proposal
+    merged = merge_rules_proposal(_rules_only(), [_binding()])
+    assert merged.action.type == "open_url" and merged.action.url == "https://example.com"
+
+
+def test_no_matching_binding_creates_as_before():
+    from assist.ai_binder import merge_rules_proposal
+    assert merge_rules_proposal(_rules_only(("ctrl", "shift", "x")), [_binding()]) is None
+    real = Binding(id="n", enabled=True, mode="chord", keys=["ctrl", "shift", "s"],
+                   action=Action(type="open_url", url="https://x.com"), app_rules={"cursor.exe": "app"})
+    assert merge_rules_proposal(real, [_binding()]) is None

@@ -1278,12 +1278,20 @@ class KeywareApp(ctk.CTk):
             here = getattr(self.service.config.profile_by_id(self.selected_id), "name", "Global")
             notes.insert(0, f"No {proposal.profile_name} profile yet, so this goes in {here}. Add the profile first for app-only.")
 
+        from assist.ai_binder import merge_rules_proposal
+
         binding = proposal.binding
+        merged = merge_rules_proposal(binding, self.service.bindings(self.selected_id))
         self._stop_recording(cancel=True)
         self._hide_conflict()
         self._editing_id = None
+        if merged is not None:
+            binding = merged
+            proposal.binding = merged
+            proposal.merged_into = merged.id
+            proposal.label = proposal.label or merged.label
         self._set_app_rules(binding.app_rules)
-        self.form_title.configure(text="New binding")
+        self.form_title.configure(text="Edit binding" if merged is not None else "New binding")
         self._set_entry(self.label, proposal.label)
         self._set_entry(self.trigger, format_keys(binding.keys))
         self.mode.set(_mode_label(binding))
@@ -1295,6 +1303,7 @@ class KeywareApp(ctk.CTk):
         self._show_action_fields()
         self._update_key_hint(binding.keys)
         self.form_error.configure(text="")
+        self._editing_id = merged.id if merged is not None else None
         self._ai_proposal = proposal
 
         for child in self.ai_card_rows.winfo_children():

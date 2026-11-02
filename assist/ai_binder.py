@@ -167,6 +167,7 @@ class Proposal:
     notes: list[str] = field(default_factory=list)
     model: str = ""
     seconds: float = 0.0
+    merged_into: str = ""  # id of the existing binding these rules were merged into
 
     def summary_lines(self, leader_key: str | None = None) -> list[tuple[str, str]]:
         binding = self.binding
@@ -191,7 +192,26 @@ class Proposal:
             lines.append(("Profile", "Global"))
         if self.label:
             lines.insert(0, ("Label", self.label))
+        if self.merged_into:
+            lines.insert(0, ("Change", f"Adds rule to existing {format_keys(binding.keys)}"))
         return lines
+
+
+def is_rules_only(binding: Binding) -> bool:
+    return bool(binding.app_rules) and (binding.action is None or binding.action.type == "none") and binding.tap_action is None
+
+
+def merge_rules_proposal(proposal: Binding, existing: list[Binding]) -> Binding | None:
+    """Rules-only proposal on a trigger that already exists: return a copy of the existing
+    binding with the proposal's app_rules added/overriding. None means create as usual."""
+    if not is_rules_only(proposal):
+        return None
+    for old in existing:
+        if old.mode == proposal.mode and sorted(old.keys) == sorted(proposal.keys):
+            merged = Binding.from_dict(old.to_dict())
+            merged.app_rules = {**old.app_rules, **proposal.app_rules}
+            return merged
+    return None
 
 
 def _detail_lines(action: Action) -> list[tuple[str, str]]:
@@ -386,7 +406,7 @@ Prefer the simplest shape: one thing → a single action; several things → one
 - "app": in that app Keyware does nothing and the key reaches the app, so the app's own shortcut works.
 - "both": Keyware runs the action AND the key reaches the app.
 Use it when the user says a shortcut should "work normally", "be left alone" or "still do its own thing" in an app, or should "also" reach an app. Keep the binding Global; do not make an app profile for this. Use exe names from the Profiles list.
-"make Ctrl+Shift+S work normally in Cursor" with no other action named: reply with the binding the user already has if they describe it, otherwise a key-off binding {"type":"none"} on that trigger with "app_rules": {"cursor.exe": "app"} and a note that the rule can be added to their existing binding instead.
+"make Ctrl+Shift+S work normally in Cursor" with no other action named: this is a rules-only change for an EXISTING shortcut. Reply with action {"type":"none"} on that exact trigger plus "app_rules": {"cursor.exe": "app"}. Keyware merges these rules into the user's existing binding on that trigger (keeping its action); only if none exists is it created as a key-off binding.
 
 # Conflict rules (Keyware enforces these; you just produce the binding)
 In one profile, one trigger can do only one thing: two chords with the same keys clash, two leader shortcuts with the same follow-up clash, and tap/hold/double-tap/triple-tap on the same key clash — except holds of different lengths, which are tiers. Do not change the user's requested key to dodge a clash; Keyware will show the conflict.
