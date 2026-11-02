@@ -757,7 +757,9 @@ def _pynput_key(name: str):
     }
     if name in special:
         return special[name]
-    vk = NAME_TO_VK.get(name)
+    from engine.keys import name_to_vk
+
+    vk = name_to_vk(name)
     if vk is None:
         raise ValueError(f"Unknown key '{name}'.")
     return KeyCode.from_vk(vk)
