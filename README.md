@@ -11,6 +11,7 @@
   <a href="https://keyware.site/download">Download for Windows</a> ·
   <a href="https://keyware.site/guide">Guide</a> ·
   <a href="https://keyware.site/privacy">Privacy</a> ·
+  <a href="https://ko-fi.com/keyware_donate">Donate</a> ·
   <a href="LICENSE">MIT License</a>
 </p>
 
@@ -130,7 +131,7 @@ Please report vulnerabilities privately as described in [SECURITY.md](SECURITY.m
 ## Support Keyware
 
 Keyware is free and has no ads. If it saves you time, you can support it on Ko-fi:
-[Support Keyware on Ko-fi](https://ko-fi.com/keyware)
+[Support Keyware on Ko-fi](https://ko-fi.com/keyware_donate)
 
 ## License
 
