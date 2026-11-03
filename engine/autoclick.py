@@ -61,7 +61,6 @@ class AutoClicker:
         self._closed = False
         self._thread: Optional[threading.Thread] = None
 
-    # ---- control (any thread) ----
     @property
     def running_binding(self) -> Optional[str]:
         job = self._job
