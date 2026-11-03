@@ -298,6 +298,52 @@ def validate_app_rules(rules: dict[str, str]) -> dict[str, str]:
     return clean
 
 
+MAX_SETUPS = 9
+DEFAULT_SETUP_HOLD_SECONDS = 8
+
+
+def _setup_number(value: Any) -> int:
+    try:
+        number = int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+    return number if 1 <= number <= MAX_SETUPS else 0
+
+
+def parse_setups(raw: Any) -> dict[int, str]:
+    """{"1": "Elytra", "2": "Spear"} -> {1: "Elytra", 2: "Spear"}. Bad entries are dropped."""
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[int, str] = {}
+    for key, value in raw.items():
+        number = _setup_number(key)
+        name = str(value or "").strip()[:40]
+        if number:
+            out[number] = name or f"Setup {number}"
+    return out
+
+
+def parse_setup_text(text: str) -> dict[int, str]:
+    """"1 Elytra, 2 Spear" -> {1: "Elytra", 2: "Spear"}. Blank clears. Raises ValueError."""
+    out: dict[int, str] = {}
+    for part in re.split(r"[,;\n]", text or ""):
+        part = part.strip()
+        if not part:
+            continue
+        match = re.fullmatch(r"([1-9])(?:\s*[:.=-]\s*|\s+|$)(.*)", part)
+        if not match:
+            raise ValueError(f"Setups look like 1 Elytra, 2 Spear (numbers 1-9). Could not read: {part}")
+        number = int(match.group(1))
+        if number in out:
+            raise ValueError(f"Setup {number} is listed twice.")
+        out[number] = match.group(2).strip()[:40] or f"Setup {number}"
+    return out
+
+
+def setup_text(setups: dict[int, str]) -> str:
+    return ", ".join(f"{number} {name}" for number, name in sorted(setups.items()))
+
+
 @dataclass
 class Binding:
     id: str
@@ -317,6 +363,8 @@ class Binding:
     # Per-app rules: exe name (lowercase, e.g. "cursor.exe") -> "keyware" | "app" | "both".
     # Apps not listed use "keyware" (run the action, swallow the key).
     app_rules: dict[str, str] = field(default_factory=dict)
+    # Setups: 0 = always active; 1-9 = only while that setup of its profile is active.
+    setup: int = 0
 
     def is_tap_hold(self) -> bool:
         return self.mode == "hold" and (self.tap_action is not None or bool(self.hold_press))
@@ -342,6 +390,7 @@ class Binding:
             **({"tap_action": self.tap_action.to_dict()} if self.tap_action is not None else {}),
             **({"hold_press": True} if self.hold_press else {}),
             **({"app_rules": dict(self.app_rules)} if self.app_rules else {}),
+            **({"setup": int(self.setup)} if self.setup else {}),
         }
 
     @staticmethod
@@ -361,6 +410,7 @@ class Binding:
             tap_action=Action.from_dict(raw["tap_action"]) if isinstance(raw.get("tap_action"), dict) else None,
             hold_press=bool(raw.get("hold_press", False)),
             app_rules=parse_app_rules(raw.get("app_rules")),
+            setup=_setup_number(raw.get("setup")),
         )
 
 
@@ -371,10 +421,17 @@ class Profile:
     process_names: list[str]
     enabled: bool
     bindings: list[Binding] = field(default_factory=list)
+    # Up to 9 numbered setups ("1" -> "Elytra"); hold that number key to switch.
+    setups: dict[int, str] = field(default_factory=dict)
+    active_setup: int = 0
 
     @property
     def is_global(self) -> bool:
         return self.id == "global"
+
+    def setup_label(self, number: int) -> str:
+        name = self.setups.get(int(number), "")
+        return f"Setup {int(number)}: {name}" if name else f"Setup {int(number)}"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -383,6 +440,8 @@ class Profile:
             "process_names": list(self.process_names),
             "enabled": bool(self.enabled),
             "bindings": [binding.to_dict() for binding in self.bindings],
+            **({"setups": {str(k): v for k, v in sorted(self.setups.items())}} if self.setups else {}),
+            **({"active_setup": int(self.active_setup)} if self.active_setup else {}),
         }
 
     @staticmethod
@@ -397,12 +456,22 @@ class Profile:
             process_names=[str(item) for item in raw.get("process_names", []) or []],
             enabled=bool(raw.get("enabled", True)),
             bindings=bindings,
+            setups=parse_setups(raw.get("setups")),
+            active_setup=_setup_number(raw.get("active_setup")),
         )
 
 
 DEFAULT_AI_ENDPOINT = "https://keyware-app.vercel.app/api/bind"
 AI_PROVIDERS = ("gemini", "groq")
 _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
+
+
+def _hold_seconds(value: Any) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return DEFAULT_SETUP_HOLD_SECONDS
+    return max(0, min(60, number))
 
 
 def _ai_endpoint(value: Any) -> str:
@@ -444,6 +513,8 @@ class Config:
     # Log the action and do not swallow the key or run it.
     dry_run: bool = False
     pause_hotkey: list[str] = field(default_factory=lambda: list(DEFAULT_PAUSE_HOTKEY))
+    # Hold a number key 1-9 this long to switch the current profile's setup. 0 turns it off.
+    setup_hold_seconds: int = DEFAULT_SETUP_HOLD_SECONDS
     # Leave Pulse's hotkeys alone. The list is exact combos, not prefixes.
     respect_pulse: bool = True
     pulse_hotkeys: list[list[str]] = field(default_factory=lambda: [list(item) for item in DEFAULT_PULSE_HOTKEYS])
@@ -495,6 +566,7 @@ class Config:
             "rollover_ms": int(self.rollover_ms),
             "dry_run": bool(self.dry_run),
             "pause_hotkey": list(self.pause_hotkey),
+            "setup_hold_seconds": int(self.setup_hold_seconds),
             "respect_pulse": bool(self.respect_pulse),
             "pulse_hotkeys": [list(combo) for combo in self.pulse_hotkeys],
             "donate_url": self.donate_url,
@@ -540,6 +612,7 @@ class Config:
             rollover_ms=_optional_int(raw, "rollover_ms", 120),
             dry_run=bool(raw.get("dry_run", False)),
             pause_hotkey=_string_list(raw.get("pause_hotkey"), DEFAULT_PAUSE_HOTKEY),
+            setup_hold_seconds=_hold_seconds(raw.get("setup_hold_seconds", DEFAULT_SETUP_HOLD_SECONDS)),
             respect_pulse=bool(raw.get("respect_pulse", True)),
             pulse_hotkeys=_combo_list(raw.get("pulse_hotkeys")),
             donate_url=str(raw.get("donate_url", "") or "").strip(),
@@ -1147,6 +1220,9 @@ def is_web_url(url: str) -> bool:
 def sanitize_config(config: Config) -> list[str]:
     """Make a loaded config safe to run. Invalid bindings are disabled, not deleted."""
     warnings: list[str] = []
+    for profile in config.profiles:
+        if profile.active_setup and profile.active_setup not in profile.setups:
+            profile.active_setup = 0
     if config.leader_key:
         leader = canonicalize(config.leader_key)
         if leader is None or leader in MODIFIERS or leader == "esc":

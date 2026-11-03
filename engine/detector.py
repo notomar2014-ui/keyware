@@ -50,6 +50,14 @@ def _clicks_while_held(binding: Binding) -> bool:
     return action is not None and action.type == "auto_click" and action.click_mode == "hold"
 
 
+def _live(binding: Binding, profile: Profile) -> bool:
+    """Enabled, and either always-on (no setup) or in the profile's active setup."""
+    if not binding.enabled:
+        return False
+    setup = int(getattr(binding, "setup", 0) or 0)
+    return setup == 0 or (setup == profile.active_setup and setup in profile.setups)
+
+
 @dataclass
 class HandleResult:
     suppress: bool
@@ -84,6 +92,22 @@ class _TapHold:
     at: float
     state: str = "pending"
     keys: tuple[str, ...] = ()
+
+
+@dataclass
+class _SetupHold:
+    """A number key 1-9 held down; at setup_hold_seconds it switches the setup.
+
+    The key itself is never swallowed or delayed: only the time is watched.
+    """
+
+    key: str
+    at: float
+    profile_id: str
+    done: bool = False
+
+
+SETUP_KEYS = frozenset("123456789")
 
 
 @dataclass
@@ -122,6 +146,8 @@ class InputDetector:
         # True when an active binding uses the Copilot key (or Caps Lock).
         self.copilot_bound = False
         self.caps_bound = False
+        # Number key being timed for a setup switch (None when no hold is running).
+        self.setup_hold: _SetupHold | None = None
 
     def set_enabled(self, enabled: bool) -> list[Effect]:
         enabled = bool(enabled)
@@ -157,6 +183,7 @@ class InputDetector:
         self.dance = None
         self.leader_until = None
         self.capture = False
+        self.setup_hold = None
         return effects
 
     def snapshot_state(self) -> dict:
@@ -233,6 +260,7 @@ class InputDetector:
             down.consumed = True
         self.dance = None
         self.leader_until = None
+        self.setup_hold = None
         effects.append(Effect(kind="log", message=f"Profile → {active.name}"))
         return effects
 
@@ -308,6 +336,8 @@ class InputDetector:
             result = self._maybe_mask(name, self._press(name, now))
         else:
             result = self._release(name, now)
+        if pressed:
+            self._track_setup_press(name, now, already_down)
         if self.paused:
             return result
         if output_busy and not result.suppress and not (pressed and already_down):
@@ -345,6 +375,7 @@ class InputDetector:
         if self.leader_until is not None and elapsed_ms(self.leader_until, now) >= 0:
             self.leader_until = None
             effects.append(Effect(kind="log", message="Leader window timed out."))
+        effects.extend(self._check_setup_hold(now))
         effects.extend(self._expire_stuck(now))
         return effects
 
@@ -464,6 +495,8 @@ class InputDetector:
         return self._finish(key, now, HandleResult(False, pending))
 
     def _release(self, key: str, now: float) -> HandleResult:
+        if self.setup_hold is not None and self.setup_hold.key == key:
+            self.setup_hold = None
         clicking = self.autoclick_keys.pop(key, None)
         result = self._release_key(key, now)
         if clicking is not None:
@@ -785,6 +818,55 @@ class InputDetector:
         self.right_alt = False
         self.autoclick_keys.clear()
         self.tap_holds.clear()
+        self.setup_hold = None
+
+    # --- setups -----------------------------------------------------------
+
+    def _track_setup_press(self, key: str, now: float, repeat: bool) -> None:
+        if repeat:
+            return  # auto-repeat keeps the original start time
+        if not self.enabled or self.paused or self.capture:
+            self.setup_hold = None
+            return
+        if key in SETUP_KEYS and not self.modifiers and self._setup_hold_ms() > 0:
+            self.setup_hold = _SetupHold(key=key, at=now, profile_id=self.active_id)
+
+    def _setup_hold_ms(self) -> int:
+        try:
+            return max(0, int(getattr(self.config, "setup_hold_seconds", 8))) * 1000
+        except (TypeError, ValueError):
+            return 8000
+
+    def _check_setup_hold(self, now: float) -> list[Effect]:
+        hold = self.setup_hold
+        if hold is None or hold.done:
+            return []
+        limit = self._setup_hold_ms()
+        if limit <= 0 or hold.profile_id != self.active_id:
+            self.setup_hold = None
+            return []
+        if elapsed_ms(hold.at, now) < limit:
+            return []
+        hold.done = True  # once per press, however long it stays down
+        return self.switch_setup(int(hold.key))
+
+    def switch_setup(self, number: int) -> list[Effect]:
+        """Make setup `number` active in the current profile. Unknown numbers are ignored."""
+        profile = self.active
+        if profile is None or int(number) not in profile.setups:
+            return []
+        label = profile.setup_label(number)
+        if profile.active_setup == int(number):
+            return [Effect(kind="setup", message=label, key=profile.id)]
+        profile.active_setup = int(number)
+        effects = self._flush_held_characters()
+        for down in self.held.values():
+            down.consumed = True
+        self.tap_holds.clear()
+        self.dance = None
+        self._reindex()
+        effects.append(Effect(kind="setup", message=label, key=profile.id))
+        return effects
 
     # --- tap / hold (v1.3.5) ----------------------------------------------
 
@@ -869,9 +951,9 @@ class InputDetector:
         global_profile = self.global_profile
         active = self.active
         if global_profile is not None:
-            bindings.extend(binding for binding in global_profile.bindings if binding.enabled)
+            bindings.extend(binding for binding in global_profile.bindings if _live(binding, global_profile))
         if active is not None and (global_profile is None or active.id != global_profile.id):
-            overlay = [binding for binding in active.bindings if binding.enabled]
+            overlay = [binding for binding in active.bindings if _live(binding, active)]
             overlay_sigs = {binding.signature() for binding in overlay}
             bindings = [binding for binding in bindings if binding.signature() not in overlay_sigs]
             bindings.extend(overlay)
