@@ -465,6 +465,6 @@ def test_version_flag_prints_and_writes_the_version(tmp_path, capsys):
 
     out = tmp_path / "v.txt"
     assert main.main(["--version", "--out", str(out)]) == 0
-    assert __version__ == "1.3.6"
-    assert out.read_text(encoding="utf-8").strip() == "1.3.6"
-    assert "1.3.6" in capsys.readouterr().out
+    assert __version__ == "1.3.7"
+    assert out.read_text(encoding="utf-8").strip() == "1.3.7"
+    assert "1.3.7" in capsys.readouterr().out
