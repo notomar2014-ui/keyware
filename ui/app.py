@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import queue
+import re
 import sys
 import threading
 import time
@@ -16,7 +17,11 @@ from engine import __version__
 DONATE_URL = "https://ko-fi.com/keyware_donate"
 from engine.keys import format_keys, parse_key_expression
 from engine.models import (
+    parse_setup_text,
+    setup_text,
+    APP_RULE_LABELS,
     AUTOCLICK_DEFAULT_CPS,
+    parse_app_rules,
     AUTOCLICK_MAX_CPS,
     AUTOCLICK_MIN_CPS,
     Action,
@@ -449,10 +454,13 @@ class KeywareApp(ctk.CTk):
         self.profile_processes.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 6))
         self.profile_enabled = ctk.CTkSwitch(editor, text="Enabled")
         self.profile_enabled.grid(row=2, column=0, columnspan=2, sticky="w", pady=(0, 6))
+        self.profile_setups = ctk.CTkEntry(editor, placeholder_text="Setups: 1 Elytra, 2 Spear")
+        self.profile_setups.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        Tooltip(self.profile_setups, "Optional. Hold the number key to switch setups.")
         self.profile_save = self._ghost(editor, "Save", self._save_profile, width=100)
-        self.profile_save.grid(row=3, column=0, sticky="ew", padx=(0, 4))
+        self.profile_save.grid(row=4, column=0, sticky="ew", padx=(0, 4))
         self.profile_delete = self._ghost(editor, "Delete", self._delete_profile, width=100)
-        self.profile_delete.grid(row=3, column=1, sticky="ew")
+        self.profile_delete.grid(row=4, column=1, sticky="ew")
 
         center = ctk.CTkFrame(body)
         center.grid(row=0, column=1, sticky="nsew", padx=(0, 10))
@@ -488,8 +496,14 @@ class KeywareApp(ctk.CTk):
         self.form_title.grid(row=0, column=0, sticky="w")
         self._build_mode_toggle(title_row).grid(row=0, column=1, sticky="e")
 
-        self.label = ctk.CTkEntry(form, placeholder_text="Label, optional")
-        self.label.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        label_row = ctk.CTkFrame(form, fg_color="transparent", border_width=0)
+        label_row.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        label_row.grid_columnconfigure(0, weight=1)
+        self.label = ctk.CTkEntry(label_row, placeholder_text="Label, optional")
+        self.label.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        self.setup_entry = ctk.CTkEntry(label_row, width=84, placeholder_text="Setup #")
+        self.setup_entry.grid(row=0, column=1)
+        Tooltip(self.setup_entry, "Blank = always on. 1-9 = only in that setup of this profile.")
 
         trigger_row = ctk.CTkFrame(form, fg_color="transparent", border_width=0)
         trigger_row.grid(row=2, column=0, sticky="ew", pady=(0, 8))
@@ -596,6 +610,7 @@ class KeywareApp(ctk.CTk):
         self._ghost(self.macro_box, "Add step", self._add_macro_step).grid(row=2, column=0, sticky="w", pady=(6, 0))
         self._build_autoclick(form)
         self._build_ai_panel(form)
+        self._build_app_rules(form)
 
         self.form_error = ctk.CTkLabel(form, text="", text_color=INK, anchor="w", justify="left", wraplength=420)
         self.form_error.grid(row=12, column=0, sticky="ew", pady=(0, 8))
@@ -608,6 +623,73 @@ class KeywareApp(ctk.CTk):
             buttons, text="Replace it", height=36, fg_color=OFF_RED, hover_color=("#991b1b", "#ef4444"),
             text_color="#ffffff", command=lambda: self._save_binding(replace=True),
         )
+
+    # --- Per-app rules ------------------------------------------------------
+    def _build_app_rules(self, form) -> None:
+        box = ctk.CTkFrame(form, fg_color=CARD, border_width=1, border_color=LINE, corner_radius=10)
+        box.grid(row=11, column=0, sticky="ew", pady=(0, 8))
+        box.grid_columnconfigure(0, weight=1)
+        self.app_rules_box = box
+        ctk.CTkLabel(box, text="PER-APP RULES", text_color=MUTED, font=self._font(11), anchor="w").grid(
+            row=0, column=0, sticky="w", padx=12, pady=(10, 0))
+        ctk.CTkLabel(box, text="Default for all other apps: Keyware only", text_color=MUTED, font=self._font(12),
+                     anchor="w").grid(row=1, column=0, sticky="w", padx=12, pady=(0, 6))
+        self.app_rule_list = ctk.CTkFrame(box, fg_color="transparent", border_width=0)
+        self.app_rule_list.grid(row=2, column=0, sticky="ew", padx=12)
+        self.app_rule_list.grid_columnconfigure(0, weight=1)
+        self._ghost(box, "+ Add app", lambda: self._add_app_rule("", "keyware")).grid(
+            row=3, column=0, sticky="w", padx=12, pady=(6, 0))
+        ctk.CTkLabel(box, text="Match by exe name. App only: the app's own shortcut works. Both: run the action and pass the key.",
+                     text_color=MUTED, font=self._font(11), anchor="w", justify="left", wraplength=360).grid(
+            row=4, column=0, sticky="w", padx=12, pady=(4, 10))
+        self._app_rule_rows: list = []
+
+    def _add_app_rule(self, app: str, mode: str) -> None:
+        row = ctk.CTkFrame(self.app_rule_list, fg_color="transparent", border_width=0)
+        row.grid(row=len(self._app_rule_rows), column=0, sticky="ew", pady=(0, 6))
+        row.grid_columnconfigure(0, weight=1)
+        entry = ctk.CTkEntry(row, placeholder_text="Cursor.exe")
+        entry.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        if app:
+            entry.insert(0, app)
+        menu = ctk.CTkOptionMenu(row, values=list(APP_RULE_LABELS.values()), width=130)
+        menu.set(APP_RULE_LABELS.get(mode, APP_RULE_LABELS["keyware"]))
+        menu.grid(row=0, column=1, padx=(0, 6))
+        item = (row, entry, menu)
+        ctk.CTkButton(row, text="x", width=28, height=28, fg_color="transparent", border_width=1, border_color=LINE,
+                      text_color=MUTED, hover_color=LINE, command=lambda: self._remove_app_rule(item)).grid(row=0, column=2)
+        self._app_rule_rows.append(item)
+
+    def _remove_app_rule(self, item) -> None:
+        if item in self._app_rule_rows:
+            self._app_rule_rows.remove(item)
+            item[0].destroy()
+            for index, (row, _entry, _menu) in enumerate(self._app_rule_rows):
+                row.grid(row=index, column=0, sticky="ew", pady=(0, 6))
+
+    def _set_app_rules(self, rules: dict) -> None:
+        for item in list(self._app_rule_rows):
+            item[0].destroy()
+        self._app_rule_rows = []
+        for app, mode in (rules or {}).items():
+            self._add_app_rule(app, mode)
+
+    def _collect_setup(self) -> int:
+        raw = self.setup_entry.get().strip()
+        if not raw:
+            return 0
+        if not re.fullmatch(r"[1-9]", raw):
+            raise ValueError("Setup is a number 1-9, or blank for always on.")
+        return int(raw)
+
+    def _collect_app_rules(self) -> dict:
+        by_label = {label: mode for mode, label in APP_RULE_LABELS.items()}
+        rules: dict = {}
+        for _row, entry, menu in self._app_rule_rows:
+            app = entry.get().strip()
+            if app:
+                rules[app] = by_label.get(menu.get(), "keyware")
+        return parse_app_rules(rules)
 
     # --- Auto-click fields -------------------------------------------------
 
@@ -744,6 +826,32 @@ class KeywareApp(ctk.CTk):
             except Exception:
                 pass
         self._undo_after = self.after(UNDO_SECONDS * 1000, self._expire_undo)
+
+    def _flash(self, text: str, ms: int = 1800) -> None:
+        """Small always-on-top note near the bottom of the screen. Takes no focus, never blocks."""
+        try:
+            import tkinter as tk
+
+            old = getattr(self, "_flash_win", None)
+            if old is not None and old.winfo_exists():
+                old.destroy()
+            win = tk.Toplevel(self)
+            win.overrideredirect(True)
+            win.attributes("-topmost", True)
+            try:
+                win.attributes("-alpha", 0.92)
+            except Exception:
+                pass
+            tk.Label(win, text=text, bg="#18181b", fg="#fafafa", font=("Segoe UI", 12, "bold"),
+                     padx=16, pady=8).pack()
+            win.update_idletasks()
+            x = (win.winfo_screenwidth() - win.winfo_reqwidth()) // 2
+            y = win.winfo_screenheight() - win.winfo_reqheight() - 120
+            win.geometry(f"+{x}+{y}")
+            self._flash_win = win
+            self.after(ms, lambda: win.winfo_exists() and win.destroy())
+        except Exception:
+            pass
 
     def _hide_toast(self) -> None:
         self.toast.place_forget()
@@ -1216,11 +1324,20 @@ class KeywareApp(ctk.CTk):
             here = getattr(self.service.config.profile_by_id(self.selected_id), "name", "Global")
             notes.insert(0, f"No {proposal.profile_name} profile yet, so this goes in {here}. Add the profile first for app-only.")
 
+        from assist.ai_binder import merge_rules_proposal
+
         binding = proposal.binding
+        merged = merge_rules_proposal(binding, self.service.bindings(self.selected_id))
         self._stop_recording(cancel=True)
         self._hide_conflict()
         self._editing_id = None
-        self.form_title.configure(text="New binding")
+        if merged is not None:
+            binding = merged
+            proposal.binding = merged
+            proposal.merged_into = merged.id
+            proposal.label = proposal.label or merged.label
+        self._set_app_rules(binding.app_rules)
+        self.form_title.configure(text="Edit binding" if merged is not None else "New binding")
         self._set_entry(self.label, proposal.label)
         self._set_entry(self.trigger, format_keys(binding.keys))
         self.mode.set(_mode_label(binding))
@@ -1232,6 +1349,7 @@ class KeywareApp(ctk.CTk):
         self._show_action_fields()
         self._update_key_hint(binding.keys)
         self.form_error.configure(text="")
+        self._editing_id = merged.id if merged is not None else None
         self._ai_proposal = proposal
 
         for child in self.ai_card_rows.winfo_children():
@@ -1354,14 +1472,28 @@ class KeywareApp(ctk.CTk):
         self.startup_switch.grid(row=2, column=0, sticky="w", pady=(0, 8))
         if self.service.config.start_with_windows:
             self.startup_switch.select()
+        toggle_row = ctk.CTkFrame(box, fg_color="transparent", border_width=0)
+        toggle_row.grid(row=3, column=0, sticky="ew", pady=(0, 8))
+        toggle_row.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(toggle_row, text="On/off shortcut", font=self._font(13, "bold"), anchor="w").grid(
+            row=0, column=0, sticky="w", padx=(0, 8))
+        self.toggle_entry = ctk.CTkEntry(toggle_row, placeholder_text="Click, then press the keys")
+        self.toggle_entry.grid(row=0, column=1, sticky="ew", padx=(0, 8))
+        self._recorder_field(self.toggle_entry, "toggle")
+        self.toggle_entry.insert(0, self.service.toggle_hotkey_text())
+        self._ghost(toggle_row, "Save", self._save_toggle_hotkey).grid(row=0, column=2)
+        ctk.CTkLabel(toggle_row, text="Setup hold (s)", font=self._font(13, "bold"), anchor="w").grid(
+            row=1, column=0, sticky="w", padx=(0, 8), pady=(6, 0))
+        self.setup_hold_entry = ctk.CTkEntry(toggle_row, width=60)
+        self.setup_hold_entry.grid(row=1, column=1, sticky="w", pady=(6, 0))
+        self.setup_hold_entry.insert(0, str(self.service.config.setup_hold_seconds))
+        self._ghost(toggle_row, "Save", self._save_setup_hold).grid(row=1, column=2, pady=(6, 0))
         ctk.CTkLabel(
-            box,
-            text="Pause with Ctrl + Alt + F12. The tray icon switches to a pause mark.",
-            text_color=MUTED,
-            font=self._font(12),
-            wraplength=360,
-            justify="left",
-        ).grid(row=3, column=0, sticky="ew", pady=(0, 8))
+            toggle_row,
+            text="The shortcut turns Keyware off and on (keys pass through while off). "
+                 "Hold a number key 1-9 that long to switch the profile's setup. 0 turns it off.",
+            text_color=MUTED, font=self._font(12), wraplength=360, justify="left",
+        ).grid(row=2, column=0, columnspan=3, sticky="ew", pady=(4, 0))
         ctk.CTkLabel(box, text="Leader key", font=self._font(13, "bold"), anchor="w").grid(row=4, column=0, sticky="w")
         ctk.CTkLabel(
             box,
@@ -1805,6 +1937,7 @@ class KeywareApp(ctk.CTk):
             profile = self.service.config.global_profile()
         self.profile_name.delete(0, "end")
         self.profile_name.insert(0, profile.name)
+        self._set_entry(self.profile_setups, setup_text(profile.setups))
         self.profile_processes.configure(state="normal")
         self.profile_processes.delete(0, "end")
         if profile.is_global:
@@ -1825,12 +1958,14 @@ class KeywareApp(ctk.CTk):
     def _save_profile(self) -> None:
         try:
             processes = [part.strip() for part in self.profile_processes.get().split(",")]
+            setups = parse_setup_text(self.profile_setups.get())
             self.service.update_profile(
                 self.selected_id,
                 self.profile_name.get(),
                 processes,
                 bool(self.profile_enabled.get()),
             )
+            self.service.set_profile_setups(self.selected_id, setups)
         except ValueError as exc:
             self._show_banner(str(exc))
             return
@@ -1898,6 +2033,11 @@ class KeywareApp(ctk.CTk):
         card = ctk.CTkFrame(self.binding_list)
         card.grid_columnconfigure(0, weight=1)
         title = trigger_text(binding, self.service.config.leader_key)
+        if binding.setup:
+            owner = self.service.config.profile_by_id(self.selected_id)
+            name = owner.setups.get(binding.setup, "missing") if owner else ""
+            live = owner is not None and owner.active_setup == binding.setup
+            title += f"  ·  Setup {binding.setup} {name}" + ("" if live else " (inactive)")
         ctk.CTkLabel(card, text=title, font=self._font(14, "bold"), anchor="w").grid(row=0, column=0, sticky="w", padx=12, pady=(10, 0))
         toggle = ctk.CTkSwitch(card, text="", width=40, command=lambda b=binding: self._toggle_binding(b, toggle))
         if binding.enabled:
@@ -1946,8 +2086,10 @@ class KeywareApp(ctk.CTk):
             self._set_binder_mode("Manual")
         self._stop_recording(cancel=True)
         self._editing_id = binding.id
+        self._set_app_rules(binding.app_rules)
         self.form_title.configure(text="Edit binding")
         self._set_entry(self.label, binding.label)
+        self._set_entry(self.setup_entry, str(binding.setup) if binding.setup else "")
         self._set_entry(self.trigger, format_keys(binding.keys))
         self.mode.set(_mode_label(binding))
         self._on_mode(self.mode.get())
@@ -2350,7 +2492,7 @@ class KeywareApp(ctk.CTk):
             self.capture_button.configure(text="Capture")
 
     def _note_for(self, kind: str, text: str) -> None:
-        if kind == "leader":
+        if kind in ("leader", "toggle"):
             self.settings_note.configure(text=text)
         else:
             self.form_error.configure(text=text)
@@ -2454,6 +2596,8 @@ class KeywareApp(ctk.CTk):
                 taps=taps,
                 label=self.label.get().strip(),
                 action=self._collect_action(),
+                app_rules=self._collect_app_rules(),
+                setup=self._collect_setup(),
             )
             if mode == "hold":
                 binding.tap_action = self._collect_tap_action()
@@ -2630,10 +2774,11 @@ class KeywareApp(ctk.CTk):
 
     def _clear_form(self) -> None:
         self._stop_recording(cancel=True)
+        self._set_app_rules({})
         self._hide_conflict()
         self._editing_id = None
         self.form_title.configure(text="New binding")
-        for entry in (self.label, self.trigger, self.url, self.app_path, self.combo, self.app_args, self.app_fallback,
+        for entry in (self.label, self.setup_entry, self.trigger, self.url, self.app_path, self.combo, self.app_args, self.app_fallback,
                       self.path_entry, self.command_entry, self.play_query):
             entry.delete(0, "end")
         self._set_entry(self.media_count, "1")
@@ -2665,6 +2810,23 @@ class KeywareApp(ctk.CTk):
     def _on_dry_run(self) -> None:
         self.service.set_dry_run(bool(self.dry_switch.get()))
         self.settings_note.configure(text="Dry run on." if self.service.config.dry_run else "Dry run off.")
+
+    def _save_toggle_hotkey(self) -> None:
+        try:
+            self.service.set_pause_hotkey(parse_key_expression(self.toggle_entry.get().strip()))
+        except ValueError as exc:
+            self.settings_note.configure(text=str(exc))
+            return
+        self._set_entry(self.toggle_entry, self.service.toggle_hotkey_text())
+        self.settings_note.configure(text=f"On/off shortcut: {self.service.toggle_hotkey_text()}.")
+
+    def _save_setup_hold(self) -> None:
+        try:
+            self.service.set_setup_hold_seconds(int(self.setup_hold_entry.get().strip() or "8"))
+        except ValueError as exc:
+            self.settings_note.configure(text=str(exc) if "Use" in str(exc) else "Enter whole seconds, e.g. 8.")
+            return
+        self.settings_note.configure(text=f"Setup hold: {self.service.config.setup_hold_seconds} s.")
 
     def _save_leader(self) -> None:
         try:
@@ -2769,6 +2931,10 @@ class KeywareApp(ctk.CTk):
             elif message.kind == "pause":
                 self._append(message.text)
                 self._sync_status()
+            elif message.kind == "toast":
+                self._flash(message.text)
+                if self.selected_id:
+                    self._refresh_bindings()
             elif message.text:
                 self._append(message.text)
 

@@ -79,6 +79,9 @@ def find_conflicts(candidate: Binding, existing: list[Binding], leader_key: str 
     for item in existing:
         if item.id == candidate.id or not item.enabled:
             continue
+        a, b = int(getattr(candidate, "setup", 0) or 0), int(getattr(item, "setup", 0) or 0)
+        if a and b and a != b:
+            continue  # different setups are never active together
         if trigger_slot(item) == slot and not _hold_tiers(candidate, item):
             reason = f"{_what(candidate, leader_key)} is already used by {_name(item, leader_key)}. One trigger can only do one thing."
             found.append(Conflict(binding=item, reason=reason))

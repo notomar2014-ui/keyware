@@ -21,14 +21,15 @@ from engine.config_store import ConfigStore
 from engine.context_tracker import ContextTracker
 from engine.detector import Effect, InputDetector
 from engine.hook_engine import HookUnavailable
-from engine.models import Binding, Profile, new_id, validate_binding, validate_leader_key
+from engine.keys import MODIFIERS, canonicalize, format_keys
+from engine.models import DEFAULT_PAUSE_HOTKEY, Binding, Profile, new_id, validate_binding, validate_leader_key
 from engine.physical import GuardedInjector, PhysicalKeys
-from engine.profiles import match_profile, process_basename
+from engine.profiles import app_rule_mode, apply_app_rules, match_profile, process_basename
 from engine.session import SessionMonitor
 from engine.startup import StartupManager
 from engine.watchdog import decide_hook
 from engine.hook_health import SilentHookDetector
-from engine import HOLD_TICK_SECONDS
+from engine import HOLD_TICK_SECONDS, PANIC_KEYS
 
 
 @dataclass
@@ -320,6 +321,11 @@ class KeywareService:
             self._lock.release()
         effects = result.effects
         suppress = result.suppress
+        if any(effect.kind == "fire" and effect.binding_id for effect in effects):
+            effects, suppress, passed = self._apply_app_rules(effects, suppress)
+            if passed and pressed:
+                # The down goes to the app, so its key-up must too.
+                self._detector.swallow_release.discard(key)
         if self.config.dry_run:
             effects, logs, pause = _split_dry(effects)
             for message in logs:
@@ -332,6 +338,28 @@ class KeywareService:
         except Exception:
             self._log("Could not dispatch an input event.")
         return suppress
+
+    def _binding_rules(self, binding_id: str) -> dict[str, str]:
+        for profile in self.config.profiles:
+            for binding in profile.bindings:
+                if binding.id == binding_id:
+                    return binding.app_rules
+        return {}
+
+    def _apply_app_rules(self, effects: list[Effect], suppress: bool):
+        """Per-app rules (keyware / app / both) for the bindings that just fired."""
+        rules = {e.binding_id: self._binding_rules(e.binding_id) for e in effects if e.kind == "fire" and e.binding_id}
+        if not any(rules.values()):
+            return effects, suppress, False
+        name = self.foreground_name
+        if self.context is not None:
+            # Fresh read at key time (one OpenProcess call, only for bindings with rules);
+            # the 500 ms cache could still name the previous window after an Alt+Tab.
+            try:
+                name = process_basename(self.context.read()) or name
+            except Exception:
+                pass
+        return apply_app_rules(effects, suppress, lambda binding_id: app_rule_mode(rules.get(binding_id), name))
 
     def tick(self, now: float | None = None) -> None:
         if self._recorder is not None:
@@ -455,6 +483,7 @@ class KeywareService:
                 self._detector.set_paused(False)
             self._log("Resumed.")
             self._put(UiMessage(kind="pause", text="Resumed."))
+            self._put(UiMessage(kind="toast", text="Keyware on"))
             return
         self.paused = True
         self.clicker.stop_all("paused")
@@ -463,8 +492,72 @@ class KeywareService:
         with self._lock:
             effects = self._detector.set_paused(True)
         self._dispatch(effects, from_hook=False)
-        self._log("Paused. The hook stays installed. Ctrl + Alt + F12 resumes.")
+        self._log(f"Paused. The hook stays installed. {self.toggle_hotkey_text()} resumes.")
         self._put(UiMessage(kind="pause", text="Paused. The hook stays installed."))
+        self._put(UiMessage(kind="toast", text="Keyware off"))
+
+    def toggle_hotkey_text(self) -> str:
+        return format_keys(list(self.config.pause_hotkey or DEFAULT_PAUSE_HOTKEY))
+
+    def set_pause_hotkey(self, keys: list[str]) -> None:
+        """The on/off shortcut (the pause chord). Needs a modifier and must not be the panic chord."""
+        cleaned: list[str] = []
+        for name in keys:
+            canonical = canonicalize(str(name))
+            if canonical is None:
+                raise ValueError(f"Unknown key: {name}")
+            if canonical not in cleaned:
+                cleaned.append(canonical)
+        if not cleaned or not any(name in MODIFIERS for name in cleaned) or all(name in MODIFIERS for name in cleaned):
+            raise ValueError("Use at least one modifier and one key, e.g. Ctrl + Alt + F12.")
+        if set(cleaned) == set(PANIC_KEYS):
+            raise ValueError("That is the panic chord. Pick another shortcut.")
+        with self._lock:
+            self.config.pause_hotkey = cleaned
+            self._detector.config = self.config
+        self._save()
+        self._log(f"On/off shortcut set to {format_keys(cleaned)}.")
+
+    def set_setup_hold_seconds(self, seconds: int) -> None:
+        value = int(seconds)
+        if value < 0 or value > 60:
+            raise ValueError("Use 1-60 seconds, or 0 to turn setup switching off.")
+        with self._lock:
+            self.config.setup_hold_seconds = value
+            self._detector.config = self.config
+        self._save()
+
+    def set_profile_setups(self, profile_id: str, setups: dict[int, str]) -> None:
+        """Replace a profile's numbered setups. Bindings of a removed setup stay but are inactive."""
+        from engine.models import parse_setups
+
+        cleaned = parse_setups({str(k): v for k, v in setups.items()})
+        with self._lock:
+            profile = self._require(profile_id)
+            profile.setups = cleaned
+            if profile.active_setup not in cleaned:
+                profile.active_setup = min(cleaned) if cleaned else 0
+        self._save_and_sync()
+
+    def set_binding_setup(self, profile_id: str, binding_id: str, setup: int) -> None:
+        number = int(setup or 0)
+        with self._lock:
+            profile = self._require(profile_id)
+            if number and number not in profile.setups:
+                raise ValueError(f"Profile {profile.name} has no setup {number}.")
+            for binding in profile.bindings:
+                if binding.id == binding_id:
+                    binding.setup = number
+                    break
+            else:
+                raise ValueError("That binding no longer exists.")
+        self._save_and_sync()
+
+    def switch_setup(self, number: int) -> None:
+        """Same as holding the number key (used by the UI and tests)."""
+        with self._lock:
+            effects = self._detector.switch_setup(int(number))
+        self._dispatch(effects, from_hook=False)
 
     def set_dry_run(self, enabled: bool) -> None:
         enabled = bool(enabled)
@@ -647,6 +740,7 @@ class KeywareService:
         validate_binding(binding, self.config)
         with self._lock:
             profile = self._require(profile_id)
+            _check_setup(profile, binding)
             self._check_conflicts(profile, binding, replace)
             if not binding.id:
                 binding.id = new_id("bind")
@@ -665,6 +759,7 @@ class KeywareService:
             profile = self._require(profile_id)
             if not any(item.id == binding.id for item in profile.bindings):
                 raise ValueError("That binding is no longer in the profile.")
+            _check_setup(profile, binding)
             self._check_conflicts(profile, binding, replace)
             index = next(i for i, item in enumerate(profile.bindings) if item.id == binding.id)
             profile.bindings[index] = binding
@@ -764,7 +859,7 @@ class KeywareService:
                     armed += 1
         if snap["paused"]:
             headline = "PAUSED"
-            detail = "Ctrl + Alt + F12 resumes. Keys pass through."
+            detail = f"{self.toggle_hotkey_text()} resumes. Keys pass through."
         elif snap["hook"] == "on":
             headline = "ON  ·  DRY RUN" if snap["dry_run"] else "ON"
             plural = "binding" if armed == 1 else "bindings"
@@ -1138,6 +1233,8 @@ class KeywareService:
                 self._replay("mask", "")
             elif effect.kind == "pause_toggle":
                 self.toggle_pause()
+            elif effect.kind == "setup":
+                self._on_setup_switched(effect.message)
             elif effect.kind == "audio":
                 if from_hook and not self.synchronous:
                     if not self._workers:
@@ -1429,6 +1526,22 @@ class KeywareService:
         self._dispatch(effects, from_hook=False)
         self._check_clicker()
 
+    def _on_setup_switched(self, label: str) -> None:
+        self._log(f"{label} active.")
+        self._put(UiMessage(kind="toast", text=label))
+
+        def persist() -> None:
+            try:
+                with self._lock:
+                    self._save()
+            except Exception as exc:
+                self._put(UiMessage(kind="log", text=f"Could not save the active setup: {exc}"))
+
+        if self.synchronous:
+            persist()
+        else:
+            threading.Thread(target=persist, name="keyware-setup-save", daemon=True).start()
+
     def _save(self) -> None:
         self.store.save(self.config)
         self._config_mtime = self._config_mtime_value()
@@ -1469,6 +1582,12 @@ class KeywareService:
             except queue.Empty:
                 pass
         self._ui.put(message)
+
+
+def _check_setup(profile: Profile, binding: Binding) -> None:
+    number = int(getattr(binding, "setup", 0) or 0)
+    if number and number not in profile.setups:
+        raise ValueError(f"{profile.name} has no setup {number}. Add it under the profile first.")
 
 
 def _zero_sleep(_seconds: float) -> None:

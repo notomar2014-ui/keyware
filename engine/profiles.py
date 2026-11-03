@@ -42,3 +42,39 @@ def match_profile(profiles: list[Profile], process_name: str) -> Profile:
         if any(same_process(candidate, actual) for candidate in profile.process_names):
             return profile
     return global_profile
+
+
+def app_rule_mode(rules: dict[str, str] | None, process_name: str) -> str:
+    """The per-app rule for the foreground exe. Empty, unknown or unlisted -> "keyware"."""
+    actual = normalize_process(process_name)
+    if not rules or not actual:
+        return "keyware"
+    for app, mode in rules.items():
+        if same_process(app, actual):
+            return mode if mode in ("keyware", "app", "both") else "keyware"
+    return "keyware"
+
+
+def apply_app_rules(effects: list, suppress: bool, mode_for) -> tuple[list, bool, bool]:
+    """Filter detector effects by per-app rules.
+
+    mode_for(binding_id) -> "keyware" | "app" | "both". "app" drops the fire (and its
+    log/audio), "both" keeps the fire; either passes the key through. Returns
+    (effects, suppress, passed_through).
+    """
+    out: list = []
+    passed = False
+    skip_log = ""
+    for effect in effects:
+        if effect.kind == "fire" and effect.binding_id:
+            mode = mode_for(effect.binding_id)
+            if mode in ("app", "both"):
+                passed = True
+            if mode == "app":
+                skip_log = effect.message  # the matching "Fired ..." log
+                continue
+        if skip_log and effect.kind == "log" and effect.message == skip_log:
+            skip_log = ""
+            continue
+        out.append(effect)
+    return out, (False if passed else suppress), passed
