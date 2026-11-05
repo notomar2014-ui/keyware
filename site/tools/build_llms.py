@@ -8,7 +8,7 @@ import re
 from bs4 import BeautifulSoup, NavigableString
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BASE = "https://keyware-app.vercel.app"
+BASE = "https://keyware.site"
 
 
 def text_of(node) -> str:

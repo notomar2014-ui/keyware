@@ -111,4 +111,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://keyware-app.vercel.app/sitemap.xml
+Sitemap: https://keyware.site/sitemap.xml

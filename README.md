@@ -7,9 +7,10 @@
 <p align="center"><strong>Make your keys your own.</strong></p>
 
 <p align="center">
-  A free Windows key remapper and macro engine with plain-English AI bindings.<br>
+  Remap any key or mouse button, build macros and hotkeys, and set per-app shortcuts, just by describing them in plain English.<br>
   <a href="https://keyware.site/download">Download for Windows</a> ·
   <a href="https://keyware.site/guide">Guide</a> ·
+  <a href="https://keyware.site/whats-new">What's new</a> ·
   <a href="https://keyware.site/privacy">Privacy</a> ·
   <a href="https://ko-fi.com/keyware_donate">Donate</a> ·
   <a href="LICENSE">MIT License</a>
@@ -34,6 +35,19 @@ bindings you review before saving. Nothing is ever saved automatically.
 - **Starts with Windows by default**, silently in the system tray (no window, hotkeys working). Turn it off in Settings. Closing the window keeps Keyware in the tray; **Quit** in the tray fully closes it.
 - **The hook engine never touches the network.** The only web requests are the
   optional Text-mode AI call and the song/video lookup a *Play* action makes.
+
+## New in 1.3.7
+
+- **Setups 1-9.** Keep several sets of bindings in one profile (for example in
+  Minecraft: Setup 1 Elytra, Setup 2 Spear). Hold a number key for 8 seconds to
+  switch; a quick tap still types the number. A toast shows "Setup 2: Spear".
+  The hold time is configurable and each profile remembers its setup.
+- **One-key on/off.** Ctrl + Alt + F12 (change it in Settings) turns Keyware off
+  and on, with a toast each time. While off, every key passes straight through.
+- **Per-app shortcut rules.** Make a binding only fire in the apps you choose.
+
+1.3.6 added binding any key or mouse button and a Donate button.
+See the full list at [keyware.site/whats-new](https://keyware.site/whats-new).
 
 ## Screenshots
 

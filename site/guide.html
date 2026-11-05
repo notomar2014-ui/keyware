@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Keyware Guide: how to use Keyware</title>
+  <title>How to use Keyware (Keyware - Key Remapper for Windows) · Guide</title>
   <meta name="description" content="The complete Keyware guide: getting started, triggers, tap and hold, Copilot key and Caps Lock, macropads, profiles, Manual mode actions, AI Text mode, conflicts, deleting with Undo, pause and panic stop, use cases, FAQ and troubleshooting.">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="color-scheme" content="dark">
-  <link rel="canonical" href="https://keyware-app.vercel.app/guide">
+  <link rel="canonical" href="https://keyware.site/guide">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <!-- Search engine verification: paste the codes from Google Search Console and Bing Webmaster Tools, then uncomment.
   <meta name="google-site-verification" content="PASTE_GOOGLE_CODE">
@@ -15,18 +15,18 @@
   -->
   <link rel="alternate" type="text/plain" href="/llms.txt" title="Keyware for AI assistants">
   <meta property="og:type" content="article">
-  <meta property="og:site_name" content="Keyware">
-  <meta property="og:title" content="Keyware Guide: how to use Keyware">
+  <meta property="og:site_name" content="Keyware - Key Remapper for Windows">
+  <meta property="og:title" content="How to use Keyware - Key Remapper for Windows">
   <meta property="og:description" content="Everything you need to make your keys your own: triggers, profiles, actions, AI Text mode, use cases and troubleshooting.">
-  <meta property="og:url" content="https://keyware-app.vercel.app/guide">
-  <meta property="og:image" content="https://keyware-app.vercel.app/og.png">
+  <meta property="og:url" content="https://keyware.site/guide">
+  <meta property="og:image" content="https://keyware.site/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Keyware logo and tagline: Make your keys your own">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Keyware Guide: how to use Keyware">
+  <meta name="twitter:title" content="How to use Keyware - Key Remapper for Windows">
   <meta name="twitter:description" content="Triggers, tap and hold, Copilot key, Caps Lock, macropads, profiles, actions and AI Text mode.">
-  <meta name="twitter:image" content="https://keyware-app.vercel.app/og.png">
+  <meta name="twitter:image" content="https://keyware.site/og.png">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/assets/img/logo-small.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -40,13 +40,13 @@
     {
       "@type": "TechArticle",
       "headline": "Keyware Guide: how to use Keyware",
-      "url": "https://keyware-app.vercel.app/guide",
+      "url": "https://keyware.site/guide",
       "dateModified": "2026-10-31",
       "inLanguage": "en",
       "about": {
-        "@id": "https://keyware-app.vercel.app/#app"
+        "@id": "https://keyware.site/#app"
       },
-      "image": "https://keyware-app.vercel.app/og.png"
+      "image": "https://keyware.site/og.png"
     },
     {
       "@type": "BreadcrumbList",
@@ -55,13 +55,13 @@
           "@type": "ListItem",
           "position": 1,
           "name": "Keyware",
-          "item": "https://keyware-app.vercel.app/"
+          "item": "https://keyware.site/"
         },
         {
           "@type": "ListItem",
           "position": 2,
           "name": "Guide",
-          "item": "https://keyware-app.vercel.app/guide"
+          "item": "https://keyware.site/guide"
         }
       ]
     }
@@ -85,7 +85,7 @@
         <a href="/guide" aria-current="page">Guide</a>
         <a href="#faq" class="hide-sm">FAQ</a>
       </nav>
-      <a class="btn btn--sm btn--light" href="/download/Keyware.exe" data-download download>Download</a>
+      <a class="btn btn--sm btn--light" href="/thanks" data-download>Download</a>
     </div>
   </header>
 
@@ -129,6 +129,9 @@
         <li><a href="#conflicts">Conflict prevention</a></li>
         <li><a href="#delete">Delete &amp; Undo</a></li>
         <li><a href="#pause">Pause &amp; panic stop</a></li>
+        <li><a href="#on-off">Turning Keyware on and off</a></li>
+        <li><a href="#setups">Switching setups</a></li>
+        <li><a href="#per-app-rules">Per-app shortcut rules</a></li>
         <li><a href="#use-cases">Use cases</a></li>
         <li><a href="#faq">FAQ</a></li>
         <li><a href="#troubleshooting">Troubleshooting</a></li>
@@ -145,7 +148,7 @@
         <ol class="numbered">
           <li>
             <h3>Download</h3>
-            <p>Click <a href="/download/Keyware.exe" data-download download>Download for Windows</a> and save <code>Keyware.exe</code> (v<span data-version>1.3.5</span>, <span data-size>20.2 MB</span>) somewhere you'll find it again, such as your Desktop or a <code>Tools</code> folder. Keyware runs on Windows 10 and 11.</p>
+            <p>Click <a href="/thanks" data-download>Download for Windows</a> and save <code>Keyware.exe</code> (v<span data-version>1.3.7</span>, <span data-size>20.2 MB</span>) somewhere you'll find it again, such as your Desktop or a <code>Tools</code> folder. Keyware runs on Windows 10 and 11.</p>
           </li>
           <li>
             <h3>First launch: “Windows protected your PC”</h3>
@@ -219,6 +222,8 @@
           </table>
         </div>
         <p class="callout"><b>Tip.</b> Tap, Hold and multi-tap only apply when no modifier is held, so <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">P</span> still prints even if you've bound Hold <span class="kbd kbd--sm">P</span>. Turn on <em>Audio ticks at hold tiers</em> in Settings to hear when a hold has lasted long enough.</p>
+        <h3 id="any-button">Any key or mouse button (new in 1.3.6)</h3>
+        <p>A trigger can be almost anything you can press: every Windows key, the mouse wheel (up or down, also with a modifier like <span class="kbd kbd--sm">Ctrl</span> + wheel), wheel tilt left and right, and extra mouse buttons (X1 to X16). Click <em>Record</em> in the Quick binder and press the button. Keys Keyware has no name for still work and show up as a code such as <code>vk_XX</code> or <code>sc_XXX</code>.</p>
       </section>
 
       <!-- TAP VS HOLD -->
@@ -482,7 +487,7 @@
           <div class="tcard">
             <div class="tcard__keys"><span class="kbd">Ctrl</span><span class="kbd">Alt</span><span class="kbd">F12</span></div>
             <h3>Pause</h3>
-            <p>Stops all remaps instantly and lets every key through. The tray icon shows a pause mark. Press the same keys to resume. Perfect for a quick chat in a game.</p>
+            <p>Stops all remaps instantly and lets every key through. The tray icon shows a pause mark. Press the same keys to turn it back on. A small note says “Keyware off” or “Keyware on”. You can change these keys in Settings.</p>
           </div>
           <div class="tcard">
             <div class="tcard__keys"><span class="kbd">Ctrl</span><span class="kbd">Alt</span><span class="kbd">Shift</span><span class="kbd">Esc</span></div>
@@ -496,6 +501,48 @@
           </div>
         </div>
         <figure class="shot"><img src="/assets/img/guide/settings.webp" width="1128" height="792" loading="lazy" alt="Keyware Settings, opened with the gear at the top right (marked 1): Audio ticks, Dry run, Start Keyware with Windows, the pause note, Leader key, and the AI key (optional) card."><figcaption>Click the gear (1) to open Settings. Dry run, the pause shortcut and Start with Windows live here. <em>Back</em> returns to your bindings.</figcaption></figure>
+      </section>
+
+      <!-- ON / OFF -->
+      <section id="on-off" class="doc__section">
+        <p class="doc__kicker">New in 1.3.7</p>
+        <h2>Turning Keyware on and off</h2>
+        <p>Press <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">F12</span> at any time to turn Keyware off. A small note pops up saying <strong>Keyware off</strong>. While it's off, every key and mouse button works normally and no bindings run.</p>
+        <p>Press the same keys again to turn it back on. You'll see <strong>Keyware on</strong>.</p>
+        <p><strong>Use other keys:</strong> open <strong>Settings</strong> (the gear), click the <strong>On/off shortcut</strong> box, press your new keys, and click <strong>Save</strong>. Use at least one of Ctrl, Alt, Shift or Win plus one other key. It can't be the panic stop keys.</p>
+        <p>Panic stop is different: it fully lets go of the keyboard, and you turn Keyware back on from the window or tray.</p>
+      </section>
+
+      <!-- SETUPS -->
+      <section id="setups" class="doc__section">
+        <p class="doc__kicker">New in 1.3.7</p>
+        <h2>Switching setups</h2>
+        <p>A profile can have up to nine numbered <strong>setups</strong>. Each setup has its own bindings, so the same key can do one thing in one setup and something else in another. Bindings that aren't in a setup always work.</p>
+        <p><strong>Example, Minecraft:</strong> in your Minecraft profile, make <strong>1 Elytra</strong> and <strong>2 Spear</strong>. Put your flying keys in setup 1 and your fighting keys in setup 2.</p>
+        <ol>
+          <li><strong>Add setups:</strong> pick the profile, type <code>1 Elytra, 2 Spear</code> in the <strong>Setups</strong> box under its name, and click <strong>Save</strong>.</li>
+          <li><strong>Put a binding in a setup:</strong> in the Quick Binder, type the number in the <strong>Setup #</strong> box next to the label. Leave it empty for “always on”.</li>
+          <li><strong>Switch:</strong> while the game is in front, hold the number key (top row, 1 to 9) for <strong>8 seconds</strong>. A small note says, for example, <strong>Setup 2: Spear</strong>.</li>
+        </ol>
+        <ul>
+          <li>A quick tap or short hold still types the number like normal. Keyware never blocks the key, it only counts how long you hold it.</li>
+          <li>Holding a number that isn't a setup does nothing.</li>
+          <li>Keyware remembers the active setup for each profile, even after a restart.</li>
+          <li>Change the 8 seconds in <strong>Settings › Setup hold (s)</strong>. Set it to 0 to turn setup switching off.</li>
+        </ul>
+      </section>
+
+      <!-- PER-APP RULES -->
+      <section id="per-app-rules" class="doc__section">
+        <p class="doc__kicker">Per-app</p>
+        <h2>Per-app shortcut rules</h2>
+        <p>Sometimes an app already uses a shortcut you've bound. For each binding you can choose, per app, what happens:</p>
+        <ul>
+          <li><strong>Keyware</strong>: run your action and hide the key from the app (the default).</li>
+          <li><strong>App</strong>: let the app keep its own shortcut, Keyware does nothing there.</li>
+          <li><strong>Both</strong>: run your action and also pass the key to the app.</li>
+        </ul>
+        <p>Set it in the binding's app rules, or just describe it in Text mode, like <em>“Ctrl+K opens Notion, but let Cursor keep Ctrl+K”</em>.</p>
       </section>
 
       <!-- USE CASES -->
@@ -656,11 +703,11 @@
           <div class="cta__glow" aria-hidden="true"></div>
           <h2>Make your keys your own.</h2>
           <p class="lead">Free for Windows 10 and 11.</p>
-          <a class="btn btn--primary btn--lg" href="/download/Keyware.exe" data-download download>
+          <a class="btn btn--primary btn--lg" href="/thanks" data-download>
             <svg class="win" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.2 10.4 4.2v7.1H3V5.2Zm0 13.6 7.4 1v-7.1H3v6.1Zm8.2 1.1L21 21.3v-8.6h-9.8v7.2Zm0-15.8v7.2H21V2.7l-9.8 1.4Z"/></svg>
             Download for Windows
           </a>
-          <p class="hero__meta">v<span data-version>1.3.5</span><span class="sep" aria-hidden="true">·</span><span data-size>20.2 MB</span></p>
+          <p class="hero__meta">v<span data-version>1.3.7</span><span class="sep" aria-hidden="true">·</span><span data-size>20.2 MB</span></p>
         </div>
       </section>
     </main>
@@ -678,13 +725,13 @@
       <nav class="footer__links" aria-label="Footer">
         <a href="/">Home</a>
         <a href="/guide">Guide</a>
-        <a href="/download/Keyware.exe" data-download download>Download</a>
+        <a href="/thanks" data-download>Download</a>
         <a href="#faq">FAQ</a>
         <a href="/privacy">Privacy</a>
         <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>
         <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>
       </nav>
-      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.3.5</span> · Windows is a trademark of Microsoft.</p>
+      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.3.7</span> · Windows is a trademark of Microsoft.</p>
     </div>
   </footer>
 </body>

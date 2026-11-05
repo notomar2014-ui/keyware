@@ -6,14 +6,14 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
-const BASE = 'https://keyware-app.vercel.app';
+const BASE = 'https://keyware.site';
 const ldOf = (html) => [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
 
 test('home: JSON-LD SoftwareApplication is valid, free, and matches the page version', () => {
   const html = read('index.html');
   const [ld] = ldOf(html);
   const app = ld['@graph'].find((n) => n['@type'] === 'SoftwareApplication');
-  assert.equal(app.name, 'Keyware');
+  assert.match(app.name, /^Keyware/);
   assert.equal(app.offers.price, '0');
   assert.equal(app.isAccessibleForFree, true);
   assert.match(app.operatingSystem, /Windows 11/);
@@ -56,7 +56,7 @@ test('robots.txt allows search and AI crawlers, hides admin and api, and points 
 
 test('sitemap lists every public page with a lastmod', () => {
   const xml = read('sitemap.xml');
-  for (const p of ['/', '/guide', '/privacy']) assert.ok(xml.includes(`<loc>${BASE}${p}</loc><lastmod>`), p);
+  for (const p of ['/', '/guide', '/privacy', '/whats-new']) assert.ok(xml.includes(`<loc>${BASE}${p}</loc><lastmod>`), p);
 });
 
 test('llms.txt and llms-full.txt exist, follow the format, and cover the new features and every guide section', () => {
