@@ -27,5 +27,8 @@ Things we especially want to hear about:
 - a key that gets stuck or swallowed, or a way to defeat the panic chord;
 - an API key, install ID or feedback text leaking into logs, errors or responses.
 
-Download integrity: every CI build attaches `Keyware.exe.sha256` next to the exe; compare it
-with `Get-FileHash Keyware.exe -Algorithm SHA256`.
+Download integrity: every CI build attaches a `.sha256` file next to the exe
+(`Keyware.exe` for x64, `Keyware-arm64.exe` for ARM64). Compare it with
+`Get-FileHash .\Keyware.exe -Algorithm SHA256`. The website shows the x64 hash
+for the current version, and the ARM64 hash only when that file is published
+for the same version. The two hashes are not interchangeable.

@@ -79,10 +79,18 @@ Donate button. See the full list at
 
 ## Download
 
-Get the latest `Keyware.exe` from **https://keyware.site/download**.
+Get the latest 64-bit `Keyware.exe` from **https://keyware.site/download**.
 The [guide](https://keyware.site/guide)
-walks through the first setup. Windows 10 or 11, 64-bit. On ARM64 Windows the
-same exe runs under x64 emulation. There is no native ARM64 build.
+walks through the first setup. Windows 10 or 11. Most PCs use the 64-bit
+file, which also runs under emulation on ARM64 Windows.
+
+The same page lists a native ARM64 `Keyware-arm64.exe` when that build of the
+same version is attached to the GitHub release. It is a separate file, with
+its own SHA-256. PyInstaller cannot cross-compile, so the ARM64 file is built
+on GitHub's `windows-11-arm` runner.
+
+There is no Mac download. Remapping is the Windows hook described below.
+A Mac build of this code would not remap keys.
 
 ## Build from source
 
@@ -107,9 +115,12 @@ py -3 -m venv .venv
 `run.bat` creates the virtual environment and starts Keyware in one step.
 `python main.py --self-test` checks the engine without installing a hook.
 
-Every push is tested and built on `windows-latest` by GitHub Actions
-([`.github/workflows/build.yml`](.github/workflows/build.yml)); the unsigned exe is
-attached to each run as an artifact.
+Every push is tested and built by GitHub Actions
+([`.github/workflows/build.yml`](.github/workflows/build.yml)).
+`windows-latest` produces the unsigned x64 exe. `windows-11-arm` produces the
+unsigned native ARM64 exe. Each run uploads both artifacts. A push to `main`
+also attaches `Keyware-arm64.exe` to the existing GitHub release for that
+version, which is when the website offers the ARM64 download.
 
 ### Text mode and API keys
 

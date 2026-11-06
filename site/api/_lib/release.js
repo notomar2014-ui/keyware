@@ -1,8 +1,119 @@
 'use strict';
-// The release the site hands out. The exe lives under a versioned path so /download/Keyware.exe
-// can go through the counter (a real file at that path would be served before any rewrite).
+// The release the site hands out.
+//
+// x64 is the file deployed with the site at /download/<version>/Keyware.exe.
+// Its SHA-256 is the hash of that file (the same hash as the v1.3.8 GitHub
+// release asset). ARM64 is not stored in this repo. It is listed only when
+// the GitHub release for this same version has Keyware-arm64.exe and that
+// asset's digest is a SHA-256. The page and the redirect both use that digest,
+// so the hash on the page is the hash of the file the button downloads.
+
 const VERSION = '1.3.8';
-const FILE_PATH = `/download/${VERSION}/Keyware.exe`;
-// SHA-256 of the published Keyware.exe for VERSION (GitHub release v1.3.8).
-const SHA256 = '9b792c19fa2d2684dfd2d64bc252a1f0df5114084667e1a5ac930db48063bf09';
-module.exports = { VERSION, FILE_PATH, SHA256 };
+const GITHUB_REPO = 'notomar2014-ui/keyware';
+const ARM_FILE = 'Keyware-arm64.exe';
+const X64_SHA256 = '9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09';
+const X64_BYTES = 21173481;
+
+function formatSize(bytes) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+const X64 = {
+  arch: 'x64',
+  version: VERSION,
+  label: '64-bit (x64)',
+  file: 'Keyware.exe',
+  url: '/download/Keyware.exe',
+  path: `/download/${VERSION}/Keyware.exe`,
+  bytes: X64_BYTES,
+  size: formatSize(X64_BYTES),
+  sha256: X64_SHA256,
+};
+
+const FILE_PATH = X64.path;
+const ARM_PAGE = `https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${ARM_FILE}`;
+
+function publicBuild(build) {
+  return {
+    arch: build.arch,
+    version: build.version,
+    label: build.label,
+    file: build.file,
+    url: build.url,
+    bytes: build.bytes,
+    size: build.size,
+    sha256: build.sha256,
+  };
+}
+
+function armFromAsset(asset) {
+  if (!asset || asset.name !== ARM_FILE) return null;
+  if (asset.state && asset.state !== 'uploaded') return null;
+  const digest = String(asset.digest || '').match(/^sha256:([0-9a-f]{64})$/i);
+  if (!digest) return null;
+  if (asset.browser_download_url !== ARM_PAGE) return null;
+  const bytes = Number(asset.size);
+  if (!Number.isFinite(bytes) || bytes < 5_000_000) return null;
+  return {
+    arch: 'arm64',
+    version: VERSION,
+    label: 'ARM64',
+    file: ARM_FILE,
+    url: `/download/${ARM_FILE}`,
+    redirect: ARM_PAGE,
+    bytes,
+    size: formatSize(bytes),
+    sha256: digest[1].toUpperCase(),
+  };
+}
+
+let armCache = { at: 0, arm: undefined, ok: false };
+
+function resetArmCache() {
+  armCache = { at: 0, arm: undefined, ok: false };
+}
+
+async function lookupArm({ fetchImpl = globalThis.fetch, now = Date.now, cacheMs = 5 * 60 * 1000, missMs = 60 * 1000, cache } = {}) {
+  const box = cache || armCache;
+  const t = now();
+  if (box.arm !== undefined && t - box.at < (box.ok ? cacheMs : missMs)) return box.arm;
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/releases/tags/v${VERSION}`;
+  const res = await fetchImpl(url, {
+    headers: {
+      accept: 'application/vnd.github+json',
+      'user-agent': 'keyware-site',
+      'x-github-api-version': '2022-11-28',
+    },
+    signal: AbortSignal.timeout(4000),
+  });
+  if (!res.ok) {
+    box.at = t;
+    box.arm = null;
+    box.ok = false;
+    return null;
+  }
+  const data = await res.json();
+  const asset = (data.assets || []).find((item) => item && item.name === ARM_FILE);
+  const arm = armFromAsset(asset);
+  box.at = t;
+  box.arm = arm;
+  box.ok = true;
+  return arm;
+}
+
+module.exports = {
+  VERSION,
+  GITHUB_REPO,
+  ARM_FILE,
+  ARM_PAGE,
+  X64,
+  X64_SHA256,
+  X64_BYTES,
+  FILE_PATH,
+  formatSize,
+  publicBuild,
+  armFromAsset,
+  lookupArm,
+  resetArmCache,
+  SHA256: X64_SHA256,
+};

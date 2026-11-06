@@ -5,10 +5,12 @@
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11, 64-bit. A single portable Keyware.exe (about 20 MB), no installer. On ARM64 Windows that exe runs under x64 emulation. Current version: 1.3.8.
-- Download: https://keyware.site/download/Keyware.exe
+- Platform: Windows 10 and Windows 11. The download is one portable exe, no installer. Most PCs use the 64-bit (x64) file, about 20 MB. On ARM64 Windows that file runs under emulation. A native ARM64 build of the same version is listed on the home page when that file is published. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.3.8.
+- Download (x64): https://keyware.site/download/Keyware.exe
+- Download (ARM64, only when published): https://keyware.site/download/Keyware-arm64.exe
+- SHA-256 (x64 Keyware.exe 1.3.8): 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09
 - License: MIT, open source.
-- Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. Optional feedback and actions you create (such as a Play lookup) can also use the network. See https://keyware.site/privacy.
+- Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. A Play action looks up the name you entered. Feedback sends the message, email, app version and a random install ID; the server keeps a salted hash of that ID. See https://keyware.site/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
 - Copilot key: Keyware recognises the Copilot key (which sends Win+Shift+F23) as one key and can bind it to any action. Windows 11 also has a built-in option at Settings > Bluetooth & devices > Keyboard > Customize Copilot key (Search, Copilot or an app; newer updates add Right Ctrl and the Context menu key).
 - Caps Lock: can be remapped, given tap and hold actions (for example tap = Esc, hold = Ctrl) or turned off; Shift+Caps Lock still toggles capitals.
@@ -112,9 +114,9 @@ Yes. Keyware is completely free: no trial, no paid tier, no ads and no account. 
 
 Keyware runs as a normal app without admin rights and has no ads or tracking. Your bindings are stored locally in %APPDATA%\Keyware\config.json. Keys you haven't bound pass straight through to Windows, and Ctrl Alt Shift Esc switches everything off instantly.
 
-The key engine never goes online. Text mode sends the sentence you typed plus a short summary of your existing triggers and profile names (your keystrokes are not uploaded). Feedback you send from Settings includes only your message, your email and the app version. Actions you create can also use the network, such as a Play lookup. Details are in the privacy statement.
+The key engine does not record or upload what you type. Text mode sends the sentence you typed (plus a short summary of your existing triggers and profile names) so the AI can draft a binding for you to review. A Play action looks up the song or video name you entered. Feedback sends the note you write, the email you enter, the app version and a random install ID; the server keeps only a short salted hash of that ID. Details are in the privacy statement.
 
-Because the app isn't code-signed yet, Windows SmartScreen may warn you the first time. Click More info → Run anyway.
+Keyware isn't code-signed, so Windows SmartScreen may warn you when you open a new download. Click More info → Run anyway. The SHA-256 for this file is listed with the download.
 
 ### Is there a limit on Text mode?
 
@@ -130,13 +132,12 @@ Two things to know: if a game runs as administrator, Windows won't let a normal 
 
 ### How do I uninstall it?
 
-There's no installer, so there's nothing to uninstall:
+There's no installer. To remove Keyware:
 
-- In Settings, turn off Start Keyware with Windows (it is on by default).
+- In Settings, turn off Start Keyware with Windows. It is on by default. Turning it off deletes the Keyware startup entry for your Windows account. If you skip this, Windows still tries to open Keyware when you sign in.
 - Right-click the Keyware icon in the system tray and choose Quit.
-- Delete Keyware.exe.
-- Optional: to remove your settings too, press Win R, type %APPDATA%\Keyware and delete that folder.
-With Start with Windows turned off first, nothing is left behind.
+- Delete Keyware.exe. If you also downloaded the ARM64 build, delete Keyware-arm64.exe too.
+- Optional: press Win R, type %APPDATA%\Keyware and delete that folder. That removes your settings, the install ID and a saved AI key. They stay on the PC until you do.
 
 ### Can it remap the Copilot key?
 
@@ -146,7 +147,11 @@ If you only want it to open Search, Copilot or one app, Windows 11 can do that w
 
 ### Which versions of Windows are supported?
 
-Windows 10 and Windows 11, 64-bit. On ARM64 Windows this 64-bit build runs under emulation.
+Windows 10 and Windows 11. The download on this page is 64-bit (x64), which is the right file for most PCs. On ARM64 Windows that file runs under emulation. A native ARM64 build of the same version is listed beside it when that file is published. That is the build for Windows on ARM, including Copilot+ PCs.
+
+### Does Keyware work on a Mac?
+
+No. There is no Mac download, on Apple Silicon or Intel. Keyware remaps keys with a Windows keyboard and mouse hook. On a Mac this program can edit a config, but turning it on does not remap keys. A working Mac version would be a different input system, not another build of Keyware.exe.
 
 ---
 
@@ -159,11 +164,11 @@ Source: https://keyware.site/guide
 
 Keyware is a single program file. There's no installer and nothing to sign up for.
 
-- Download Click Download for Windows and save Keyware.exe (v1.3.8, 20.2 MB) somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. The download is 64-bit; on ARM64 Windows it runs under emulation.
+- Download Click Download for Windows and save Keyware.exe (v1.3.8, 20.2 MB, 64-bit). SHA-256 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09. Put it somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. On ARM64 Windows that 64-bit file runs under emulation. Use the ARM64 download on the home page when it is shown: it is the same version, with its own SHA-256. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
 
 ### Download
 
-- First launch: “Windows protected your PC” Keyware isn't code-signed yet, so Microsoft Defender SmartScreen may show a blue warning the first time you open it. Click More info, then Run anyway. You only need to do this once. Windows protected your PC Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk. More info App: Keyware.exePublisher: Unknown publisher Run anywayDon't run
+- First launch: “Windows protected your PC” Keyware isn't code-signed, so Microsoft Defender SmartScreen may show a blue warning when you open a new copy. Click More info, then Run anyway. A different download, such as a new version or the ARM64 file, can show the prompt again. Compare the SHA-256 on the download with Get-FileHash .\Keyware.exe -Algorithm SHA256 if you want to confirm the file. Windows protected your PC Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk. More info App: Keyware.exePublisher: Unknown publisher Run anywayDon't run
 
 ### First launch: “Windows protected your PC”
 
@@ -520,6 +525,10 @@ Yes, completely: no trial, no paid tier, no ads and no account.
 
 Yes, under the MIT license. The app, its tests and this website's code are on GitHub, so anyone can read exactly what Keyware does, build it themselves or suggest a change.
 
+### Does Keyware work on a Mac?
+
+No. There is no Mac download, on Apple Silicon or Intel. Keyware remaps keys with a Windows keyboard and mouse hook (WH_KEYBOARD_LL, WH_MOUSE_LL, and SendInput). On a Mac the window can edit a config, and the header says the keyboard hook is only installed on Windows. Turning Keyware on does not remap keys. A working Mac version would be a different input system, not another build of Keyware.exe.
+
 ### Is it safe to use?
 
 Keyware runs as a normal app without administrator rights. It only acts on keys you've bound; every other key passes straight to Windows. It never injects keys into elevated (admin) windows, and the panic stop Ctrl Alt Shift Esc switches it all off instantly.
@@ -530,15 +539,15 @@ Open URL only accepts web links, Open app can't pass command-line arguments, and
 
 No tracking, no analytics, no ads. Keyware doesn't log what you type: the log only notes which bindings fired. Your bindings and settings live on your PC in %APPDATA%\Keyware\config.json.
 
-The key engine never goes online. Text mode sends the sentence you type into the Text box, plus a short summary of your existing triggers and profile names, so the AI avoids clashes. Your keystrokes are not uploaded. A Play action also looks up the song or video name you entered.
+The key engine does not upload what you type. Text mode sends the sentence you type into the Text box, plus a short summary of your existing triggers and profile names so the AI avoids clashes. Your keystrokes are not uploaded. A Play action looks up the name you entered.
 
-If you send an idea, feedback or a bug report from Settings, Keyware sends your message, the email you enter and the app version, so we can reply if we need more information. Nothing else is attached, and it's never shared or used for marketing.
+If you send an idea, feedback or a bug report from Settings, Keyware sends your message, the email you enter, the app version and a random install ID. The server stores the message, the email, the version and a short salted hash of the install ID, so we can reply if we need more information. It does not send your bindings, settings or keystrokes, and it is never used for marketing.
 
 Read the full privacy statement for exactly what is sent, where it is stored and for how long.
 
 ### Why does Windows warn me when I open it?
 
-Keyware isn't code-signed yet, and SmartScreen warns about any new app without a signature and many downloads. Click More info → Run anyway.
+Keyware isn't code-signed, so SmartScreen warns about an app it does not recognise. Click More info → Run anyway. The warning is about the missing signature, not about a problem found in the file. The SHA-256 listed with the download is how you check you received the file this site publishes.
 
 ### Does it work in games?
 
@@ -554,10 +563,12 @@ Yes. Copy %APPDATA%\Keyware\config.json to the other PC (same folder) and choose
 
 ### How do I uninstall it?
 
-- In Settings, turn off Start Keyware with Windows (it is on by default).
+There's no installer. To remove Keyware:
+
+- In Settings, turn off Start Keyware with Windows. It is on by default. Turning it off deletes the Keyware startup entry for your Windows account. If you skip this, Windows still tries to open Keyware when you sign in.
 - Right-click the tray icon and choose Quit.
-- Delete Keyware.exe.
-- Optional: delete the %APPDATA%\Keyware folder to remove your settings.
+- Delete Keyware.exe. If you also downloaded the ARM64 build, delete Keyware-arm64.exe too.
+- Optional: delete the %APPDATA%\Keyware folder. That removes your settings, the install ID and a saved AI key. They stay on the PC until you do.
 10
 
 ## Troubleshooting
@@ -603,11 +614,15 @@ Yes. Copy %APPDATA%\Keyware\config.json to the other PC (same folder) and choose
 
 ### Windows Defender or antivirus flagged it
 
-- SmartScreen, unrecognized app. A blue “Windows protected your PC” window that says Microsoft Defender SmartScreen prevented an unrecognized app from starting is because Keyware isn't code-signed yet. That is not a malware detection. If you downloaded Keyware from this site, click More info, then Run anyway.
+- SmartScreen, unrecognized app. A blue “Windows protected your PC” window that says Microsoft Defender SmartScreen prevented an unrecognized app from starting is because Keyware isn't code-signed. That is not a malware detection. If you downloaded Keyware from this site, click More info, then Run anyway. A new copy can ask again. Compare the SHA-256 on the download with Get-FileHash .\Keyware.exe -Algorithm SHA256 if you want to confirm the file.
 - Malware or threat detection. If Microsoft Defender or another antivirus names a virus, trojan, or other threat, do not run the file and do not add an exclusion. Delete it and download Keyware again only from this site.
 
 ## Make your keys your own.
 
-Free for Windows 10 and 11.
+Free for Windows 10 and 11. The button below is the 64-bit download. On ARM64 Windows that file runs under emulation. There is no Mac download.
 
-v1.3.8·20.2 MB
+v1.3.8·20.2 MB·64-bit (x64)
+
+SHA-256 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09
+
+Keyware-arm64.exe · same version · · SHA-256

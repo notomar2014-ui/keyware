@@ -8,7 +8,25 @@
   /* Config-driven bits */
   if (cfg.VERSION) document.querySelectorAll("[data-version]").forEach(function (el) { el.textContent = cfg.VERSION; });
   if (cfg.FILE_SIZE) document.querySelectorAll("[data-size]").forEach(function (el) { el.textContent = cfg.FILE_SIZE; });
+  if (cfg.SHA256) document.querySelectorAll("[data-sha]").forEach(function (el) { el.textContent = cfg.SHA256; });
   if (cfg.DOWNLOAD_URL) document.querySelectorAll("[data-download]").forEach(function (el) { el.setAttribute("href", cfg.DOWNLOAD_URL); });
+  var armWraps = document.querySelectorAll("[data-arm-wrap]");
+  if (armWraps.length && window.fetch) {
+    fetch("/api/release", { headers: { Accept: "application/json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (rel) {
+        if (!rel || rel.version !== cfg.VERSION || !Array.isArray(rel.builds)) return;
+        var arm = null;
+        for (var i = 0; i < rel.builds.length; i++) if (rel.builds[i].arch === "arm64") arm = rel.builds[i];
+        if (!arm || arm.version !== cfg.VERSION || arm.url !== "/download/Keyware-arm64.exe") return;
+        if (!/^[0-9A-F]{64}$/.test(arm.sha256 || "")) return;
+        document.querySelectorAll("[data-arm-sha]").forEach(function (el) { el.textContent = arm.sha256; });
+        if (arm.size) document.querySelectorAll("[data-arm-size]").forEach(function (el) { el.textContent = arm.size; });
+        document.querySelectorAll("[data-arm]").forEach(function (el) { el.setAttribute("href", arm.url); });
+        armWraps.forEach(function (el) { el.hidden = false; });
+      })
+      .catch(function () { /* no ARM64 listing until the release asset can be checked */ });
+  }
   document.querySelectorAll("[data-support]").forEach(function (el) {
     var url = (cfg.DONATE_URL || "").trim();
     if (url) { el.setAttribute("href", url); el.hidden = false; } else { el.hidden = true; }

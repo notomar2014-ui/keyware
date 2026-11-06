@@ -34,6 +34,6 @@ If you change the Text-mode system prompt in `assist/ai_binder.py`, run
 1. Fork, create a branch, keep the change focused.
 2. Add or update tests; `python -m pytest` must pass.
 3. Describe what changed and how you tested it on Windows.
-4. CI builds `Keyware.exe` on `windows-latest`; please check the run is green.
+4. CI builds `Keyware.exe` on `windows-latest` (x64) and `windows-11-arm` (native ARM64). PyInstaller cannot cross-compile, so both jobs have to be green.
 
 By contributing you agree that your contribution is licensed under the MIT License.
