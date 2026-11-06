@@ -2,7 +2,7 @@
 
 Keyware is a Windows keyboard remapper and macro engine. Make your keys your own. It maps keys, chords, and hold durations to actions, and it switches those bindings by the app in front.
 
-A short press of an unbound key is never swallowed. The listener starts only after you turn **Active** on, and **Ctrl + Alt + Shift + Esc** drops the hook immediately. Keyware does not need administrator rights and does not store secrets. The hook engine never touches the network; the only web requests are the optional Text-mode AI call and the song/video lookup a **Play** action makes when you press its key.
+A short press of an unbound key is never swallowed. The listener starts only after you turn **Active** on, and **Ctrl + Alt + Shift + Esc** drops the hook immediately. Keyware does not need administrator rights and does not store secrets. The hook engine never touches the network. The app goes online only for optional Text mode (the sentence plus a short setup summary; keystrokes are not uploaded), optional feedback from Settings, and actions you create that look something up, such as a **Play** action.
 
 ## Turning it on
 
@@ -132,6 +132,38 @@ python -m pytest
 ```
 
 The tests feed synthetic key events into the detector and the service. They do not open applications, send keystrokes, or play audio. A fixture blocks `subprocess`, `os.startfile`, `webbrowser`, and `winsound` for the whole run.
+
+## Platforms
+
+Remapping is Windows-only. It is not a packaging gap. Turning Keyware on calls `HookEngine.start()`, which raises `HookUnavailable` unless `sys.platform == "win32"`. The message is: "The keyboard hook is only installed on Windows. Bindings can still be edited." The mouse hook does the same.
+
+The listener is a Win32 low-level hook (`WH_KEYBOARD_LL` / `WH_MOUSE_LL`) through pynput's `win32_event_filter`. Events are classified from `vkCode`, `scanCode`, `flags`, and `dwExtraInfo`. Swallowing is `suppress_event()` on that filter. Injection is `SendInput` in `engine/sendinput.py`, which raises off Windows. There is no Quartz, CGEvent, or IOHID path. `keyware.spec` bundles only the Win32 pynput and pystray backends.
+
+These other behaviors are Windows APIs too, so a Mac build of the same code would not gain them:
+
+| Behavior | Windows API | Off Windows |
+| --- | --- | --- |
+| Foreground app / per-app profiles | `GetForegroundWindow` and the process image name | The context reader returns nothing, so profiles stay on Global |
+| Elevated window | Process access / UIPI | The elevated check is not installed |
+| Stuck-key reconcile | `GetAsyncKeyState` | The probe reports every key down, so reconcile does nothing |
+| Hook-removed check | `GetLastInputInfo` | No probe is installed |
+| One instance | Mutex `Local\Keyware.single` | A file lock under the config directory |
+| Start with Windows | HKCU `Run` | `StartupManager` keeps the setting in memory only |
+| Own AI key | DPAPI | `assist.secret_store.available()` is false |
+| Open URL, app, or file | `os.startfile` | `SystemOpener` raises |
+| Lock screen, wait for a window | `LockWorkStation`, window enumeration | Lock raises; wait returns false |
+| Run command | `cmd.exe /c` | Still calls `cmd.exe`, which is not a Mac shell |
+| Hold beep | `winsound.Beep` | The player ignores the error |
+| Caps Lock light | `GetKeyState` | Reported off |
+| Copilot key | Win+Shift+F23 on the Win32 hook | Not a Mac key |
+
+What does run elsewhere: the detector, config, conflict checks, and Text-mode validation. `python main.py --self-test` never installs a hook. `python main.py --diag` prints that the hook is Windows-only and exits 0. CI runs that headless pytest suite on `windows-latest` before it builds `Keyware.exe`. The site job on `ubuntu-latest` only tests the website. The same pytest suite passes on Linux when the window tests are skipped (no display). The window can open where CustomTkinter has a display, and bindings can be saved. Activating Keyware does not remap keys.
+
+**macOS.** A `.app` or a PyInstaller bundle would not remap keys. pynput on macOS can observe some keys, but this code never uses that backend, and macOS suppression is a CGEvent tap that needs Accessibility permission (often Input Monitoring as well). That tap does not speak VK codes, scan codes, or `dwExtraInfo`, which is how Keyware ignores its own injected events. Posting keys would be `CGEventPost`, not `SendInput`. Per-app rules match Windows executable names (`cursor.exe`), not bundle ids. The Copilot key, Caps Lock light, UIPI, and the secure desktop have no counterpart here. A Mac App Store sandbox cannot install a global event tap. A Developer ID app outside the store can ask for Accessibility, and the user has to allow it in System Settings. That is a new input stack, not a rebuild of `Keyware.exe`.
+
+**Windows ARM64.** The Python sources call Win32 APIs and do not set a CPU target. CI (`windows-latest`) and the published exe are x64. An x64 exe can run on ARM64 Windows under emulation. A native ARM64 exe is a rebuild on an ARM64 Windows machine (PyInstaller does not cross-compile). That packaging work is separate from the hook design above.
+
+**Linux.** Same hook refusal as macOS. Config falls back to `~/.config/keyware/config.json` when `APPDATA` is unset. Useful for tests and for editing a config, not for remapping.
 
 ## Build a single exe
 

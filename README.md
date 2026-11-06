@@ -86,7 +86,7 @@ walks through the first setup. Windows 10 or 11.
 
 ## Build from source
 
-You need Windows and Python 3.11 or newer.
+You need Windows and Python 3.11 or newer. Remapping is a Windows low-level hook (`WH_KEYBOARD_LL` / `WH_MOUSE_LL`) plus `SendInput`. On macOS or Linux the window can edit bindings, and `python main.py --self-test` checks the engine, but turning Keyware on does not install a hook. A Mac build would need a different input stack. Details are in [docs/TECHNICAL.md](docs/TECHNICAL.md).
 
 ```bat
 git clone https://github.com/notomar2014-ui/keyware.git
