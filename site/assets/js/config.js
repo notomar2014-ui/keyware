@@ -2,11 +2,14 @@
 window.KEYWARE_CONFIG = {
   // Footer "Support Keyware" link. Leave empty ("") to hide the link everywhere.
   DONATE_URL: "https://ko-fi.com/keyware_donate",
-  // Current download. /download/Keyware.exe is counted by /api/download, which sends the file
-  // from /download/<VERSION>/Keyware.exe (see api/_lib/release.js). Update both together.
+  // Current x64 download. /download/Keyware.exe is counted by /api/download, which sends
+  // the file from /download/<VERSION>/Keyware.exe. SHA256 is that file's hash.
+  // Keep these identical to site/api/_lib/release.js. ARM64 is not listed here:
+  // the page asks /api/release and shows it only when that same version has one.
   VERSION: "1.3.8",
   DOWNLOAD_URL: "/download/Keyware.exe",
   FILE_SIZE: "20.2 MB",
-  // Download buttons ([data-download]) go here first; /thanks then starts DOWNLOAD_URL.
+  SHA256: "9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09",
+  // [data-download] starts this file. /thanks starts it too.
   THANKS_URL: "/thanks"
 };

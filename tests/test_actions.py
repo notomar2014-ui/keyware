@@ -167,6 +167,19 @@ def test_system_opener_uses_startfile_and_never_a_shell(monkeypatch):
     assert popens[0][1]["shell"] is False
 
 
+def test_system_opener_refuses_mac_actions(monkeypatch):
+    import sys
+
+    monkeypatch.setattr(sys, "platform", "darwin")
+    opener = SystemOpener()
+    with pytest.raises(OSError, match="Windows"):
+        opener.open_url("https://example.com")
+    with pytest.raises(OSError, match="Windows"):
+        opener.lock_screen()
+    with pytest.raises(OSError, match="Windows"):
+        opener.run_command("echo hi")
+
+
 def test_cancelled_exception_is_internal():
     assert issubclass(Cancelled, Exception)
 

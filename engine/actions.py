@@ -482,6 +482,8 @@ class SystemOpener:
         os.startfile(target)  # type: ignore[attr-defined]
 
     def lock_screen(self) -> None:
+        if sys.platform != "win32":
+            raise OSError("Locking the screen requires Windows.")
         import ctypes
 
         if not ctypes.windll.user32.LockWorkStation():  # type: ignore[attr-defined]
@@ -489,6 +491,8 @@ class SystemOpener:
 
     def run_command(self, command: str) -> None:
         text = validate_command(command)
+        if sys.platform != "win32":
+            raise OSError("Run command requires Windows.")
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         subprocess.Popen(["cmd.exe", "/d", "/c", text], shell=False, creationflags=flags,
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

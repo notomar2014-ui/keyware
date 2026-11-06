@@ -111,6 +111,23 @@
       ]
     },
     {
+      "source": "/download/:version/Keyware-arm64.exe",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.microsoft.portable-executable"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"Keyware-arm64.exe\""
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/assets/(img|fonts)/(.*)",
       "headers": [
         {
@@ -165,6 +182,9 @@
     "api/download.js": {
       "maxDuration": 10
     },
+    "api/release.js": {
+      "maxDuration": 10
+    },
     "api/feedback.js": {
       "maxDuration": 10
     },
@@ -176,6 +196,10 @@
     {
       "source": "/download/Keyware.exe",
       "destination": "/api/download"
+    },
+    {
+      "source": "/download/Keyware-arm64.exe",
+      "destination": "/api/download?arch=arm64"
     },
     {
       "source": "/admin",

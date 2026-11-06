@@ -6,19 +6,40 @@ on:
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: read
+# PyInstaller cannot cross-compile. The runner CPU is the exe's CPU.
+# windows-latest is x64. windows-11-arm is the public GitHub-hosted Windows
+# ARM64 runner (free on public repositories). A private repo would need a
+# larger ARM runner instead.
 
 jobs:
   windows:
-    name: Tests and Keyware.exe (Windows)
-    runs-on: windows-latest
+    name: Tests and Keyware.exe (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+            python-architecture: x64
+            pe: "8664"
+            artifact: Keyware-exe-unsigned
+            asset: Keyware.exe
+          - arch: arm64
+            runner: windows-11-arm
+            python-architecture: arm64
+            pe: AA64
+            artifact: Keyware-exe-arm64
+            asset: Keyware-arm64.exe
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          architecture: ${{ matrix.python-architecture }}
           cache: pip
           cache-dependency-path: |
             requirements.txt
@@ -27,12 +48,23 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt
 
+      - name: Confirm the runner CPU
+        shell: pwsh
+        run: |
+          $got = (python -c "import platform; print(platform.machine())").Trim().ToLower()
+          Write-Host "platform.machine=$got"
+          if ('${{ matrix.arch }}' -eq 'arm64' -and $got -ne 'arm64') { throw "This job needs a native ARM64 runner, got $got. PyInstaller cannot cross-compile." }
+          if ('${{ matrix.arch }}' -eq 'x64' -and $got -notin @('amd64', 'x86_64')) { throw "This job needs an x64 runner, got $got." }
+
       - name: Headless tests
         # No DISPLAY is set, so the window tests skip; the rest use fakes and never install a real hook.
         run: python -m pytest -q
 
       - name: Build Keyware.exe
         run: python build.py
+
+      - name: Confirm PE architecture
+        run: python tools/pe_machine.py dist/Keyware.exe ${{ matrix.pe }}
 
       - name: Smoke-test the exe (no window, no hook)
         shell: pwsh
@@ -44,24 +76,62 @@ jobs:
           if ($got -ne $want) { throw "exe reports $got, source is $want" }
           $s = Start-Process dist/Keyware.exe -ArgumentList '--self-test' -Wait -PassThru
           if ($s.ExitCode -ne 0) { throw "--self-test exited $($s.ExitCode)" }
-          Write-Host "Keyware.exe ${got}: --version and --self-test passed"
+          Write-Host "Keyware.exe ${got} (${{ matrix.arch }}): --version and --self-test passed"
 
-      - name: SHA-256
-        shell: pwsh
-        run: (Get-FileHash dist/Keyware.exe -Algorithm SHA256).Hash | Tee-Object dist/Keyware.exe.sha256
+      - name: Hash and name the artifact
+        run: python tools/package_exe.py --dist dist --arch ${{ matrix.arch }} --asset ${{ matrix.asset }} --version-file version.txt
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Keyware-exe-unsigned
+          name: ${{ matrix.artifact }}
           path: |
-            dist/Keyware.exe
-            dist/Keyware.exe.sha256
+            dist/${{ matrix.asset }}
+            dist/${{ matrix.asset }}.sha256
+            dist/version.txt
+            dist/release.json
           if-no-files-found: error
+
+  publish-arm64:
+    name: Attach ARM64 exe to the version release
+    needs: windows
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Keyware-exe-arm64
+          path: dist
+
+      - name: Check version, hash and ARM64 header
+        run: python3 tools/package_exe.py --check --dist dist --arch arm64 --asset Keyware-arm64.exe --source-root .
+
+      - name: Upload Keyware-arm64.exe to the existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          ver=$(tr -d '[:space:]' < dist/version.txt)
+          tag="v${ver}"
+          if ! gh release view "$tag" >/dev/null; then
+            echo "No GitHub release $tag. The ARM64 artifact is still on this workflow run. Create the release before this job can attach Keyware-arm64.exe."
+            exit 1
+          fi
+          gh release upload "$tag" dist/Keyware-arm64.exe dist/Keyware-arm64.exe.sha256 --clobber
+          hash=$(tr -d '[:space:]' < dist/Keyware-arm64.exe.sha256)
+          gh release view "$tag" --json body -q .body > /tmp/keyware-notes.md
+          python3 tools/arm_notes.py "$hash" < /tmp/keyware-notes.md > /tmp/keyware-notes-arm.md
+          gh release edit "$tag" --notes-file /tmp/keyware-notes-arm.md
 
   site:
     name: Website tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: site

@@ -93,7 +93,10 @@ test('download: a store failure still hands out the file', async () => {
 test('vercel.json routes the download through the counter and the exe is not at the counted path', () => {
   const v = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
   assert.ok(v.rewrites.some((r) => r.source === '/download/Keyware.exe' && r.destination === '/api/download'));
+  assert.ok(v.redirects.some((r) => r.destination === 'https://keyware.site/$1' && (r.has || []).some((h) => h.value === 'keyware-app.vercel.app')));
+  assert.ok(v.rewrites.some((r) => r.source === '/download/Keyware-arm64.exe' && r.destination === '/api/download?arch=arm64'));
   assert.ok(!fs.existsSync(path.join(ROOT, 'download', 'Keyware.exe')), 'a real file there would bypass the counter');
+  assert.ok(!fs.existsSync(path.join(ROOT, 'download', 'Keyware-arm64.exe')), 'a real file there would bypass the counter');
   assert.ok(v.rewrites.some((r) => r.source === '/admin' && r.destination === '/api/admin'));
   const globalRule = v.headers.find((h) => h.headers.some((x) => x.key === 'Content-Security-Policy' && x.value.includes("form-action 'none'")));
   assert.ok(!new RegExp(`^${globalRule.source.replace('/((', '/((').replace(/\)\.\*\)$/, ').*)')}$`).test('/admin'), 'site CSP does not apply to /admin');

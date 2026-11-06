@@ -51,7 +51,7 @@
       <p class="eyebrow">Privacy statement</p>
       <h1>Your keys stay yours</h1>
       <p class="lead">Keyware has no accounts, no ads, no analytics and no tracking cookies. This page explains exactly what the Keyware app and this website (keyware.site) send, what is stored, where, and for how long.</p>
-      <p class="lead"><strong>Last updated: 31 October 2026.</strong></p>
+      <p class="lead"><strong>Last updated: 6 November 2026.</strong></p>
     </div>
   </div>
 
@@ -85,7 +85,7 @@
           <li>No accounts, no sign-up, no ads, no analytics and no tracking cookies, in the app or on this website.</li>
           <li>The key engine works offline. Your bindings and settings stay on your PC in <code>%APPDATA%\Keyware</code>.</li>
           <li>Only <em>Text mode</em> sends anything for AI: the sentence you type plus a short summary of your existing setup, so the AI doesn't suggest a clashing key.</li>
-          <li>A random install ID and your IP address are used, only in salted, hashed form, to apply fair daily limits and to count downloads.</li>
+          <li>A random install ID and your IP address are used only as salted hashes: the install ID for daily limits and for grouping feedback, the IP address for daily limits and so that one browser counts as one download.</li>
           <li>Feedback you choose to send (message, email, app version) is used only to reply to you. It is never shared or sold.</li>
           <li>We never sell, rent or share personal information for marketing.</li>
           <li>Keyware is open source (MIT). You can check every point on this page in the code on <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>.</li>
@@ -124,8 +124,8 @@
         <p class="doc__kicker">04</p>
         <h2>Rate limits &amp; download counts</h2>
         <p><b>Install ID.</b> The first time you use Text mode or send feedback, Keyware creates a random ID (a UUID) and saves it in your config file. It is not linked to your name, email, Windows account or hardware.</p>
-        <p><b>Daily AI limit.</b> To keep the free AI fair (20 requests per install and 60 per IP address a day), the server combines the install ID and your IP address with a secret salt and keeps only a shortened SHA-256 hash of each, never the raw values. These counters are held in the server's memory for the current day only and are discarded after about a day or when the server restarts.</p>
-        <p><b>Download counts.</b> When you download Keyware from this site, the server creates a salted hash of your IP address and browser name for 10 minutes, so a double click counts once. The saved download record contains only the date and a random ID, with no IP address, hash or browser details. Bots and link previews are not counted.</p>
+        <p><b>Daily AI limit.</b> To keep the free AI fair (20 requests per install and 60 per IP address a day), the server combines the install ID and your IP address with a secret salt and keeps only a shortened SHA-256 of each, never the raw values. When Upstash Redis is connected, those counters are stored there and expire after about 48 hours. When it is not, they stay in that server's memory for the current day and are discarded when the day changes or that server restarts. In the memory case they are not shared across every server copy, so the limit is approximate.</p>
+        <p><b>Download counts.</b> When you download Keyware from this site, the server stores a salted hash of your IP address and browser name for 10 minutes, so a double click counts once. The download total is a count for that day. If downloads are stored in Vercel Blob instead of Redis, each count is a file named with the date and a random ID, with no IP address, hash or browser details. Bots and link previews are not counted.</p>
         <p>Similar salted hashes limit how much feedback one install or network can send per day.</p>
       </section>
 
@@ -160,11 +160,11 @@
           <tbody>
             <tr><td>Your bindings, settings, install ID, own AI key (encrypted)</td><td>Your PC, <code>%APPDATA%\Keyware</code></td><td>Until you delete them</td></tr>
             <tr><td>Text mode sentence and AI reply</td><td>Not stored by Keyware (only passed to the AI provider)</td><td>Not kept</td></tr>
-            <tr><td>Rate-limit counters (salted hashes)</td><td>Server memory</td><td>Up to about 26 hours</td></tr>
-            <tr><td>Download de-duplication (salted hash)</td><td>Server memory</td><td>10 minutes</td></tr>
-            <tr><td>Download records (date + random ID)</td><td>Vercel Blob (no personal data)</td><td>Until deleted</td></tr>
-            <tr><td>Feedback (message, email, app version, hashed install ID)</td><td>Vercel Blob (private)</td><td>Until deleted</td></tr>
-            <tr><td>Usage totals (AI requests, active installs, per-model counts)</td><td>Server memory</td><td>Until a server restart</td></tr>
+            <tr><td>Rate-limit counters (salted hashes of install ID and IP)</td><td>Upstash Redis when it is connected; otherwise that server's memory</td><td>Text mode: about 48 hours in Redis, or the current day in memory (also cleared on restart). Feedback limits: about 26 hours in Redis, or the current day in memory</td></tr>
+            <tr><td>Download de-duplication (salted hash of IP and browser)</td><td>The same place as the counters</td><td>10 minutes</td></tr>
+            <tr><td>Download totals</td><td>Redis daily counts, or Vercel Blob files that store only the date and a random ID</td><td>Until deleted</td></tr>
+            <tr><td>Feedback (message, email, app version, hashed install ID)</td><td>Vercel Blob (private), Redis, or that server's memory when neither store is connected</td><td>Until deleted. A memory-only copy is discarded when that server restarts</td></tr>
+            <tr><td>Usage totals (request counts and salted install hashes)</td><td>Redis when connected; otherwise server memory</td><td>Redis keeps daily figures for about 13 months. All-time request and install counters stay until deleted. Memory copies last until that server restarts</td></tr>
           </tbody>
         </table>
         </div>

@@ -16,7 +16,9 @@ const routes = {
   '/api/feedback': require('../api/feedback'),
   '/api/kofi-webhook': require('../api/kofi-webhook'),
   '/download/Keyware.exe': require('../api/download'),
+  '/download/Keyware-arm64.exe': require('../api/download'),
   '/api/download': require('../api/download'),
+  '/api/release': require('../api/release'),
 };
 const admin = require('../api/admin');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.svg': 'image/svg+xml', '.exe': 'application/vnd.microsoft.portable-executable', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };

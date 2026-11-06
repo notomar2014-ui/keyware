@@ -154,16 +154,16 @@ These other behaviors are Windows APIs too, so a Mac build of the same code woul
 | Own AI key | DPAPI | `assist.secret_store.available()` is false |
 | Open URL, app, or file | `os.startfile` | `SystemOpener` raises |
 | Lock screen, wait for a window | `LockWorkStation`, window enumeration | Lock raises; wait returns false |
-| Run command | `cmd.exe /c` | Still calls `cmd.exe`, which is not a Mac shell |
+| Run command | `cmd.exe /c` | `SystemOpener` raises before starting a process |
 | Hold beep | `winsound.Beep` | The player ignores the error |
 | Caps Lock light | `GetKeyState` | Reported off |
 | Copilot key | Win+Shift+F23 on the Win32 hook | Not a Mac key |
 
 What does run elsewhere: the detector, config, conflict checks, and Text-mode validation. `python main.py --self-test` never installs a hook. `python main.py --diag` prints that the hook is Windows-only and exits 0. CI runs that headless pytest suite on `windows-latest` before it builds `Keyware.exe`. The site job on `ubuntu-latest` only tests the website. The same pytest suite passes on Linux when the window tests are skipped (no display). The window can open where CustomTkinter has a display, and bindings can be saved. Activating Keyware does not remap keys.
 
-**macOS.** A `.app` or a PyInstaller bundle would not remap keys. pynput on macOS can observe some keys, but this code never uses that backend, and macOS suppression is a CGEvent tap that needs Accessibility permission (often Input Monitoring as well). That tap does not speak VK codes, scan codes, or `dwExtraInfo`, which is how Keyware ignores its own injected events. Posting keys would be `CGEventPost`, not `SendInput`. Per-app rules match Windows executable names (`cursor.exe`), not bundle ids. The Copilot key, Caps Lock light, UIPI, and the secure desktop have no counterpart here. A Mac App Store sandbox cannot install a global event tap. A Developer ID app outside the store can ask for Accessibility, and the user has to allow it in System Settings. That is a new input stack, not a rebuild of `Keyware.exe`.
+**macOS.** Keyware does not publish a Mac download, on Apple Silicon or Intel. A `.app` or a PyInstaller bundle of this code would not remap keys. `HookEngine.start()` raises `HookUnavailable` unless `sys.platform == "win32"`, and the window then shows UNAVAILABLE with that message. pynput on macOS can observe some keys, but this code never uses that backend. macOS suppression is a CGEvent tap that needs Accessibility permission (often Input Monitoring as well). That tap does not speak VK codes, scan codes, or `dwExtraInfo`, which is how Keyware ignores its own injected events. Posting keys would be `CGEventPost`, not `SendInput`. Per-app rules match Windows executable names (`cursor.exe`), not bundle ids. The Copilot key, Caps Lock light, UIPI, and the secure desktop have no counterpart here. A Mac App Store sandbox cannot install a global event tap. A Developer ID app outside the store can ask for Accessibility, and the user has to allow it in System Settings. That is a new input stack, not a rebuild of `Keyware.exe`. CI does not run a macOS packaging job.
 
-**Windows ARM64.** The Python sources call Win32 APIs and do not set a CPU target. CI (`windows-latest`) and the published exe are x64. An x64 exe can run on ARM64 Windows under emulation. A native ARM64 exe is a rebuild on an ARM64 Windows machine (PyInstaller does not cross-compile). That packaging work is separate from the hook design above.
+**Windows ARM64.** The Python sources call Win32 APIs and do not set a CPU target. The published `Keyware.exe` is x64, and that file can run on ARM64 Windows under emulation. A native ARM64 exe is a rebuild on an ARM64 Windows machine (PyInstaller does not cross-compile). CI does that rebuild on `windows-11-arm` and names the file `Keyware-arm64.exe`. That packaging work is separate from the hook design above.
 
 **Linux.** Same hook refusal as macOS. Config falls back to `~/.config/keyware/config.json` when `APPDATA` is unset. Useful for tests and for editing a config, not for remapping.
 
@@ -176,7 +176,7 @@ pip install -r requirements-dev.txt
 python build.py
 ```
 
-`build.bat` does the same thing. The output is `dist\Keyware.exe`. PyInstaller cannot cross-compile that file from Linux or macOS, so the script stops with instructions on those systems. The first launch of the one-file exe is slower while it unpacks. Errors from a windowed build are appended to `%APPDATA%\Keyware\error.log`.
+`build.bat` does the same thing. The output is `dist\Keyware.exe`. PyInstaller cannot cross-compile that file. An x64 Windows PC produces an x64 exe. A Windows on ARM PC, including the GitHub Actions `windows-11-arm` runner, produces a native ARM64 exe. Linux and macOS stop with instructions. The first launch of the one-file exe is slower while it unpacks. Errors from a windowed build are appended to `%APPDATA%\Keyware\error.log`.
 
 ## Sample bindings
 
