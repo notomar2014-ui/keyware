@@ -33,8 +33,11 @@ bindings you review before saving. Nothing is ever saved automatically.
   Keyware is ON, and **Ctrl + Alt + Shift + Esc** drops it instantly.
 - **No admin rights, no ads.**
 - **Starts with Windows by default**, silently in the system tray (no window, hotkeys working). Turn it off in Settings. Closing the window keeps Keyware in the tray; **Quit** in the tray fully closes it.
-- **The hook engine never touches the network.** The only web requests are the
-  optional Text-mode AI call and the song/video lookup a *Play* action makes.
+- **The hook engine never touches the network.** Optional Text mode sends the
+  sentence you type and a short setup summary (not your keystrokes). Optional
+  feedback from Settings, and actions you create that look something up (such as
+  a *Play* song or video), also use the network. What each one sends is on the
+  [privacy page](https://keyware.site/privacy).
 
 ## New in 1.3.7
 

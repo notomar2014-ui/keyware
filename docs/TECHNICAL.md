@@ -82,7 +82,7 @@ On a machine without `APPDATA`, that is `~/.config/keyware/config.json`. A corru
 
 `rollover_ms` is the overlap window in milliseconds. `0` disables it. The window is not shown in Settings.
 
-`dry_run` logs actions and does not swallow keys. `pause_hotkey` defaults to Ctrl, Alt, and F12. `respect_pulse` and `pulse_hotkeys` are the Pulse exclusion list. `start_with_windows` is kept so older files still load, and it is forced off. Hold P in the sample profile stays off until you enable it.
+`dry_run` logs actions and does not swallow keys. `pause_hotkey` defaults to Ctrl, Alt, and F12. `respect_pulse` and `pulse_hotkeys` are the Pulse exclusion list. `start_with_windows` is kept so older files still load. A new install turns it on once; after that the Settings choice wins. Hold P in the sample profile stays off until you enable it.
 
 `donate_url` (an `https` link, empty by default) shows a **♥ Support Keyware** button in the footer and an occasional note on every second launch (never the first), with **Support Keyware**, **Maybe later** and **Don't ask again**. With no link, neither appears. There are no ads. `approved_commands` holds hashes of the Run commands you confirmed.
 

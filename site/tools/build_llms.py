@@ -60,7 +60,7 @@ Key facts:
 - Platform: Windows 10 and Windows 11, 64-bit. A single portable Keyware.exe (about 20 MB), no installer. Current version: {{version}}.
 - Download: {BASE}/download/Keyware.exe
 - License: MIT, open source.
-- Privacy: settings stay on the PC in %APPDATA%\\Keyware\\config.json. Only Text mode goes online, and it sends just the sentence typed plus a short summary of existing triggers.
+- Privacy: settings stay on the PC in %APPDATA%\\Keyware\\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. Optional feedback and actions you create (such as a Play lookup) can also use the network. See {BASE}/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
 - Copilot key: Keyware recognises the Copilot key (which sends Win+Shift+F23) as one key and can bind it to any action. Windows 11 also has a built-in option at Settings > Bluetooth & devices > Keyboard > Customize Copilot key (Search, Copilot or an app; newer updates add Right Ctrl and the Context menu key).
 - Caps Lock: can be remapped, given tap and hold actions (for example tap = Esc, hold = Ctrl) or turned off; Shift+Caps Lock still toggles capitals.

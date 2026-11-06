@@ -450,7 +450,7 @@
         </ol>
         <figure class="shot shot--sm"><img src="/assets/img/guide/aikey.webp" width="526" height="418" loading="lazy" alt="Settings, AI key (optional): Use my own free key switched on, Gemini and Groq tabs, a Paste your key box with Save and Remove, Get a free key and Test buttons, and the note Detected: Google Gemini key. Press Save."><figcaption>Settings → AI key (optional). Keyware shows which kind of key it detected.</figcaption></figure>
         <p>Keyware detects which kind of key you pasted and tells you straight away if it doesn't look like a Gemini or Groq key. To go back to Keyware's free AI, turn <strong>Use my own free key</strong> off.</p>
-        <p class="callout"><b>Privacy.</b> Text mode is the only part of Keyware that goes online for AI. It sends just the sentence you typed (plus a short summary of your existing triggers and profile names) to an AI model so it can draft the binding (through Keyware's server, or straight to Google or Groq if you use your own key). Your keystrokes, bindings and settings never leave your PC. See the <a href="/privacy">privacy statement</a>.</p>
+        <p class="callout"><b>Privacy.</b> Text mode sends the sentence you typed and a short summary of your setup (your leader key, profile names, the apps they apply to, and triggers you already use) so the AI can draft the binding. That goes through Keyware's server, or straight to Google or Groq if you use your own key. Your keystrokes are not uploaded. See the <a href="/privacy">privacy statement</a>.</p>
       </section>
 
       <!-- CONFLICTS -->
@@ -630,7 +630,7 @@
             <summary>What about my privacy? Is anything tracked?</summary>
             <div class="faq__a">
               <p>No tracking, no analytics, no ads. Keyware doesn't log what you type: the log only notes which bindings fired. Your bindings and settings live on your PC in <code>%APPDATA%\Keyware\config.json</code>.</p>
-              <p>The key engine never goes online. Only Text mode connects to the internet for AI, and it sends just the sentence you type into the Text box, plus a short summary of your existing triggers and profile names so the AI avoids clashes.</p>
+              <p>The key engine never goes online. Text mode sends the sentence you type into the Text box, plus a short summary of your existing triggers and profile names, so the AI avoids clashes. Your keystrokes are not uploaded. A Play action also looks up the song or video name you entered.</p>
               <p>If you send an idea, feedback or a bug report from Settings, Keyware sends your message, the email you enter and the app version, so we can reply if we need more information. Nothing else is attached, and it's never shared or used for marketing.</p>
               <p>Read the full <a href="/privacy">privacy statement</a> for exactly what is sent, where it is stored and for how long.</p>
               <figure class="shot"><img src="/assets/img/guide/feedback.webp" width="1046" height="312" loading="lazy" alt="Settings, Suggestions &amp; feedback: Idea, Feedback and Bug tabs, an email box, a message box with a 2000 character counter, a Send button and the note We might email you to ask for more information."><figcaption>Settings → Suggestions &amp; feedback.</figcaption></figure>
@@ -656,6 +656,7 @@
             <summary>How do I uninstall it?</summary>
             <div class="faq__a">
               <ol>
+                <li>In Settings, turn off <strong>Start Keyware with Windows</strong> (it is on by default).</li>
                 <li>Right-click the tray icon and choose <strong>Quit</strong>.</li>
                 <li>Delete <code>Keyware.exe</code>.</li>
                 <li>Optional: delete the <code>%APPDATA%\Keyware</code> folder to remove your settings.</li>
@@ -696,7 +697,9 @@
           <div class="tr"><h3>My settings look wrong after editing config.json</h3><ul>
             <li>If the file can't be read, Keyware keeps your previous settings and says so in the log. A corrupt file is saved as <code>config.json.bak</code> and replaced with defaults.</li></ul></div>
           <div class="tr"><h3>Windows Defender or antivirus flagged it</h3><ul>
-            <li>New, unsigned tools that listen to the keyboard are sometimes flagged by heuristics. Only download Keyware from this site. If SmartScreen appears, use <strong>More info</strong> → <strong>Run anyway</strong>.</li></ul></div>
+            <li><strong>SmartScreen, unrecognized app.</strong> A blue “Windows protected your PC” window that says Microsoft Defender SmartScreen prevented an unrecognized app from starting is because Keyware isn't code-signed yet. That is not a malware detection. If you downloaded Keyware from this site, click <strong>More info</strong>, then <strong>Run anyway</strong>.</li>
+            <li><strong>Malware or threat detection.</strong> If Microsoft Defender or another antivirus names a virus, trojan, or other threat, do not run the file and do not add an exclusion. Delete it and download Keyware again only from this site.</li>
+          </ul></div>
         </div>
 
         <div class="cta cta--guide">
