@@ -31,10 +31,11 @@ def with_arm_hash(body: str, sha256: str) -> str:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2:
+    # argv is sys.argv[1:], so the workflow's one hash argument is argv[0].
+    if len(argv) != 1:
         print("usage: python tools/arm_notes.py <sha256> < body.md", file=sys.stderr)
         return 2
-    sys.stdout.write(with_arm_hash(sys.stdin.read(), argv[1]))
+    sys.stdout.write(with_arm_hash(sys.stdin.read(), argv[0]))
     return 0
 
 

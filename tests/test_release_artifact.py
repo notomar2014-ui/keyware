@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import sys
 from pathlib import Path
@@ -76,6 +77,28 @@ def test_arm_release_notes_replace_the_arm_line_only():
     crlf = with_arm_hash(again.replace("\n", "\r\n"), "D" * 64)
     assert crlf.count("Keyware-arm64.exe") == 1
     assert f"SHA-256 (Keyware-arm64.exe): `{'D' * 64}`" in crlf
+
+
+def test_arm_notes_cli_takes_the_hash_the_workflow_passes(capsys):
+    from arm_notes import main
+
+    sys.stdin = io.StringIO("There is no native ARM64 build.\nSHA-256 (Keyware.exe): `AAAA`\n")
+    try:
+        assert main(["AB" * 32]) == 0
+        out = capsys.readouterr().out
+    finally:
+        sys.stdin = sys.__stdin__
+    assert "There is no native ARM64 build." not in out
+    assert f"SHA-256 (Keyware-arm64.exe): `{'AB' * 32}`" in out
+    assert "SHA-256 (Keyware.exe): `AAAA`" in out
+    err = io.StringIO()
+    old = sys.stderr
+    sys.stderr = err
+    try:
+        assert main([]) == 2
+    finally:
+        sys.stderr = old
+    assert "usage:" in err.getvalue()
 
 
 def test_release_json_roundtrip(tmp_path):

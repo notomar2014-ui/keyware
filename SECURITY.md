@@ -29,6 +29,6 @@ Things we especially want to hear about:
 
 Download integrity: every CI build attaches a `.sha256` file next to the exe
 (`Keyware.exe` for x64, `Keyware-arm64.exe` for ARM64). Compare it with
-`Get-FileHash .\Keyware.exe -Algorithm SHA256`. The website shows the x64 hash
-for the current version, and the ARM64 hash only when that file is published
-for the same version. The two hashes are not interchangeable.
+`Get-FileHash .\Keyware.exe -Algorithm SHA256` or
+`Get-FileHash .\Keyware-arm64.exe -Algorithm SHA256`. The website shows both
+hashes for the current version. The two hashes are not interchangeable.

@@ -121,8 +121,25 @@ jobs:
             echo "No GitHub release $tag. The ARM64 artifact is still on this workflow run. Create the release before this job can attach Keyware-arm64.exe."
             exit 1
           fi
-          gh release upload "$tag" dist/Keyware-arm64.exe dist/Keyware-arm64.exe.sha256 --clobber
-          hash=$(tr -d '[:space:]' < dist/Keyware-arm64.exe.sha256)
+          asset="Keyware-arm64.exe"
+          if ! gh release view "$tag" --json assets --jq '.assets[].name' | grep -qx "$asset"; then
+            gh release upload "$tag" "dist/$asset" "dist/$asset.sha256" --clobber
+          else
+            echo "Keeping the published $asset. This job does not replace that file or Keyware.exe."
+          fi
+          digest=""
+          for _ in 1 2 3 4 5; do
+            digest=$(gh release view "$tag" --json assets --jq '.assets[] | select(.name=="Keyware-arm64.exe") | .digest')
+            case "$digest" in
+              sha256:[0-9a-fA-F]*) break ;;
+            esac
+            sleep 2
+          done
+          case "$digest" in
+            sha256:[0-9a-fA-F]*) ;;
+            *) echo "Published $asset has no sha256 digest ($digest)"; exit 1 ;;
+          esac
+          hash=$(printf '%s' "${digest#sha256:}" | tr '[:lower:]' '[:upper:]')
           gh release view "$tag" --json body -q .body > /tmp/keyware-notes.md
           python3 tools/arm_notes.py "$hash" < /tmp/keyware-notes.md > /tmp/keyware-notes-arm.md
           gh release edit "$tag" --notes-file /tmp/keyware-notes-arm.md

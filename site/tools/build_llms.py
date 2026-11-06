@@ -55,6 +55,11 @@ def sha256() -> str:
     return re.search(r"X64_SHA256 = '([0-9A-F]{64})'", text).group(1)
 
 
+def arm_sha256() -> str:
+    text = (ROOT / "api" / "_lib" / "release.js").read_text(encoding="utf-8")
+    return re.search(r"ARM_SHA256 = '([0-9A-F]{64})'", text).group(1)
+
+
 SUMMARY = f"""# Keyware
 
 > Keyware is a free, open-source (MIT) key remapper for Windows 10 and 11. It turns any key into a shortcut: chords, separate tap and hold actions, double- and triple-tap, leader keys, macros, auto-click and per-app profiles. It can remap the Copilot key and Caps Lock, and works with macropads and stream decks that send F13 to F24. An optional AI Text mode builds a binding from a plain-English sentence for you to review. No ads, no tracking, no account and no admin rights.
@@ -62,10 +67,11 @@ SUMMARY = f"""# Keyware
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11. The download is one portable exe, no installer. Most PCs use the 64-bit (x64) file, about 20 MB. On ARM64 Windows that file runs under emulation. A native ARM64 build of the same version is listed on the home page when that file is published. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: {{version}}.
+- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20 MB, and native ARM64 Keyware-arm64.exe, about 15.5 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: {{version}}.
 - Download (x64): {BASE}/download/Keyware.exe
-- Download (ARM64, only when published): {BASE}/download/Keyware-arm64.exe
+- Download (ARM64): {BASE}/download/Keyware-arm64.exe
 - SHA-256 (x64 Keyware.exe {{version}}): {{sha256}}
+- SHA-256 (ARM64 Keyware-arm64.exe {{version}}): {{armsha}}
 - License: MIT, open source.
 - Privacy: settings stay on the PC in %APPDATA%\\Keyware\\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. A Play action looks up the name you entered. Feedback sends the message, email, app version and a random install ID; the server keeps a salted hash of that ID. See {BASE}/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
@@ -87,7 +93,7 @@ Key facts:
 
 def main() -> None:
     v = version()
-    summary = SUMMARY.replace("{version}", v).replace("{sha256}", sha256())
+    summary = SUMMARY.replace("{version}", v).replace("{sha256}", sha256()).replace("{armsha}", arm_sha256())
     (ROOT / "llms.txt").write_text(summary, encoding="utf-8")
     full = [summary.rstrip(), "", "---", "", "# Home page", ""]
     home = BeautifulSoup((ROOT / "index.html").read_text(encoding="utf-8"), "html.parser")

@@ -8,7 +8,7 @@
 
 <p align="center">
   Remap any key or mouse button, build macros and hotkeys, and set per-app shortcuts, just by describing them in plain English.<br>
-  <a href="https://keyware.site/download">Download for Windows</a> ·
+  <a href="https://keyware.site/#install">Download for Windows</a> ·
   <a href="https://keyware.site/guide">Guide</a> ·
   <a href="https://keyware.site/whats-new">What's new</a> ·
   <a href="https://keyware.site/privacy">Privacy</a> ·
@@ -79,15 +79,14 @@ Donate button. See the full list at
 
 ## Download
 
-Get the latest 64-bit `Keyware.exe` from **https://keyware.site/download**.
+The site offers two Windows builds, each with its own size and SHA-256:
+64-bit `Keyware.exe` and native ARM64 `Keyware-arm64.exe`.
+Get them from **https://keyware.site/#install**.
 The [guide](https://keyware.site/guide)
 walks through the first setup. Windows 10 or 11. Most PCs use the 64-bit
-file, which also runs under emulation on ARM64 Windows.
-
-The same page lists a native ARM64 `Keyware-arm64.exe` when that build of the
-same version is attached to the GitHub release. It is a separate file, with
-its own SHA-256. PyInstaller cannot cross-compile, so the ARM64 file is built
-on GitHub's `windows-11-arm` runner.
+file, which also runs under emulation on ARM64 Windows. Windows on ARM,
+including Copilot+ PCs, uses the ARM64 file. PyInstaller cannot cross-compile,
+so that file is built on GitHub's `windows-11-arm` runner.
 
 There is no Mac download. Remapping is the Windows hook described below.
 A Mac build of this code would not remap keys.
@@ -119,8 +118,9 @@ Every push is tested and built by GitHub Actions
 ([`.github/workflows/build.yml`](.github/workflows/build.yml)).
 `windows-latest` produces the unsigned x64 exe. `windows-11-arm` produces the
 unsigned native ARM64 exe. Each run uploads both artifacts. A push to `main`
-also attaches `Keyware-arm64.exe` to the existing GitHub release for that
-version, which is when the website offers the ARM64 download.
+attaches `Keyware-arm64.exe` to the existing GitHub release when that asset
+is not already there, and writes that file's SHA-256 into the release notes.
+It does not replace the published x64 `Keyware.exe`.
 
 ### Text mode and API keys
 

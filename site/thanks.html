@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Thanks for downloading · Keyware</title>
-  <meta name="description" content="Your Keyware download is starting. Quick setup steps and ways to support Keyware.">
+  <meta name="description" content="Choose the 64-bit (x64) or ARM64 Keyware download. There is no Mac download.">
   <meta name="robots" content="noindex, follow">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="color-scheme" content="dark">
@@ -15,7 +15,6 @@
   <link rel="manifest" href="/site.webmanifest">
   <link rel="preload" href="/assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/css/style.css">
-  <noscript><meta http-equiv="refresh" content="1;url=/download/Keyware.exe"></noscript>
   <script src="/assets/js/config.js" defer></script>
   <script src="/assets/js/main.js" defer></script>
   <script src="/assets/js/thanks.js" defer></script>
@@ -34,7 +33,7 @@
         <a href="/guide">Guide</a>
         <a href="/privacy" class="hide-sm">Privacy</a>
       </nav>
-      <a class="btn btn--sm btn--light" href="/download/Keyware.exe" data-download-direct download>Download</a>
+      <a class="btn btn--sm btn--light" href="/#install">Download</a>
     </div>
   </header>
 
@@ -43,11 +42,27 @@
       <section class="cta" aria-labelledby="thanks-title">
         <div class="cta__glow" aria-hidden="true"></div>
         <img class="cta__logo" src="/assets/img/logo.svg" alt="Keyware logo" width="72" height="72">
-        <p class="thanks__status" data-dl-status role="status"><span class="thanks__spin" aria-hidden="true"></span><span data-dl-text>Your download is starting…</span></p>
-        <h1 id="thanks-title" class="thanks__title">Thanks for downloading Keyware</h1>
-        <p class="lead"><span data-file>Keyware.exe</span> · v<span data-version>1.3.8</span> · <span data-size>20.2 MB</span></p>
-        <p class="thanks__again">SHA-256 <code data-sha>9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09</code></p>
-        <p class="thanks__again">Didn't start? <a href="/download/Keyware.exe" data-download-direct download>Download Keyware again</a></p>
+        <p class="thanks__status" data-dl-status role="status"><span data-dl-text>Choose 64-bit (x64) or ARM64. There is no Mac download.</span></p>
+        <h1 id="thanks-title" class="thanks__title">Download Keyware</h1>
+        <div class="arch-pick" role="group" aria-label="Choose a Windows build">
+          <div class="arch-card">
+            <p class="arch-card__kicker">Most PCs</p>
+            <h3>64-bit (x64)</h3>
+            <p>On ARM64 Windows this file runs under emulation.</p>
+            <a class="btn btn--primary" href="/download/Keyware.exe" data-download>Download 64-bit (x64)</a>
+            <p class="arch-card__file">Keyware.exe · v<span data-version>1.3.8</span> · <span data-size>20.2 MB</span></p>
+            <p class="hashline">SHA-256 <code data-sha>9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09</code></p>
+          </div>
+          <div class="arch-card">
+            <p class="arch-card__kicker">Windows on ARM</p>
+            <h3>ARM64</h3>
+            <p>Native build, including Copilot+ PCs.</p>
+            <a class="btn btn--primary" href="/download/Keyware-arm64.exe" data-arm>Download ARM64</a>
+            <p class="arch-card__file">Keyware-arm64.exe · v<span data-version>1.3.8</span> · <span data-arm-size>15.5 MB</span></p>
+            <p class="hashline">SHA-256 <code data-arm-sha>84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D</code></p>
+          </div>
+        </div>
+        <p class="hero__note">No Mac download, on Apple Silicon or Intel. A Mac build of this app would not remap keys.</p>
 
         <ol class="install">
           <li><span class="install__n">1</span><div><h3>Run Keyware.exe</h3><p>Open it from your Downloads folder. No installer, nothing to sign up for.</p></div></li>
@@ -91,7 +106,7 @@
       <nav class="footer__links" aria-label="Footer">
         <a href="/">Home</a>
         <a href="/guide">Guide</a>
-        <a href="/download/Keyware.exe" data-download-direct download>Download</a>
+        <a href="/#install">Download</a>
         <a href="/privacy">Privacy</a>
         <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>
         <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>

@@ -77,8 +77,14 @@ strong{color:var(--fg);font-weight:600}
 .hero__meta .sep{margin:0 10px;opacity:.6}
 .hero__note{max-width:560px;margin:14px auto 0;color:var(--fg-3);font-size:13px;line-height:1.55}
 .hero__note a{color:var(--fg-2)}
-.arch-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center}
-.arch-arm{margin-top:22px}
+.arch-pick{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:28px auto 0;max-width:860px;text-align:left}
+.arch-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:22px 20px 18px;border:1px solid var(--line-2);border-radius:18px;background:rgba(255,255,255,.035)}
+.arch-card__kicker{margin:0;font-size:12px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.arch-card h3{margin:0;font-size:22px;font-weight:650;letter-spacing:-.02em}
+.arch-card p{margin:0;color:var(--fg-2);font-size:14.5px}
+.arch-card .btn{margin-top:4px}
+.arch-card__file{color:var(--fg-3);font-size:13px}
+.arch-card .hashline{margin:0;max-width:none;text-align:left}
 .hashline{margin:14px auto 0;max-width:720px;color:var(--fg-3);font-size:12.5px;line-height:1.55;text-align:center}
 .hashline code{font-size:11.5px}
 .hero__shot{position:relative;margin:64px auto 0;max-width:1040px}
@@ -243,8 +249,8 @@ strong{color:var(--fg);font-weight:600}
 /* Mobile hero tweaks */
 @media (max-width:620px){
   .hero{padding:56px 0 24px}
-  .hero__cta .btn,.arch-row .btn{width:100%}
-  .arch-row{flex-direction:column}
+  .hero__cta .btn,.arch-card .btn{width:100%}
+  .arch-pick{grid-template-columns:1fr}
   .hero__shot{margin-top:56px}
   .keystrip{top:-26px;padding:6px 8px;gap:4px}
   .keystrip .kbd{font-size:12px}

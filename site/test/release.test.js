@@ -14,6 +14,7 @@ const { MemoryKV } = require('../api/_lib/kv');
 
 const ROOT = path.join(__dirname, '..');
 const HASH = '9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09';
+const ARM_HASH = '84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D';
 const CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';
 
 function armAsset(extra = {}) {
@@ -54,14 +55,22 @@ test('x64 release constants match the published 1.3.8 file', () => {
   assert.equal(release.SHA256, HASH);
   assert.equal(release.X64.bytes, 21173481);
   assert.equal(release.X64.size, '20.2 MB');
+  assert.equal(release.ARM_SHA256, ARM_HASH);
+  assert.equal(release.ARM_BYTES, 16203491);
+  assert.equal(release.formatSize(release.ARM_BYTES), '15.5 MB');
+  assert.notEqual(release.ARM_SHA256, HASH);
   assert.equal(release.X64.version, release.VERSION);
   assert.equal(release.FILE_PATH, '/download/1.3.8/Keyware.exe');
   const config = fs.readFileSync(path.join(ROOT, 'assets/js/config.js'), 'utf8');
   assert.match(config, new RegExp(`VERSION: "${release.VERSION}"`));
   assert.match(config, new RegExp(`FILE_SIZE: "${release.X64.size}"`));
   assert.match(config, new RegExp(`SHA256: "${HASH}"`));
-  for (const file of ['index.html', 'guide.html']) {
-    assert.ok(fs.readFileSync(path.join(ROOT, file), 'utf8').includes(HASH), file);
+  assert.match(config, new RegExp(`ARM_SHA256: "${ARM_HASH}"`));
+  assert.match(config, /ARM_FILE_SIZE: "15\.5 MB"/);
+  for (const file of ['index.html', 'guide.html', 'thanks.html']) {
+    const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    assert.ok(html.includes(HASH), file);
+    assert.ok(html.includes(ARM_HASH), file);
   }
 });
 
@@ -125,13 +134,16 @@ test('ARM64 download redirects to that asset; a missing asset is not a file', as
   assert.equal(down.statusCode, 503);
 });
 
-test('the download page hides ARM64 until the script shows it, and the hashes stay on the x64 file', () => {
+test('the download page offers x64 and ARM64 as equal choices, with no Mac download', () => {
   const home = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const guide = fs.readFileSync(path.join(ROOT, 'guide.html'), 'utf8');
-  assert.match(home, /data-arm-wrap hidden/);
-  assert.match(guide, /data-arm-wrap hidden/);
-  assert.match(home, /No Mac download/);
-  assert.match(guide, /no Mac download/);
+  const thanks = fs.readFileSync(path.join(ROOT, 'thanks.html'), 'utf8');
+  for (const html of [home, guide, thanks]) {
+    assert.match(html, /Download 64-bit \(x64\)/);
+    assert.match(html, /Download ARM64/);
+    assert.equal(html.includes('data-arm-wrap hidden'), false);
+    assert.match(html, /[Nn]o Mac download/);
+  }
   assert.ok(!/Keyware\.dmg|Download for Mac|macos-latest/.test(home + guide));
   assert.ok(!/code-signed yet|only need to do this once|nothing is left behind|Only Text mode connects/.test(home + guide));
   assert.match(home, /Start Keyware with Windows/);
