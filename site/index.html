@@ -129,7 +129,7 @@
           "name": "Which versions of Windows are supported?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Windows 10 and Windows 11. The download is 64-bit (x64), and on ARM64 Windows that file runs under emulation. A native ARM64 build of the same version is listed beside it when that file is published."
+            "text": "Windows 10 and Windows 11. The page offers two builds: 64-bit (x64) Keyware.exe, which runs under emulation on ARM64 Windows, and a native ARM64 Keyware-arm64.exe for Windows on ARM, including Copilot+ PCs. There is no Mac download."
           }
         },
         {
@@ -165,7 +165,7 @@
         <a href="/guide">Guide</a>
         <a href="/whats-new">What's new</a>
       </nav>
-      <a class="btn btn--sm btn--light" href="/thanks" data-download>Download</a>
+      <a class="btn btn--sm btn--light" href="/#install">Download</a>
     </div>
   </header>
 
@@ -182,22 +182,32 @@
         </a>
         <h1 id="hero-title" class="hero__title reveal">Make your keys<br> your own.</h1>
         <p class="hero__sub reveal">Remap any key or mouse button, build macros and hotkeys, and set per-app shortcuts, just by describing them in plain English.</p>
-        <div class="hero__cta reveal">
-          <a class="btn btn--primary btn--lg" href="/thanks" data-download>
-            <svg class="win" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.2 10.4 4.2v7.1H3V5.2Zm0 13.6 7.4 1v-7.1H3v6.1Zm8.2 1.1L21 21.3v-8.6h-9.8v7.2Zm0-15.8v7.2H21V2.7l-9.8 1.4Z"/></svg>
-            Download for Windows
-          </a>
-          <a class="btn btn--ghost btn--lg" href="/guide">How to use Keyware <span aria-hidden="true">→</span></a>
+        <div class="arch-pick reveal" role="group" aria-label="Choose a Windows build">
+          <div class="arch-card">
+            <p class="arch-card__kicker">Most PCs</p>
+            <h3>64-bit (x64)</h3>
+            <p>Windows 10 and 11. On ARM64 Windows this file runs under emulation.</p>
+            <a class="btn btn--primary" href="/download/Keyware.exe" data-download>Download 64-bit (x64)</a>
+            <p class="arch-card__file">Keyware.exe · v<span data-version>1.3.8</span> · <span data-size>20.2 MB</span></p>
+            <p class="hashline">SHA-256 <code data-sha>9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09</code></p>
+          </div>
+          <div class="arch-card">
+            <p class="arch-card__kicker">Windows on ARM</p>
+            <h3>ARM64</h3>
+            <p>Native build for Windows on ARM, including Copilot+ PCs.</p>
+            <a class="btn btn--primary" href="/download/Keyware-arm64.exe" data-arm>Download ARM64</a>
+            <p class="arch-card__file">Keyware-arm64.exe · v<span data-version>1.3.8</span> · <span data-arm-size>15.5 MB</span></p>
+            <p class="hashline">SHA-256 <code data-arm-sha>84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D</code></p>
+          </div>
         </div>
         <p class="hero__meta reveal">
           <span>v<span data-version>1.3.8</span></span><span class="sep" aria-hidden="true">·</span>
-          <span data-size>20.2 MB</span><span class="sep" aria-hidden="true">·</span>
-          <span>64-bit (x64)</span><span class="sep" aria-hidden="true">·</span>
           <span>Windows 10 &amp; 11</span><span class="sep" aria-hidden="true">·</span>
-          <span>Free, no ads, no tracking</span>
+          <span>Free, no ads, no tracking</span><span class="sep" aria-hidden="true">·</span>
+          <a href="/guide">How to use Keyware</a>
         </p>
+        <p class="hero__note reveal">No Mac download, on Apple Silicon or Intel. Keyware remaps keys with a Windows keyboard and mouse hook, so a Mac build of this app would not remap keys.</p>
         <p class="hero__note reveal">Windows may show a SmartScreen prompt when you open a new download, because Keyware isn't code-signed. Click <strong>More info</strong> → <strong>Run anyway</strong>. <a href="#install">How to install</a></p>
-        <p class="hero__note reveal" data-arm-wrap hidden><a href="/download/Keyware-arm64.exe" data-arm>Download the native ARM64 build</a> of the same version (<span data-arm-size></span>). SHA-256 <code data-arm-sha></code>.</p>
 
         <div class="hero__shot reveal">
           <div class="keystrip" aria-hidden="true">
@@ -487,25 +497,29 @@
           <div class="cta__glow" aria-hidden="true"></div>
           <img class="cta__logo" src="/assets/img/logo.svg" alt="Keyware logo" width="72" height="72" loading="lazy">
           <h2 id="install-title">Make your keys your own.</h2>
-          <p class="lead">Free for Windows 10 and 11. One portable file, no installer, nothing to sign up for. Most PCs use the 64-bit download. On ARM64 Windows that file runs under emulation.</p>
-          <div class="arch-row">
-            <a class="btn btn--primary btn--lg" href="/thanks" data-download>
-              <svg class="win" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.2 10.4 4.2v7.1H3V5.2Zm0 13.6 7.4 1v-7.1H3v6.1Zm8.2 1.1L21 21.3v-8.6h-9.8v7.2Zm0-15.8v7.2H21V2.7l-9.8 1.4Z"/></svg>
-              Download for Windows
-            </a>
-          </div>
-          <p class="hero__meta">Keyware.exe<span class="sep" aria-hidden="true">·</span>v<span data-version>1.3.8</span><span class="sep" aria-hidden="true">·</span><span data-size>20.2 MB</span><span class="sep" aria-hidden="true">·</span>64-bit (x64)</p>
-          <p class="hashline">SHA-256 <code data-sha>9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09</code></p>
-          <div class="arch-arm" data-arm-wrap hidden>
-            <div class="arch-row">
-              <a class="btn btn--ghost btn--lg" href="/download/Keyware-arm64.exe" data-arm>Download for Windows on ARM</a>
+          <p class="lead">Free for Windows 10 and 11. Choose 64-bit (x64) or ARM64. One portable file, no installer, nothing to sign up for.</p>
+          <div class="arch-pick" role="group" aria-label="Choose a Windows build">
+            <div class="arch-card">
+              <p class="arch-card__kicker">Most PCs</p>
+              <h3>64-bit (x64)</h3>
+              <p>Windows 10 and 11. On ARM64 Windows this file runs under emulation.</p>
+              <a class="btn btn--primary" href="/download/Keyware.exe" data-download>Download 64-bit (x64)</a>
+              <p class="arch-card__file">Keyware.exe · v<span data-version>1.3.8</span> · <span data-size>20.2 MB</span></p>
+              <p class="hashline">SHA-256 <code data-sha>9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09</code></p>
             </div>
-            <p class="hashline">Keyware-arm64.exe<span class="sep" aria-hidden="true"> · </span>v<span data-version>1.3.8</span><span class="sep" aria-hidden="true"> · </span><span data-arm-size></span><span class="sep" aria-hidden="true"> · </span>ARM64<br>SHA-256 <code data-arm-sha></code></p>
+            <div class="arch-card">
+              <p class="arch-card__kicker">Windows on ARM</p>
+              <h3>ARM64</h3>
+              <p>Native build for Windows on ARM, including Copilot+ PCs.</p>
+              <a class="btn btn--primary" href="/download/Keyware-arm64.exe" data-arm>Download ARM64</a>
+              <p class="arch-card__file">Keyware-arm64.exe · v<span data-version>1.3.8</span> · <span data-arm-size>15.5 MB</span></p>
+              <p class="hashline">SHA-256 <code data-arm-sha>84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D</code></p>
+            </div>
           </div>
           <p class="hero__note">No Mac download, on Apple Silicon or Intel. Keyware remaps keys with a Windows keyboard and mouse hook, so a Mac build of this app would not remap keys.</p>
 
           <ol class="install">
-            <li><span class="install__n">1</span><div><h3>Download</h3><p>Save <code>Keyware.exe</code> anywhere you like, for example your Desktop. On a Windows on ARM PC, use the ARM64 button above when it is shown.</p></div></li>
+            <li><span class="install__n">1</span><div><h3>Download</h3><p>Choose <strong>64-bit (x64)</strong> or <strong>ARM64</strong> above and save that file anywhere you like, for example your Desktop. Most PCs use 64-bit. Windows on ARM uses ARM64.</p></div></li>
             <li><span class="install__n">2</span><div><h3>More info → Run anyway</h3><p>Keyware isn't code-signed, so Windows SmartScreen may say it “protected your PC” when you open a new download. Click <strong>More info</strong>, then <strong>Run anyway</strong>.</p></div></li>
             <li><span class="install__n">3</span><div><h3>Turn it on</h3><p>Add a binding, press Save, and Keyware switches on. It lives in your system tray.</p></div></li>
           </ol>
@@ -569,7 +583,7 @@
           </details>
           <details class="reveal">
             <summary>Which versions of Windows are supported?</summary>
-            <div class="faq__a"><p>Windows 10 and Windows 11. The download on this page is 64-bit (x64), which is the right file for most PCs. On ARM64 Windows that file runs under emulation. A native ARM64 build of the same version is listed beside it when that file is published. That is the build for Windows on ARM, including Copilot+ PCs.</p></div>
+            <div class="faq__a"><p>Windows 10 and Windows 11. This page has two downloads: <strong>64-bit (x64)</strong> <code>Keyware.exe</code> for most PCs, and native <strong>ARM64</strong> <code>Keyware-arm64.exe</code> for Windows on ARM, including Copilot+ PCs. On ARM64 Windows the 64-bit file runs under emulation. Each button lists that file's size and SHA-256.</p></div>
           </details>
           <details class="reveal">
             <summary>Does Keyware work on a Mac?</summary>
@@ -590,7 +604,7 @@
         <p>Make your keys your own.</p>
       </div>
       <nav class="footer__links" aria-label="Footer">
-        <a href="/thanks" data-download>Download</a>
+        <a href="/#install">Download</a>
         <a href="#features">Features</a>
         <a href="/guide">Guide</a>
         <a href="#text-mode">Text mode</a>
