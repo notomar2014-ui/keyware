@@ -39,18 +39,17 @@ bindings you review before saving. Nothing is ever saved automatically.
   a *Play* song or video), also use the network. What each one sends is on the
   [privacy page](https://keyware.site/privacy).
 
-## New in 1.3.7
+## New in 1.3.8
 
-- **Setups 1-9.** Keep several sets of bindings in one profile (for example in
-  Minecraft: Setup 1 Elytra, Setup 2 Spear). Hold a number key for 8 seconds to
-  switch; a quick tap still types the number. A toast shows "Setup 2: Spear".
-  The hold time is configurable and each profile remembers its setup.
-- **One-key on/off.** Ctrl + Alt + F12 (change it in Settings) turns Keyware off
-  and on, with a toast each time. While off, every key passes straight through.
-- **Per-app shortcut rules.** Make a binding only fire in the apps you choose.
+- **Per-app rules no longer stick a key.** For App or Both, the physical
+  key-down and key-up both reach the app. App skips Keyware's action and the
+  hold beep. Both runs the action and still passes the key. A short hold does
+  not type that key a second time.
 
-1.3.6 added binding any key or mouse button and a Donate button.
-See the full list at [keyware.site/whats-new](https://keyware.site/whats-new).
+1.3.7 added setups inside a profile, an on/off shortcut with toasts, and
+per-app shortcut rules. 1.3.6 added binding any key or mouse button and a
+Donate button. See the full list at
+[keyware.site/whats-new](https://keyware.site/whats-new).
 
 ## Screenshots
 
@@ -82,7 +81,8 @@ See the full list at [keyware.site/whats-new](https://keyware.site/whats-new).
 
 Get the latest `Keyware.exe` from **https://keyware.site/download**.
 The [guide](https://keyware.site/guide)
-walks through the first setup. Windows 10 or 11.
+walks through the first setup. Windows 10 or 11, 64-bit. On ARM64 Windows the
+same exe runs under x64 emulation. There is no native ARM64 build.
 
 ## Build from source
 
