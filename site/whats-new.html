@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>What's new · Keyware</title>
-  <meta name="description" content="What's new in Keyware 1.3.7 and 1.3.6: setups, an on/off shortcut, per-app shortcut rules, any key or mouse button, and a Donate button.">
+  <meta name="description" content="What's new in Keyware 1.3.8: per-app shortcut rules no longer leave a stuck key. 1.3.7 added setups, an on/off shortcut, and per-app rules.">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="color-scheme" content="dark">
   <link rel="canonical" href="https://keyware.site/whats-new">
@@ -57,6 +57,16 @@
   <div class="container container--guide guide">
     <main id="main" class="doc">
 
+      <section id="v1-3-8" class="doc__section">
+        <p class="doc__kicker">6 November 2026</p>
+        <h2>Version 1.3.8</h2>
+        <ul>
+          <li><strong>Per-app rules no longer stick a key.</strong> With <strong>App</strong> or <strong>Both</strong>, Keyware 1.3.7 let the key go down and then swallowed the key-up, so the app in front could see a stuck key. The press and the release now both reach that app. <strong>App</strong> still skips Keyware's action. <strong>Both</strong> still runs the action and passes the key. A short hold does not type the key a second time. <a href="/guide#per-app-rules">Per-app shortcut rules</a></li>
+        </ul>
+        <p>The download is the same 64-bit <code>Keyware.exe</code>. On ARM64 Windows it runs under emulation. There is no separate ARM build.</p>
+        <p><a href="/thanks" data-download>Download Keyware v<span data-version>1.3.8</span></a> · <a href="https://github.com/notomar2014-ui/keyware/releases/tag/v1.3.8" target="_blank" rel="noopener">Release v1.3.8 on GitHub</a></p>
+      </section>
+
       <section id="v1-3-7" class="doc__section">
         <p class="doc__kicker">5 November 2026</p>
         <h2>Version 1.3.7</h2>
@@ -74,7 +84,7 @@
           <li><strong>Any key or mouse button.</strong> Use middle click, back/forward, the wheel and tilt, modifier + left/right click, or any Windows key code as a trigger. <a href="/guide#any-button">More</a></li>
           <li><strong>Donate button.</strong> A way to support Keyware, right in the app.</li>
         </ul>
-        <p><a href="/thanks" data-download>Download Keyware v<span data-version>1.3.7</span></a> · <a href="https://github.com/notomar2014-ui/keyware/releases" target="_blank" rel="noopener">All releases on GitHub</a></p>
+        <p><a href="https://github.com/notomar2014-ui/keyware/releases" target="_blank" rel="noopener">All releases on GitHub</a></p>
       </section>
 
     </main>
@@ -97,7 +107,7 @@
         <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>
         <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>
       </nav>
-      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.3.7</span> · Windows is a trademark of Microsoft.</p>
+      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.3.8</span> · Windows is a trademark of Microsoft.</p>
     </div>
   </footer>
 </body>

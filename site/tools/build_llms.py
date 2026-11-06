@@ -57,7 +57,7 @@ SUMMARY = f"""# Keyware
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11, 64-bit. A single portable Keyware.exe (about 20 MB), no installer. Current version: {{version}}.
+- Platform: Windows 10 and Windows 11, 64-bit. A single portable Keyware.exe (about 20 MB), no installer. On ARM64 Windows that exe runs under x64 emulation. Current version: {{version}}.
 - Download: {BASE}/download/Keyware.exe
 - License: MIT, open source.
 - Privacy: settings stay on the PC in %APPDATA%\\Keyware\\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. Optional feedback and actions you create (such as a Play lookup) can also use the network. See {BASE}/privacy.
