@@ -59,12 +59,13 @@ def apply_app_rules(effects: list, suppress: bool, mode_for) -> tuple[list, bool
     """Filter detector effects by per-app rules.
 
     mode_for(binding_id) -> "keyware" | "app" | "both". "app" drops the fire (and its
-    log/audio), "both" keeps the fire; either passes the key through. Returns
+    log and hold beep), "both" keeps the fire; either passes the key through. Returns
     (effects, suppress, passed_through).
     """
     out: list = []
     passed = False
     skip_log = ""
+    skip_audio = False
     for effect in effects:
         if effect.kind == "fire" and effect.binding_id:
             mode = mode_for(effect.binding_id)
@@ -72,9 +73,15 @@ def apply_app_rules(effects: list, suppress: bool, mode_for) -> tuple[list, bool
                 passed = True
             if mode == "app":
                 skip_log = effect.message  # the matching "Fired ..." log
+                skip_audio = True  # the hold beep that follows that log
                 continue
         if skip_log and effect.kind == "log" and effect.message == skip_log:
             skip_log = ""
             continue
+        if skip_audio and effect.kind == "audio":
+            skip_audio = False
+            continue
+        if effect.kind != "log":
+            skip_audio = False
         out.append(effect)
     return out, (False if passed else suppress), passed

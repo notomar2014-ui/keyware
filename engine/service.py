@@ -321,11 +321,18 @@ class KeywareService:
             self._lock.release()
         effects = result.effects
         suppress = result.suppress
+        name = canonicalize(key) or key
         if any(effect.kind == "fire" and effect.binding_id for effect in effects):
             effects, suppress, passed = self._apply_app_rules(effects, suppress)
-            if passed and pressed:
-                # The down goes to the app, so its key-up must too.
-                self._detector.swallow_release.discard(key)
+            if passed and pressed and not self.config.dry_run:
+                # The down goes to the app, so the key-up must too. Otherwise the
+                # app sees a stuck key (chord fires on the down and the up has no fire).
+                self._mark_passthrough(name)
+        elif pressed and suppress and not self.config.dry_run and self._bare_key_passthrough(name):
+            # Tap and hold decide on release. Pass the down through now; the
+            # release keeps the fire so "both" still runs and "app" can drop it.
+            self._mark_passthrough(name)
+            suppress = False
         if self.config.dry_run:
             effects, logs, pause = _split_dry(effects)
             for message in logs:
@@ -351,15 +358,39 @@ class KeywareService:
         rules = {e.binding_id: self._binding_rules(e.binding_id) for e in effects if e.kind == "fire" and e.binding_id}
         if not any(rules.values()):
             return effects, suppress, False
-        name = self.foreground_name
-        if self.context is not None:
-            # Fresh read at key time (one OpenProcess call, only for bindings with rules);
-            # the 500 ms cache could still name the previous window after an Alt+Tab.
-            try:
-                name = process_basename(self.context.read()) or name
-            except Exception:
-                pass
+        name = self._rules_process_name()
         return apply_app_rules(effects, suppress, lambda binding_id: app_rule_mode(rules.get(binding_id), name))
+
+    def _rules_process_name(self) -> str:
+        """Foreground exe for app rules. Fresh read so Alt+Tab is not one poll behind."""
+        name = self.foreground_name
+        if self.context is None:
+            return name
+        try:
+            return process_basename(self.context.read()) or name
+        except Exception:
+            return name
+
+    def _mark_passthrough(self, name: str) -> None:
+        held = self._detector.held.get(name)
+        if held is not None:
+            held.passthrough = True
+        self._detector.swallow_release.discard(name)
+
+    def _bare_key_passthrough(self, name: str) -> bool:
+        """True when every binding delaying this bare key lets the foreground app have it."""
+        bindings = list(self._detector._by_key.get(name, []))
+        if not bindings or not any(binding.app_rules for binding in bindings):
+            return False
+        proc = self._rules_process_name()
+        return all(app_rule_mode(binding.app_rules, proc) in ("app", "both") for binding in bindings)
+
+    def _filter_app_rule_fires(self, effects: list[Effect]) -> list[Effect]:
+        """Hold actions fire from tick, not from the key event. Apply the same rules there."""
+        if not any(effect.kind == "fire" and effect.binding_id for effect in effects):
+            return effects
+        filtered, _suppress, _passed = self._apply_app_rules(effects, False)
+        return filtered
 
     def tick(self, now: float | None = None) -> None:
         if self._recorder is not None:
@@ -383,6 +414,8 @@ class KeywareService:
                     self.physical.reconcile(self._key_down, moment)
                 except Exception:
                     effects.append(Effect(kind="log", message="Could not read key state."))
+        if not self.config.dry_run:
+            effects = self._filter_app_rule_fires(effects)
         if self.config.dry_run:
             effects, logs, pause = _split_dry(effects)
             for message in logs:
