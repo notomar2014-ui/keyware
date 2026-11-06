@@ -100,3 +100,104 @@ def test_no_matching_binding_creates_as_before():
     real = Binding(id="n", enabled=True, mode="chord", keys=["ctrl", "shift", "s"],
                    action=Action(type="open_url", url="https://x.com"), app_rules={"cursor.exe": "app"})
     assert merge_rules_proposal(real, [_binding()]) is None
+
+
+def _svc(tmp_path):
+    from tests.fakes import service
+
+    created, opener, injector, audio, _hook = service(tmp_path)
+    created.set_enabled(True)
+    created.set_foreground("cursor.exe")
+    return created, opener, injector, audio
+
+
+def test_app_rule_chord_passes_the_key_down_and_up(tmp_path):
+    """The app must see the whole chord. Swallowing only the key-up leaves the key stuck."""
+    created, opener, _injector, _audio = _svc(tmp_path)
+    created.add_binding("global", _binding(app_rules={"cursor.exe": "app"}))
+    assert created.handle_input("ctrl", True, 0.0) is False
+    assert created.handle_input("shift", True, 0.0) is False
+    assert created.handle_input("s", True, 0.0) is False
+    assert created.handle_input("s", True, 0.05) is False  # auto-repeat
+    assert created.handle_input("s", False, 0.1) is False
+    assert opener.urls == []
+    created.handle_input("shift", False, 0.1)
+    created.handle_input("ctrl", False, 0.1)
+
+    created.set_foreground("notepad.exe")
+    assert created.handle_input("ctrl", True, 1.0) is False
+    assert created.handle_input("shift", True, 1.0) is False
+    assert created.handle_input("s", True, 1.0) is True
+    assert created.handle_input("s", False, 1.1) is True
+    assert opener.urls == ["https://example.com"]
+
+
+def test_both_rule_runs_the_action_and_passes_the_chord(tmp_path):
+    created, opener, _injector, _audio = _svc(tmp_path)
+    created.add_binding("global", _binding(app_rules={"cursor.exe": "both"}))
+    assert created.handle_input("ctrl", True, 0.0) is False
+    assert created.handle_input("shift", True, 0.0) is False
+    assert created.handle_input("s", True, 0.0) is False
+    assert created.handle_input("s", False, 0.1) is False
+    assert opener.urls == ["https://example.com"]
+
+
+def test_app_rule_hold_passes_the_key_and_does_not_type_it_twice(tmp_path):
+    created, opener, injector, audio = _svc(tmp_path)
+    created.add_binding("global", Binding(
+        id="h", enabled=True, mode="hold", keys=["f8"], hold_ms=300,
+        action=Action(type="open_url", url="https://example.com/hold"),
+        app_rules={"cursor.exe": "app"},
+    ))
+    assert created.handle_input("f8", True, 0.0) is False
+    assert created.handle_input("f8", False, 0.1) is False
+    assert injector.events == []
+    assert created.handle_input("f8", True, 1.0) is False
+    created.tick(1.3)
+    assert created.handle_input("f8", False, 1.4) is False
+    assert opener.urls == []
+    assert audio.played == []
+
+    created.set_foreground("notepad.exe")
+    assert created.handle_input("f8", True, 2.0) is True
+    assert created.handle_input("f8", False, 2.1) is True
+    assert ("press", "f8") in injector.events
+    created.handle_input("f8", True, 3.0)
+    created.tick(3.3)
+    assert opener.urls == ["https://example.com/hold"]
+
+
+def test_both_rule_hold_runs_during_the_hold(tmp_path):
+    created, opener, injector, _audio = _svc(tmp_path)
+    created.add_binding("global", Binding(
+        id="h", enabled=True, mode="hold", keys=["f8"], hold_ms=300,
+        action=Action(type="open_url", url="https://example.com/hold"),
+        app_rules={"cursor.exe": "both"},
+    ))
+    assert created.handle_input("f8", True, 0.0) is False
+    created.tick(0.3)
+    assert opener.urls == ["https://example.com/hold"]
+    assert created.handle_input("f8", False, 0.4) is False
+    assert injector.events == []
+
+
+def test_app_rule_drops_the_hold_beep_and_both_keeps_it():
+    beep = [Effect(kind="fire", binding_id="b1", action=Action(type="none"), message="Fired X"),
+            Effect(kind="log", message="Fired X"), Effect(kind="audio", hz=880)]
+    dropped, sup, passed = apply_app_rules(beep, True, lambda _id: "app")
+    assert dropped == [] and sup is False and passed is True
+    kept, _sup, passed = apply_app_rules(beep, True, lambda _id: "both")
+    assert [e.kind for e in kept] == ["fire", "log", "audio"] and passed is True
+
+
+def test_tap_app_rule_passes_the_key_without_firing(tmp_path):
+    created, opener, injector, _audio = _svc(tmp_path)
+    created.add_binding("global", Binding(
+        id="t", enabled=True, mode="tap", keys=["f9"],
+        action=Action(type="open_url", url="https://example.com/tap"),
+        app_rules={"cursor.exe": "app"},
+    ))
+    assert created.handle_input("f9", True, 0.0) is False
+    assert created.handle_input("f9", False, 0.05) is False
+    assert opener.urls == []
+    assert injector.events == []

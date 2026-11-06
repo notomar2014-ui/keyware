@@ -50,6 +50,11 @@ def _clicks_while_held(binding: Binding) -> bool:
     return action is not None and action.type == "auto_click" and action.click_mode == "hold"
 
 
+def _synthetic_same_key(effect: Effect, key: str) -> bool:
+    """A replay of `key` itself. Dropped when the physical key already went through."""
+    return effect.kind in ("inject", "inject_down", "inject_up") and effect.key == key
+
+
 def _live(binding: Binding, profile: Profile) -> bool:
     """Enabled, and either always-on (no setup) or in the profile's active setup."""
     if not binding.enabled:
@@ -77,6 +82,10 @@ class _Down:
     profile_id: str
     fired_ids: set[str] = field(default_factory=set)
     replayed: bool = False
+    # App rule "app" or "both": the real key reaches the foreground app.
+    # suppressed stays true so tap/hold still decide on release; the release
+    # itself is not swallowed, and a make-up inject of this same key is dropped.
+    passthrough: bool = False
 
 
 @dataclass
@@ -388,10 +397,11 @@ class InputDetector:
             down = self.held.get(key)
             if down is not None and elapsed_ms(down.at, now) < 50:
                 continue
-            if down is not None and down.suppressed:
+            if down is not None and down.suppressed and not down.passthrough:
                 # Keyware swallowed this key-down, so the OS key state never saw
                 # it and GetAsyncKeyState reports "up" while the user still holds
                 # it. Forget it only when no event (auto-repeat) came for a while.
+                # Passthrough keys did reach the OS, so its key state is real.
                 last = self.seen.get(key, down.at)
                 if elapsed_ms(last, now) < SWALLOWED_STALE_MS:
                     continue
@@ -413,6 +423,8 @@ class InputDetector:
             if self.paused:
                 return HandleResult(False, [])
             down = self.held.get(key)
+            if down is not None and down.passthrough:
+                return HandleResult(False, [])
             return HandleResult(bool(down and down.suppressed), [])
 
         self.down_keys.add(key)
@@ -498,7 +510,13 @@ class InputDetector:
         if self.setup_hold is not None and self.setup_hold.key == key:
             self.setup_hold = None
         clicking = self.autoclick_keys.pop(key, None)
+        passthrough = bool(self.held.get(key) and self.held[key].passthrough)
         result = self._release_key(key, now)
+        if passthrough:
+            # The physical down already reached the app, so do not swallow the
+            # up and do not type the key a second time to "make up" for a swallow.
+            kept = [effect for effect in result.effects if not _synthetic_same_key(effect, key)]
+            result = HandleResult(False, kept)
         if clicking is not None:
             result.effects.insert(0, Effect(kind="autoclick_stop", binding_id=clicking, key=key))
         return result

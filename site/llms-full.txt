@@ -8,7 +8,7 @@ Key facts:
 - Platform: Windows 10 and Windows 11, 64-bit. A single portable Keyware.exe (about 20 MB), no installer. Current version: 1.3.7.
 - Download: https://keyware.site/download/Keyware.exe
 - License: MIT, open source.
-- Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. Only Text mode goes online, and it sends just the sentence typed plus a short summary of existing triggers.
+- Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. Optional feedback and actions you create (such as a Play lookup) can also use the network. See https://keyware.site/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
 - Copilot key: Keyware recognises the Copilot key (which sends Win+Shift+F23) as one key and can bind it to any action. Windows 11 also has a built-in option at Settings > Bluetooth & devices > Keyboard > Customize Copilot key (Search, Copilot or an app; newer updates add Right Ctrl and the Context menu key).
 - Caps Lock: can be remapped, given tap and hold actions (for example tap = Esc, hold = Ctrl) or turned off; Shift+Caps Lock still toggles capitals.
@@ -112,7 +112,7 @@ Yes. Keyware is completely free: no trial, no paid tier, no ads and no account. 
 
 Keyware runs as a normal app without admin rights and has no ads or tracking. Your bindings are stored locally in %APPDATA%\Keyware\config.json. Keys you haven't bound pass straight through to Windows, and Ctrl Alt Shift Esc switches everything off instantly.
 
-The key engine never goes online. Only Text mode connects to the internet, and it sends just the sentence you typed (plus a short summary of your existing triggers and profile names) so the AI can draft a binding for you to review. Feedback you send from Settings includes only your message, your email and the app version. Details are in the privacy statement.
+The key engine never goes online. Text mode sends the sentence you typed plus a short summary of your existing triggers and profile names (your keystrokes are not uploaded). Feedback you send from Settings includes only your message, your email and the app version. Actions you create can also use the network, such as a Play lookup. Details are in the privacy statement.
 
 Because the app isn't code-signed yet, Windows SmartScreen may warn you the first time. Click More info → Run anyway.
 
@@ -382,7 +382,7 @@ With your own free key, Text mode talks to the AI directly and Keyware's daily l
 - Alternative: Groq (free). Create a key at console.groq.com/keys. It starts with gsk_. Paste, Save and Test it the same way.
 Keyware detects which kind of key you pasted and tells you straight away if it doesn't look like a Gemini or Groq key. To go back to Keyware's free AI, turn Use my own free key off.
 
-Privacy. Text mode is the only part of Keyware that goes online for AI. It sends just the sentence you typed (plus a short summary of your existing triggers and profile names) to an AI model so it can draft the binding (through Keyware's server, or straight to Google or Groq if you use your own key). Your keystrokes, bindings and settings never leave your PC. See the privacy statement.
+Privacy. Text mode sends the sentence you typed and a short summary of your setup (your leader key, profile names, the apps they apply to, and triggers you already use) so the AI can draft the binding. That goes through Keyware's server, or straight to Google or Groq if you use your own key. Your keystrokes are not uploaded. See the privacy statement.
 
 06
 
@@ -528,7 +528,7 @@ Open URL only accepts web links, Open app can't pass command-line arguments, and
 
 No tracking, no analytics, no ads. Keyware doesn't log what you type: the log only notes which bindings fired. Your bindings and settings live on your PC in %APPDATA%\Keyware\config.json.
 
-The key engine never goes online. Only Text mode connects to the internet for AI, and it sends just the sentence you type into the Text box, plus a short summary of your existing triggers and profile names so the AI avoids clashes.
+The key engine never goes online. Text mode sends the sentence you type into the Text box, plus a short summary of your existing triggers and profile names, so the AI avoids clashes. Your keystrokes are not uploaded. A Play action also looks up the song or video name you entered.
 
 If you send an idea, feedback or a bug report from Settings, Keyware sends your message, the email you enter and the app version, so we can reply if we need more information. Nothing else is attached, and it's never shared or used for marketing.
 
@@ -552,6 +552,7 @@ Yes. Copy %APPDATA%\Keyware\config.json to the other PC (same folder) and choose
 
 ### How do I uninstall it?
 
+- In Settings, turn off Start Keyware with Windows (it is on by default).
 - Right-click the tray icon and choose Quit.
 - Delete Keyware.exe.
 - Optional: delete the %APPDATA%\Keyware folder to remove your settings.
@@ -600,7 +601,8 @@ Yes. Copy %APPDATA%\Keyware\config.json to the other PC (same folder) and choose
 
 ### Windows Defender or antivirus flagged it
 
-- New, unsigned tools that listen to the keyboard are sometimes flagged by heuristics. Only download Keyware from this site. If SmartScreen appears, use More info → Run anyway.
+- SmartScreen, unrecognized app. A blue “Windows protected your PC” window that says Microsoft Defender SmartScreen prevented an unrecognized app from starting is because Keyware isn't code-signed yet. That is not a malware detection. If you downloaded Keyware from this site, click More info, then Run anyway.
+- Malware or threat detection. If Microsoft Defender or another antivirus names a virus, trojan, or other threat, do not run the file and do not add an exclusion. Delete it and download Keyware again only from this site.
 
 ## Make your keys your own.
 
