@@ -4,6 +4,17 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/((?!api/|api$|download|admin|276cd47d9ac6fadd42e9ec57005f1cc9\\.txt).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "keyware-app.vercel.app"
+        }
+      ],
+      "destination": "https://keyware.site/$1",
+      "permanent": true
+    },
+    {
       "source": "/download",
       "destination": "/download/Keyware.exe",
       "permanent": false
