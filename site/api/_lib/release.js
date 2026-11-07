@@ -8,7 +8,7 @@
 // GitHub digest, and the page script replaces the ARM hash if that digest
 // changes, so the hash on the button matches the file it downloads.
 
-const VERSION = '1.3.8';
+const VERSION = '1.3.9';
 const GITHUB_REPO = 'notomar2014-ui/keyware';
 const ARM_FILE = 'Keyware-arm64.exe';
 const X64_SHA256 = '9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09';

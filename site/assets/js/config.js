@@ -5,7 +5,7 @@ window.KEYWARE_CONFIG = {
   // Both Windows builds. Keep the hashes identical to site/api/_lib/release.js.
   // /download/Keyware.exe is counted, then served from /download/<VERSION>/Keyware.exe.
   // /download/Keyware-arm64.exe is counted, then redirected to the GitHub release asset.
-  VERSION: "1.3.8",
+  VERSION: "1.3.9",
   DOWNLOAD_URL: "/download/Keyware.exe",
   FILE_SIZE: "20.2 MB",
   SHA256: "9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09",

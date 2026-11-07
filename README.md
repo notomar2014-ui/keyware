@@ -39,6 +39,16 @@ bindings you review before saving. Nothing is ever saved automatically.
   a *Play* song or video), also use the network. What each one sends is on the
   [privacy page](https://keyware.site/privacy).
 
+## New in 1.3.9
+
+- **Text mode is a normal sentence.** The box asks what the key should do and
+  shows examples. There is no format to learn.
+- **Every window unless you name an app.** “F7 opens Calculator” opens the
+  Calculator app everywhere. Say “in Chrome” or “while gaming” to limit it.
+  The proposed card says where it will work.
+- An older binding saved as `open_calculator` opens `calc.exe`. Other bindings
+  and profiles stay as they are.
+
 ## New in 1.3.8
 
 - **Per-app rules no longer stick a key.** For App or Both, the physical

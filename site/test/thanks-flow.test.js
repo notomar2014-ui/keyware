@@ -58,7 +58,7 @@ test('the thanks page keeps both files, the published hashes, and an optional Ko
   assert.match(html, /does not start, stop, or delay the file/);
   assert.equal(release.X64_SHA256, X64);
   assert.equal(release.ARM_SHA256, ARM);
-  assert.equal(release.VERSION, '1.3.8');
+  assert.equal(release.VERSION, '1.3.9');
   const cfg = read('assets/js/config.js');
   assert.match(cfg, new RegExp(`DONATE_URL: "${KOFI}"`));
   assert.match(cfg, new RegExp(`SHA256: "${X64}"`));

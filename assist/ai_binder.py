@@ -175,7 +175,7 @@ class Proposal:
         lines = [("Trigger", trigger_text(binding, leader_key)), (hold_name, action_type_label(binding.action.type))]
         lines.extend(_detail_lines(binding.action))
         for app, rule in binding.app_rules.items():
-            lines.append((app, {"keyware": "Keyware only", "app": "App only", "both": "Both"}.get(rule, rule)))
+            lines.append((app, {"keyware": "Keyware handles it", "app": "App only", "both": "Both"}.get(rule, rule)))
         if binding.hold_press:
             lines.append(("While held", f"keeps {format_keys(binding.action.keys)} down"))
         if binding.is_tap_hold():
@@ -187,9 +187,10 @@ class Proposal:
                 lines.extend(_detail_lines(tap))
         if self.profile_name:
             procs = ", ".join(self.process_names)
-            lines.append(("Profile", f"{self.profile_name} ({procs})" if procs else self.profile_name))
+            where = f"Only while {self.profile_name} is in front"
+            lines.append(("Where", f"{where} ({procs})" if procs else where))
         else:
-            lines.append(("Profile", "Global"))
+            lines.append(("Where", "Every window"))
         if self.label:
             lines.insert(0, ("Label", self.label))
         if self.merged_into:
@@ -310,7 +311,7 @@ def looks_like_binding(text: str) -> bool:
 
 # Shared with the proxy (site/api/_lib/prompt.js, written by tools/sync_prompt.py).
 # Bump PROMPT_VERSION whenever the prompt text changes.
-PROMPT_VERSION = "2026.11.02-1"
+PROMPT_VERSION = "2026.11.07-1"
 
 SYSTEM_PROMPT = r"""You are Keyware's binding builder. Keyware is a Windows key remapper. A user describes, in plain words, what a key should do. You reply with ONE JSON object describing a single binding. You never run anything; a human reviews your JSON in an editor and saves it.
 
@@ -364,7 +365,7 @@ Never invent other names (no "mouse4", "fn").
    Searches: YouTube https://www.youtube.com/results?search_query=WORDS ; Google https://www.google.com/search?q=WORDS ;
    Wikipedia https://en.wikipedia.org/w/index.php?search=WORDS ; Amazon https://www.amazon.com/s?k=WORDS ; Spotify web https://open.spotify.com/search/WORDS .
    Plain sites: "open gmail" → https://mail.google.com , "open YouTube" → https://www.youtube.com .
-2. "open_app": {"type":"open_app","app":"notepad.exe"} — an exe name on PATH or a full path. Common: notepad.exe, calc.exe, mspaint.exe, explorer.exe, code (VS Code), cursor.exe (Cursor), chrome.exe, msedge.exe, spotify.exe, discord.exe, slack.exe, steam.exe, obs64.exe, winword.exe (Word), excel.exe, figma.exe, blender.exe, photoshop.exe. No command-line arguments. NEVER cmd, powershell, pwsh, wscript, cscript, mshta, rundll32, regsvr32, reg, regedit, bcdedit, diskpart, shutdown, taskkill, schtasks, netsh, certutil, or any .bat/.cmd/.ps1/.vbs/.js/.hta/.msi/.reg file.
+2. "open_app": {"type":"open_app","app":"notepad.exe"} — an exe name on PATH or a full path. Common: notepad.exe, calc.exe (Calculator), mspaint.exe, explorer.exe, code (VS Code), cursor.exe (Cursor), chrome.exe, msedge.exe, spotify.exe, discord.exe, slack.exe, steam.exe, obs64.exe, winword.exe (Word), excel.exe, figma.exe, blender.exe, photoshop.exe. "Open Calculator" is open_app calc.exe. There is no action type named open_calculator. No command-line arguments. NEVER cmd, powershell, pwsh, wscript, cscript, mshta, rundll32, regsvr32, reg, regedit, bcdedit, diskpart, shutdown, taskkill, schtasks, netsh, certutil, or any .bat/.cmd/.ps1/.vbs/.js/.hta/.msi/.reg file.
 3. "type_text": {"type":"type_text","text":"exact text"} — types literal text (max 8000 chars). Use only when there are no extra key presses.
 4. "key_combo": {"type":"key_combo","keys":["ctrl","shift","t"]} — sends one shortcut once (also a single key like ["enter"] or ["f5"]).
 5. "macro": {"type":"macro","steps":[...]} — ordered steps, 1-64 of them. Use whenever more than one thing happens (text then Enter, several keys, clicks, waits). Step shapes:
@@ -397,7 +398,7 @@ Never invent other names (no "mouse4", "fn").
 Prefer the simplest shape: one thing → a single action; several things → one macro.
 
 # Profiles
-- Global (default): works in every app. Use {"scope":"global"} unless the user names an app/game where it should apply.
+- Global (default): works in every window. Use {"scope":"global"} unless the user says the shortcut should work only in a named app ("in Chrome", "while gaming", "only in OBS"). Opening Calculator, Notepad or Chrome is an action, not a profile.
 - App profile: only while that app is in front. The user's games profile is called "Gaming": "in gaming", "in games", "while gaming", "in Minecraft" → {"scope":"app","name":"Gaming","process_names":["javaw.exe","minecraft.exe"]}. Other apps: Chrome chrome.exe, Edge msedge.exe, Firefox firefox.exe, VS Code code.exe, Cursor cursor.exe, Discord discord.exe, Slack slack.exe, Spotify spotify.exe, Notepad notepad.exe, Word winword.exe, Excel excel.exe, PowerPoint powerpnt.exe, Photoshop photoshop.exe, Premiere Pro "adobe premiere pro.exe", After Effects afterfx.exe, OBS obs64.exe, Figma figma.exe, Blender blender.exe, Roblox robloxplayerbeta.exe, Valorant valorant.exe, Fortnite fortniteclient-win64-shipping.exe.
 - An app profile may intentionally override a Global binding on the same key.
 
@@ -435,6 +436,9 @@ User: F6 toggles a right click autoclicker at 20 cps
 
 User: ctrl alt n opens notepad
 {"ok":true,"label":"Open Notepad","profile":{"scope":"global"},"trigger":{"mode":"chord","keys":["ctrl","alt","n"]},"action":{"type":"open_app","app":"notepad.exe"},"notes":""}
+
+User: F7 opens Calculator
+{"ok":true,"label":"Open Calculator","profile":{"scope":"global"},"trigger":{"mode":"tap","keys":["f7"]},"action":{"type":"open_app","app":"calc.exe"},"notes":""}
 
 User: double tap F8 to reopen the last closed tab in chrome
 {"ok":true,"label":"Reopen closed tab","profile":{"scope":"app","name":"Chrome","process_names":["chrome.exe"]},"trigger":{"mode":"double_tap","keys":["f8"]},"action":{"type":"key_combo","keys":["ctrl","shift","t"]},"notes":""}
@@ -671,6 +675,10 @@ def _parse_action(raw: Any) -> Action:
     if not isinstance(raw, dict):
         raise AIBinderError("The model gave no action.")
     kind = str(raw.get("type", "")).strip().lower()
+    if kind in ("open_calculator", "calculator"):
+        kind = "open_app"
+        raw = dict(raw)
+        raw["app"] = str(raw.get("app") or "calc.exe")
     if kind not in ACTION_TYPES:
         raise AIBinderError(final=True, message=f"Rejected unknown action “{kind or '?'}”.")
     if kind == "open_url":
@@ -888,6 +896,47 @@ def _load_reply(text: str) -> dict:
     if unknown:
         raise AIBinderError(final=True, message=f"Rejected unknown field “{sorted(unknown, key=str)[0]}”.")
     return data
+
+
+_SCOPE_CUE = re.compile(r"\b(?:in|inside|while|when using|only in|only while)\b", re.IGNORECASE)
+_EXCEPTION_CUE = re.compile(
+    r"\b(?:except|normally|but not|let it|leave it|keep its|keep the|still work|work normally)\b",
+    re.IGNORECASE,
+)
+
+
+def user_asked_for_app(sentence: str, proposal: Proposal) -> bool:
+    """True when the sentence limits the shortcut to an app the proposal named."""
+    if not _SCOPE_CUE.search(sentence or ""):
+        return False
+    low = (sentence or "").lower()
+    stems = [proposal.profile_name.lower()] if proposal.profile_name else []
+    stems.extend(re.sub(r"\.exe$", "", name.lower()) for name in proposal.process_names)
+    if any(stem and len(stem) >= 3 and stem in low for stem in stems):
+        return True
+    return bool(re.search(r"\b(?:game|games|gaming|minecraft)\b", low) and "gaming" in (proposal.profile_name or "").lower())
+
+
+def apply_plain_scope(sentence: str, proposal: Proposal) -> None:
+    """A sentence that names no app works in every window. Named apps stay."""
+    changed = False
+    if (proposal.profile_name or proposal.process_names) and not user_asked_for_app(sentence, proposal):
+        proposal.profile_name = ""
+        proposal.process_names = []
+        changed = True
+    if proposal.binding.app_rules and not _EXCEPTION_CUE.search(sentence or ""):
+        proposal.binding.app_rules = {}
+        changed = True
+    if changed and "Works in every window." not in proposal.notes:
+        proposal.notes.append("Works in every window.")
+
+
+def _apply_scope(result, sentence: str):
+    items = result if isinstance(result, list) else [result]
+    for item in items:
+        if isinstance(item, Proposal):
+            apply_plain_scope(sentence, item)
+    return result
 
 
 def parse_batch(text: str, config: Config | None = None) -> list:
@@ -1258,6 +1307,7 @@ class DescribeBinder:
                     raise  # a refusal, unsafe action or off-topic text: another model should not overrule it
                 last = str(exc)
                 continue
+            _apply_scope(result, text)
             seconds = round(self.clock() - started, 1)
             for item in result if isinstance(result, list) else [result]:
                 if isinstance(item, Proposal):
@@ -1286,6 +1336,7 @@ class DescribeBinder:
         if not isinstance(data, dict) or data.get("ok") is not True or not isinstance(data.get("result"), dict):
             raise AIBinderError("The AI service sent a reply Keyware can't read.", code="busy")
         result = parse(json.dumps(data["result"]), config)
+        _apply_scope(result, text)
         model = str(data.get("model") or "Keyware AI")[:40]
         seconds = round(self.clock() - started, 1)
         for item in result if isinstance(result, list) else [result]:

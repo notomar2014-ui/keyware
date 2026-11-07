@@ -149,7 +149,7 @@
         <ol class="numbered">
           <li>
             <h3>Download</h3>
-            <p>Most PCs: <a href="/thanks?arch=x64" data-download>Download 64-bit (x64)</a> and save <code>Keyware.exe</code> (v<span data-version>1.3.8</span>, <span data-size>20.2 MB</span>). SHA-256 <code data-sha>9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09</code>. Windows on ARM, including Copilot+ PCs: <a href="/thanks?arch=arm64" data-arm>Download ARM64</a> and save <code>Keyware-arm64.exe</code> (v<span data-version>1.3.8</span>, <span data-arm-size>15.5 MB</span>). SHA-256 <code data-arm-sha>84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D</code>. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a <code>Tools</code> folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.</p>
+            <p>Most PCs: <a href="/thanks?arch=x64" data-download>Download 64-bit (x64)</a> and save <code>Keyware.exe</code> (v<span data-version>1.3.9</span>, <span data-size>20.2 MB</span>). SHA-256 <code data-sha>9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09</code>. Windows on ARM, including Copilot+ PCs: <a href="/thanks?arch=arm64" data-arm>Download ARM64</a> and save <code>Keyware-arm64.exe</code> (v<span data-version>1.3.9</span>, <span data-arm-size>15.5 MB</span>). SHA-256 <code data-arm-sha>84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D</code>. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a <code>Tools</code> folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.</p>
           </li>
           <li>
             <h3>First launch: “Windows protected your PC”</h3>
@@ -177,7 +177,7 @@
           <li><span>1</span><div><b>Status dot.</b> Green when Keyware is on. Click to toggle.</div></li>
           <li><span>2</span><div><b>Profiles.</b> Global, Gaming, Browser, Code and any you add. Select one to see its bindings.</div></li>
           <li><span>3</span><div><b>Bindings.</b> Every shortcut in the selected profile, with a switch to enable or disable it, plus Edit, Run and delete.</div></li>
-          <li><span>4</span><div><b>Quick binder.</b> Where you create shortcuts, in Manual or Text mode.</div></li>
+          <li><span>4</span><div><b>Quick binder.</b> Text asks “What should this key do?”. Write a normal sentence. Manual is the field-by-field editor.</div></li>
           <li><span>5</span><div><b>Log.</b> What Keyware did and why. Hide it with <em>Hide log</em>. It's also saved to <code>%APPDATA%\Keyware\keyware.log</code>.</div></li>
           <li><span>6</span><div><b>Settings gear.</b> Opens Settings: sounds, Dry run, Start with Windows, the leader key, your own AI key and feedback. <em>Back</em> returns to your bindings.</div></li>
         </ol>
@@ -409,14 +409,15 @@
       <section id="text-mode" class="doc__section">
         <p class="doc__kicker">05</p>
         <h2>Text mode (AI)</h2>
-        <p>Don't want to fill in fields? Switch the Quick binder from <strong>Manual</strong> to <strong>Text</strong> and describe what you want in plain words.</p>
+        <p>Switch the Quick binder to <strong>Text</strong>. The box is labeled <strong>What should this key do?</strong>. Write a normal sentence, such as <em>F2 opens YouTube</em> or <em>F7 opens Calculator</em>. There is no special format to learn.</p>
+        <p>If you do not name an app, the shortcut works in <strong>every window</strong>. The proposed card says <strong>Every window</strong>. If you say <em>in Chrome</em> or <em>while gaming</em>, it says <strong>Only while that app is in front</strong>.</p>
         <div class="split split--even">
           <figure class="shot"><img src="/assets/img/guide/text-empty.webp" width="432" height="579" loading="lazy" alt="Text mode, empty: a box that says Describe what this key should do, with example prompts and a Generate button."><figcaption>1. Describe it.</figcaption></figure>
           <figure class="shot"><img src="/assets/img/guide/text.webp" width="432" height="579" loading="lazy" alt="Text mode after Generate: the sentence F2 opens YouTube and searches minecraft became a proposed binding: Tap F2, Open URL, YouTube search link, Global profile."><figcaption>2. Review the proposed binding, then Save.</figcaption></figure>
         </div>
         <ol class="steps-sm">
           <li>Type something like <em>“F2 opens YouTube and searches minecraft”</em>.</li>
-          <li>Press <strong>Generate</strong> (or <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Enter</span>). In a second or two, a <strong>Proposed binding</strong> card shows the label, trigger, action, details and profile.</li>
+          <li>Press <strong>Generate</strong> (or <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Enter</span>). A <strong>Proposed binding</strong> card shows the trigger, the action and where it works. Check that line before you save.</li>
           <li>Happy? Press <strong>Save binding</strong>. Want to tweak it? Press <strong>Edit in Manual</strong>. Nothing is saved until you press Save.</li>
         </ol>
 
@@ -537,13 +538,13 @@
       <section id="per-app-rules" class="doc__section">
         <p class="doc__kicker">Per-app</p>
         <h2>Per-app shortcut rules</h2>
-        <p>Sometimes an app already uses a shortcut you've bound. For each binding you can choose, per app, what happens:</p>
+        <p>A new binding works in every window. You only add a per-app rule when one app should treat the key differently:</p>
         <ul>
-          <li><strong>Keyware</strong>: run your action and hide the key from the app (the default).</li>
-          <li><strong>App</strong>: let the app keep its own shortcut, Keyware does nothing there.</li>
+          <li><strong>Keyware handles it</strong>: run your action and hide the key from that app.</li>
+          <li><strong>App</strong>: let the app keep its own shortcut. Keyware does nothing there.</li>
           <li><strong>Both</strong>: run your action and also pass the key to the app.</li>
         </ul>
-        <p>Set it in the binding's app rules, or just describe it in Text mode, like <em>“Ctrl+K opens Notion, but let Cursor keep Ctrl+K”</em>.</p>
+        <p>In Manual mode the line under Per-app rules says the binding works in every window until you add an app. In Text mode, say it: <em>“Ctrl+K opens Notion, but let Cursor keep Ctrl+K”</em>.</p>
         <p><strong>Fixed in 1.3.8.</strong> App and Both used to let the key go down and then swallow the key-up, so the app could see a stuck key. The press and the release now both reach the app. App still skips Keyware's action. Both still runs the action and passes the key. A short hold does not type the key a second time.</p>
       </section>
 
@@ -570,7 +571,7 @@
               <li><span class="case__t"><span class="kbd kbd--sm">F13</span> → <span class="kbd kbd--sm">C</span></span><span class="case__a">Open your class site (Google Classroom, Canvas…)</span></li>
               <li><span class="case__t">Hold <span class="kbd kbd--sm">T</span></span><span class="case__a">Open translate.google.com</span></li>
               <li><span class="case__t"><span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">N</span></span><span class="case__a">Type your name, class and date header</span></li>
-              <li><span class="case__t"><span class="kbd kbd--sm">F7</span> <span class="kbd kbd--sm">F7</span></span><span class="case__a">Open Calculator</span></li>
+              <li><span class="case__t"><span class="kbd kbd--sm">F7</span></span><span class="case__a">Opens the Calculator app in every window. In Text mode: “F7 opens Calculator”.</span></li>
             </ul>
           </article>
           <article class="case">
@@ -719,7 +720,7 @@
               <h3>64-bit (x64)</h3>
               <p>On ARM64 Windows this file runs under emulation.</p>
               <a class="btn btn--primary" href="/thanks?arch=x64" data-download>Download 64-bit (x64)</a>
-              <p class="arch-card__file">Keyware.exe · v<span data-version>1.3.8</span> · <span data-size>20.2 MB</span></p>
+              <p class="arch-card__file">Keyware.exe · v<span data-version>1.3.9</span> · <span data-size>20.2 MB</span></p>
               <p class="hashline">SHA-256 <code data-sha>9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09</code></p>
             </div>
             <div class="arch-card">
@@ -727,7 +728,7 @@
               <h3>ARM64</h3>
               <p>Native build, including Copilot+ PCs.</p>
               <a class="btn btn--primary" href="/thanks?arch=arm64" data-arm>Download ARM64</a>
-              <p class="arch-card__file">Keyware-arm64.exe · v<span data-version>1.3.8</span> · <span data-arm-size>15.5 MB</span></p>
+              <p class="arch-card__file">Keyware-arm64.exe · v<span data-version>1.3.9</span> · <span data-arm-size>15.5 MB</span></p>
               <p class="hashline">SHA-256 <code data-arm-sha>84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D</code></p>
             </div>
           </div>
@@ -755,7 +756,7 @@
         <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>
         <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>
       </nav>
-      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.3.8</span> · Windows is a trademark of Microsoft.</p>
+      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.3.9</span> · Windows is a trademark of Microsoft.</p>
     </div>
   </footer>
 </body>

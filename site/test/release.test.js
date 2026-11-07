@@ -49,8 +49,8 @@ async function run(handler, opts) {
   return r;
 }
 
-test('x64 release constants match the published 1.3.8 file', () => {
-  assert.equal(release.VERSION, '1.3.8');
+test('x64 release constants match the published file for this version', () => {
+  assert.equal(release.VERSION, '1.3.9');
   assert.equal(release.X64.sha256, HASH);
   assert.equal(release.SHA256, HASH);
   assert.equal(release.X64.bytes, 21173481);
@@ -60,7 +60,7 @@ test('x64 release constants match the published 1.3.8 file', () => {
   assert.equal(release.formatSize(release.ARM_BYTES), '15.5 MB');
   assert.notEqual(release.ARM_SHA256, HASH);
   assert.equal(release.X64.version, release.VERSION);
-  assert.equal(release.FILE_PATH, '/download/1.3.8/Keyware.exe');
+  assert.equal(release.FILE_PATH, '/download/1.3.9/Keyware.exe');
   const config = fs.readFileSync(path.join(ROOT, 'assets/js/config.js'), 'utf8');
   assert.match(config, new RegExp(`VERSION: "${release.VERSION}"`));
   assert.match(config, new RegExp(`FILE_SIZE: "${release.X64.size}"`));
@@ -98,9 +98,9 @@ test('lookup uses the release tag for this version and caches one answer', async
   const first = await release.lookupArm({ fetchImpl, now: () => 1000, cache, cacheMs: 5000 });
   const second = await release.lookupArm({ fetchImpl, now: () => 2000, cache, cacheMs: 5000 });
   assert.equal(urls.length, 1);
-  assert.match(urls[0], /\/releases\/tags\/v1\.3\.8$/);
+  assert.match(urls[0], /\/releases\/tags\/v1\.3\.9$/);
   assert.equal(first.sha256, second.sha256);
-  assert.equal(first.version, '1.3.8');
+  assert.equal(first.version, '1.3.9');
 });
 
 test('the release API lists x64 always and ARM64 only when the asset is real', async () => {
@@ -108,7 +108,7 @@ test('the release API lists x64 always and ARM64 only when the asset is real', a
   assert.equal(none.statusCode, 200);
   assert.deepEqual(none.json.builds.map((b) => b.arch), ['x64']);
   assert.equal(none.json.builds[0].sha256, HASH);
-  assert.equal(none.json.version, '1.3.8');
+  assert.equal(none.json.version, '1.3.9');
   const listed = await run(createReleaseHandler({ lookup: async () => release.armFromAsset(armAsset()) }));
   assert.deepEqual(listed.json.builds.map((b) => b.arch), ['x64', 'arm64']);
   assert.equal(listed.json.builds[1].version, listed.json.version);

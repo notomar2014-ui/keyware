@@ -5,11 +5,11 @@
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20 MB, and native ARM64 Keyware-arm64.exe, about 15.5 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.3.8.
+- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20 MB, and native ARM64 Keyware-arm64.exe, about 15.5 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.3.9.
 - Download (x64): https://keyware.site/download/Keyware.exe
 - Download (ARM64): https://keyware.site/download/Keyware-arm64.exe
-- SHA-256 (x64 Keyware.exe 1.3.8): 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09
-- SHA-256 (ARM64 Keyware-arm64.exe 1.3.8): 84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D
+- SHA-256 (x64 Keyware.exe 1.3.9): 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09
+- SHA-256 (ARM64 Keyware-arm64.exe 1.3.9): 84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D
 - License: MIT, open source.
 - Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. A Play action looks up the name you entered. Feedback sends the message, email, app version and a random install ID; the server keeps a salted hash of that ID. See https://keyware.site/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
@@ -25,5 +25,5 @@ Key facts:
 
 ## Optional
 
-- [Privacy statement](https://keyware.site/privacy)
 - [Support](https://keyware.site/support)
+- [Privacy statement](https://keyware.site/privacy)

@@ -1,0 +1,5 @@
+Paste this into Partner Center > Submission options > Restricted capabilities.
+
+Keyware is a desktop (Win32) app packaged as a FullTrustApplication. The executable is the PyInstaller build of Keyware 1.3.8. runFullTrust is required because the app cannot do its job inside an AppContainer sandbox. While the user has Keyware switched on, it installs a low-level keyboard hook (WH_KEYBOARD_LL) and a low-level mouse hook (WH_MOUSE_LL) to see the keys and mouse buttons the user has bound. It sends input with SendInput only for actions the user configured, such as typing text, key combinations, and auto-click. It reads the foreground window's process name so a per-app profile can apply. It also shows a notification-area icon. The hooks are started when Keyware is switched on and stopped when it is switched off. Keystrokes are not logged, stored, or uploaded. The app does not need administrator rights.
+
+The runFullTrust line in an older 1.3.6 package is the Store's reminder that this restricted capability needs the note above. It is not a broken package. Replace that 1.3.6 package in the submission with the 1.3.8.0 upload.

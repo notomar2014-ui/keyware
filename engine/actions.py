@@ -117,6 +117,8 @@ class ActionExecutor:
             self._open_link(action.url)
         elif action.type == "open_app":
             self._open_app(action.app, list(action.args), action.fallback)
+        elif action.type in ("open_calculator", "calculator"):
+            self._open_app(action.app or "calc.exe", list(action.args), action.fallback)
         elif action.type == "type_text":
             self._type(action.text)
         elif action.type == "key_combo":

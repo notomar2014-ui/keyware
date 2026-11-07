@@ -5,11 +5,11 @@
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20 MB, and native ARM64 Keyware-arm64.exe, about 15.5 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.3.8.
+- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20 MB, and native ARM64 Keyware-arm64.exe, about 15.5 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.3.9.
 - Download (x64): https://keyware.site/download/Keyware.exe
 - Download (ARM64): https://keyware.site/download/Keyware-arm64.exe
-- SHA-256 (x64 Keyware.exe 1.3.8): 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09
-- SHA-256 (ARM64 Keyware-arm64.exe 1.3.8): 84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D
+- SHA-256 (x64 Keyware.exe 1.3.9): 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09
+- SHA-256 (ARM64 Keyware-arm64.exe 1.3.9): 84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D
 - License: MIT, open source.
 - Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. A Play action looks up the name you entered. Feedback sends the message, email, app version and a random install ID; the server keeps a salted hash of that ID. See https://keyware.site/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
@@ -165,7 +165,7 @@ Source: https://keyware.site/guide
 
 Keyware is a single program file. There's no installer and nothing to sign up for.
 
-- Download Most PCs: Download 64-bit (x64) and save Keyware.exe (v1.3.8, 20.2 MB). SHA-256 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09. Windows on ARM, including Copilot+ PCs: Download ARM64 and save Keyware-arm64.exe (v1.3.8, 15.5 MB). SHA-256 84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
+- Download Most PCs: Download 64-bit (x64) and save Keyware.exe (v1.3.9, 20.2 MB). SHA-256 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09. Windows on ARM, including Copilot+ PCs: Download ARM64 and save Keyware-arm64.exe (v1.3.9, 15.5 MB). SHA-256 84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
 
 ### Download
 
@@ -182,7 +182,7 @@ Keyware is a single program file. There's no installer and nothing to sign up fo
 - 1Status dot. Green when Keyware is on. Click to toggle.
 - 2Profiles. Global, Gaming, Browser, Code and any you add. Select one to see its bindings.
 - 3Bindings. Every shortcut in the selected profile, with a switch to enable or disable it, plus Edit, Run and delete.
-- 4Quick binder. Where you create shortcuts, in Manual or Text mode.
+- 4Quick binder. Text asks “What should this key do?”. Write a normal sentence. Manual is the field-by-field editor.
 - 5Log. What Keyware did and why. Hide it with Hide log. It's also saved to %APPDATA%\Keyware\keyware.log.
 - 6Settings gear. Opens Settings: sounds, Dry run, Start with Windows, the leader key, your own AI key and feedback. Back returns to your bindings.
 
@@ -349,10 +349,12 @@ Clicks for you with the left, right or middle button at 1 to 50 clicks per secon
 
 ## Text mode (AI)
 
-Don't want to fill in fields? Switch the Quick binder from Manual to Text and describe what you want in plain words.
+Switch the Quick binder to Text. The box is labeled What should this key do?. Write a normal sentence, such as F2 opens YouTube or F7 opens Calculator. There is no special format to learn.
+
+If you do not name an app, the shortcut works in every window. The proposed card says Every window. If you say in Chrome or while gaming, it says Only while that app is in front.
 
 - Type something like “F2 opens YouTube and searches minecraft”.
-- Press Generate (or Ctrl Enter). In a second or two, a Proposed binding card shows the label, trigger, action, details and profile.
+- Press Generate (or Ctrl Enter). A Proposed binding card shows the trigger, the action and where it works. Check that line before you save.
 - Happy? Press Save binding. Want to tweak it? Press Edit in Manual. Nothing is saved until you press Save.
 
 ### One description, several bindings
@@ -453,12 +455,12 @@ Per-app
 
 ## Per-app shortcut rules
 
-Sometimes an app already uses a shortcut you've bound. For each binding you can choose, per app, what happens:
+A new binding works in every window. You only add a per-app rule when one app should treat the key differently:
 
-- Keyware: run your action and hide the key from the app (the default).
-- App: let the app keep its own shortcut, Keyware does nothing there.
+- Keyware handles it: run your action and hide the key from that app.
+- App: let the app keep its own shortcut. Keyware does nothing there.
 - Both: run your action and also pass the key to the app.
-Set it in the binding's app rules, or just describe it in Text mode, like “Ctrl+K opens Notion, but let Cursor keep Ctrl+K”.
+In Manual mode the line under Per-app rules says the binding works in every window until you add an app. In Text mode, say it: “Ctrl+K opens Notion, but let Cursor keep Ctrl+K”.
 
 Fixed in 1.3.8. App and Both used to let the key go down and then swallow the key-up, so the app could see a stuck key. The press and the release now both reach the app. App still skips Keyware's action. Both still runs the action and passes the key. A short hold does not type the key a second time.
 
@@ -484,7 +486,7 @@ Less clicking around, more focus.
 - F13 → COpen your class site (Google Classroom, Canvas…)
 - Hold TOpen translate.google.com
 - Ctrl Alt NType your name, class and date header
-- F7 F7Open Calculator
+- F7Opens the Calculator app in every window. In Text mode: “F7 opens Calculator”.
 
 ### 💻 Coding
 
@@ -628,7 +630,7 @@ Most PCs
 
 On ARM64 Windows this file runs under emulation.
 
-Keyware.exe · v1.3.8 · 20.2 MB
+Keyware.exe · v1.3.9 · 20.2 MB
 
 SHA-256 9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09
 
@@ -638,6 +640,6 @@ Windows on ARM
 
 Native build, including Copilot+ PCs.
 
-Keyware-arm64.exe · v1.3.8 · 15.5 MB
+Keyware-arm64.exe · v1.3.9 · 15.5 MB
 
 SHA-256 84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D
