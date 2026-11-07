@@ -166,12 +166,14 @@ Notes:
 
 Paste into **Submission options > Restricted capabilities**:
 
-> Keyware is a desktop (Win32) app packaged with the MSIX Packaging approach (PyInstaller exe as a
-> FullTrustApplication). runFullTrust is required because Keyware is a classic desktop app: it installs a low-level
-> keyboard hook (SetWindowsHookEx WH_KEYBOARD_LL) while it is switched on to detect the key bindings the user created,
-> sends input with SendInput for actions the user configured (type text, key combos, auto-click), reads the
-> foreground window's process name to pick the matching per-app profile, and shows a notification-area (tray) icon.
-> None of this is available to a sandboxed AppContainer app. The app needs no administrator rights.
+> Keyware is a desktop (Win32) app packaged as a FullTrustApplication. The executable is the PyInstaller
+> build. runFullTrust is required because the app cannot do its job inside an AppContainer sandbox. While the
+> user has Keyware switched on, it installs a low-level keyboard hook (WH_KEYBOARD_LL) and a low-level mouse
+> hook (WH_MOUSE_LL) to see the keys and mouse buttons the user has bound. It sends input with SendInput only
+> for actions the user configured, such as typing text, key combinations, and auto-click. It reads the
+> foreground window's process name so a per-app profile can apply. It also shows a notification-area icon.
+> The hooks are started when Keyware is switched on and stopped when it is switched off. Keystrokes are not
+> logged, stored, or uploaded. The app does not need administrator rights.
 
 ## 10. Notes for certification
 

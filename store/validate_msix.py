@@ -9,6 +9,7 @@ publisher and must not carry that marker.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import tempfile
 import zipfile
@@ -97,6 +98,38 @@ def _check_identity(
         raise PackageError(f"unknown expect {expect}")
 
 
+def load_partner_identity(path: Path) -> dict:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    required = ("identity_name", "publisher", "publisher_display_name", "display_name")
+    missing = [key for key in required if not str(data.get(key, "")).strip()]
+    if missing:
+        raise PackageError(f"identity file is missing {', '.join(missing)}")
+    return {key: str(data[key]) for key in required}
+
+
+def _check_partner_identity(root: ET.Element, app: ET.Element, props: ET.Element | None, identity: dict | None) -> None:
+    if not identity:
+        return
+    node = root.find("m:Identity", NS)
+    if node is None:
+        raise PackageError("Identity element is missing")
+    if node.attrib.get("Name") != identity["identity_name"]:
+        raise PackageError(f"Name is {node.attrib.get('Name')!r}")
+    if node.attrib.get("Publisher") != identity["publisher"]:
+        raise PackageError("Publisher does not match Partner Center")
+    if props is None:
+        raise PackageError("Properties element is missing")
+    display = props.find("m:DisplayName", NS)
+    publisher_display = props.find("m:PublisherDisplayName", NS)
+    if display is None or display.text != identity["display_name"]:
+        raise PackageError("DisplayName does not match the reserved app name")
+    if publisher_display is None or publisher_display.text != identity["publisher_display_name"]:
+        raise PackageError("PublisherDisplayName does not match Partner Center")
+    visual = app.find("uap:VisualElements", NS)
+    if visual is None or visual.attrib.get("DisplayName") != identity["display_name"]:
+        raise PackageError("tile DisplayName does not match the reserved app name")
+
+
 def check_msix(
     path: Path,
     *,
@@ -104,6 +137,7 @@ def check_msix(
     arch: str | None,
     version: str | None,
     check_filename: bool = True,
+    partner: dict | None = None,
 ) -> dict:
     if not zipfile.is_zipfile(path):
         raise PackageError(f"{path.name} is not a zip package")
@@ -119,18 +153,18 @@ def check_msix(
         if b"sha256" not in blockmap.lower():
             raise PackageError("block map does not use SHA-256")
         root = ET.fromstring(_read(zf, "AppxManifest.xml"))
-        identity = root.find("m:Identity", NS)
-        if identity is None:
+        ident = root.find("m:Identity", NS)
+        if ident is None:
             raise PackageError("Identity element is missing")
-        got_arch = identity.attrib.get("ProcessorArchitecture", "")
+        got_arch = ident.attrib.get("ProcessorArchitecture", "")
         if arch and got_arch != arch:
             raise PackageError(f"architecture is {got_arch}, expected {arch}")
         if got_arch not in MACHINE:
             raise PackageError(f"architecture {got_arch} is not x64 or arm64")
         _check_identity(
-            identity.attrib.get("Name", ""),
-            identity.attrib.get("Publisher", ""),
-            identity.attrib.get("Version", ""),
+            ident.attrib.get("Name", ""),
+            ident.attrib.get("Publisher", ""),
+            ident.attrib.get("Version", ""),
             path.name,
             expect,
             want_version,
@@ -150,6 +184,7 @@ def check_msix(
             raise PackageError("Application is missing")
         if app.attrib.get("Executable") != "Keyware.exe" or app.attrib.get("EntryPoint") != "Windows.FullTrustApplication":
             raise PackageError("the application is not the full-trust Keyware.exe")
+        _check_partner_identity(root, app, props, partner)
         task = root.find("m:Applications/m:Application/m:Extensions/desktop:Extension/desktop:StartupTask", NS)
         if task is None or task.attrib.get("TaskId") != "KeywareStartup":
             raise PackageError("startup task KeywareStartup is missing")
@@ -166,14 +201,14 @@ def check_msix(
         if machine != MACHINE[got_arch]:
             raise PackageError(f"Keyware.exe machine is 0x{machine:04X}, manifest says {got_arch}")
         return {
-            "name": identity.attrib.get("Name", ""),
-            "publisher": identity.attrib.get("Publisher", ""),
-            "version": identity.attrib.get("Version", ""),
+            "name": ident.attrib.get("Name", ""),
+            "publisher": ident.attrib.get("Publisher", ""),
+            "version": ident.attrib.get("Version", ""),
             "arch": got_arch,
         }
 
 
-def check_bundle(path: Path, *, expect: str, version: str | None) -> dict:
+def check_bundle(path: Path, *, expect: str, version: str | None, partner: dict | None = None) -> dict:
     if not zipfile.is_zipfile(path):
         raise PackageError(f"{path.name} is not a zip bundle")
     want_version = version or _version4()
@@ -204,6 +239,11 @@ def check_bundle(path: Path, *, expect: str, version: str | None) -> dict:
             want_version,
             check_filename=True,
         )
+        if partner and (
+            identity.attrib.get("Name") != partner["identity_name"]
+            or identity.attrib.get("Publisher") != partner["publisher"]
+        ):
+            raise PackageError("bundle identity does not match Partner Center")
         nested = [item for item in names if item.lower().endswith(".msix")]
         if len(nested) < 2:
             raise PackageError("bundle does not contain two packages")
@@ -219,6 +259,7 @@ def check_bundle(path: Path, *, expect: str, version: str | None) -> dict:
                 arch=None,
                 version=want_version,
                 check_filename=False,
+                partner=partner,
             )
             seen.add(info["arch"])
         if seen != {"x64", "arm64"}:
@@ -226,7 +267,7 @@ def check_bundle(path: Path, *, expect: str, version: str | None) -> dict:
         return {"version": identity.attrib.get("Version", ""), "archs": sorted(seen)}
 
 
-def check_upload(path: Path, *, expect: str, version: str | None) -> dict:
+def check_upload(path: Path, *, expect: str, version: str | None, partner: dict | None = None) -> dict:
     if not zipfile.is_zipfile(path):
         raise PackageError(f"{path.name} is not a zip upload")
     if expect == "prototype" and "NOT-STORE-READY" not in path.name:
@@ -242,7 +283,7 @@ def check_upload(path: Path, *, expect: str, version: str | None) -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         bundle = Path(tmp) / Path(bundles[0]).name
         bundle.write_bytes(data)
-        return check_bundle(bundle, expect=expect, version=version)
+        return check_bundle(bundle, expect=expect, version=version, partner=partner)
 
 
 def main(argv: list[str]) -> int:
@@ -253,15 +294,17 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--version")
     parser.add_argument("--bundle", action="store_true")
     parser.add_argument("--upload", action="store_true")
+    parser.add_argument("--identity")
     args = parser.parse_args(argv)
     path = Path(args.package)
+    partner = load_partner_identity(Path(args.identity)) if args.identity else None
     try:
         if args.upload:
-            info = check_upload(path, expect=args.expect, version=args.version)
+            info = check_upload(path, expect=args.expect, version=args.version, partner=partner)
         elif args.bundle:
-            info = check_bundle(path, expect=args.expect, version=args.version)
+            info = check_bundle(path, expect=args.expect, version=args.version, partner=partner)
         else:
-            info = check_msix(path, expect=args.expect, arch=args.arch, version=args.version)
+            info = check_msix(path, expect=args.expect, arch=args.arch, version=args.version, partner=partner)
     except (PackageError, ValueError, OSError) as exc:
         print(f"{path.name}: {exc}", file=sys.stderr)
         return 1

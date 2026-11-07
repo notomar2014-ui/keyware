@@ -108,8 +108,12 @@ jobs:
           $pub = "${{ github.event_name == 'workflow_dispatch' && inputs.publisher || '' }}"
           $pdn = "${{ github.event_name == 'workflow_dispatch' && inputs.publisher_display_name || '' }}"
           $dn = "${{ github.event_name == 'workflow_dispatch' && inputs.display_name || '' }}"
+          $idFile = "store/partner-identity.json"
           if ($id -and $pub -and $pdn -and $dn) {
             ./store/build_msix.ps1 @pack -IdentityName $id -Publisher $pub -PublisherDisplayName $pdn -DisplayName $dn
+          } elseif (Test-Path $idFile) {
+            $saved = Get-Content $idFile -Raw -Encoding utf8 | ConvertFrom-Json
+            ./store/build_msix.ps1 @pack -IdentityName $saved.identity_name -Publisher $saved.publisher -PublisherDisplayName $saved.publisher_display_name -DisplayName $saved.display_name
           } elseif ($id -or $pub -or $pdn -or $dn) {
             throw "Pass all four Partner Center fields, or leave all four empty for the labelled prototype."
           } else {

@@ -47,6 +47,11 @@ if ($prototype.Count -gt 0 -and $store.Count -gt 0) {
   throw "Refusing to mix prototype packages with identity packages."
 }
 $expect = if ($prototype.Count -gt 0) { "prototype" } else { "store" }
+$identityFile = Join-Path $Root "store\partner-identity.json"
+$identityArg = @()
+if ($expect -eq "store" -and (Test-Path $identityFile)) {
+  $identityArg = @("--identity", $identityFile)
+}
 $selected = if ($expect -eq "prototype") { $prototype } else { $store }
 
 $stage = Join-Path $OutDir "bundle-input"
@@ -54,7 +59,7 @@ if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 foreach ($package in $selected) {
   Copy-Item $package.FullName (Join-Path $stage $package.Name)
-  python (Join-Path $Root "store\validate_msix.py") $package.FullName --expect $expect
+  python (Join-Path $Root "store\validate_msix.py") $package.FullName --expect $expect @identityArg
   if ($LASTEXITCODE) { throw "validation failed for $($package.Name)" }
 }
 
@@ -75,7 +80,7 @@ Write-Host "MakeAppx: $makeappx"
 & $makeappx bundle /d $stage /p $bundle /bv $version /o
 if ($LASTEXITCODE) { throw "makeappx bundle failed" }
 
-python (Join-Path $Root "store\validate_msix.py") $bundle --expect $expect --bundle --version $version
+python (Join-Path $Root "store\validate_msix.py") $bundle --expect $expect --bundle --version $version @identityArg
 if ($LASTEXITCODE) { throw "bundle validation failed" }
 
 $uploadLeaf = [System.IO.Path]::ChangeExtension($bundleLeaf, ".msixupload")
@@ -88,10 +93,14 @@ $zip = Join-Path $OutDir "upload.zip"
 & tar.exe -a -c -f $zip -C $uploadStage $bundleLeaf
 if ($LASTEXITCODE) { throw "could not create the upload zip" }
 Move-Item $zip $upload
-python (Join-Path $Root "store\validate_msix.py") $upload --expect $expect --upload --version $version
+python (Join-Path $Root "store\validate_msix.py") $upload --expect $expect --upload --version $version @identityArg
 if ($LASTEXITCODE) { throw "msixupload validation failed" }
 Remove-Item $stage -Recurse -Force
 Remove-Item $uploadStage -Recurse -Force
+$noteSource = Join-Path $Root "store\RUNFULLTRUST.txt"
+if (Test-Path $noteSource) {
+  Copy-Item $noteSource (Join-Path $OutDir "RUNFULLTRUST.txt")
+}
 
 $note = Join-Path $OutDir "WHICH-FILE-TO-UPLOAD.txt"
 if ($expect -eq "prototype") {
@@ -104,8 +113,8 @@ if ($expect -eq "prototype") {
     "that version's executable, logos and manifest. They are not Store-ready.",
     "The publisher inside them is the Windows unsigned-package marker",
     "(OID.2.25.311729368913984317654407730594956997722=1), not the publisher",
-    "from a Partner Center account. No such publisher is stored in this repository,",
-    "and none was invented. Partner Center rejects a package whose",
+    "from a Partner Center account. The real values are applied only when",
+    "store/partner-identity.json is present. Partner Center rejects a package whose",
     "Package/Identity/Publisher does not match Product identity character for character.",
     "",
     "Files:",
@@ -154,16 +163,24 @@ if ($expect -eq "prototype") {
   @(
     "Keyware $version Store packages",
     "",
-    "The identity values passed to this build were written into the manifest.",
-    "This run did not check them against Partner Center. Upload only if you",
-    "copied them from Product identity yourself.",
-    "",
-    "Upload this file:",
+    "Upload this file to the existing submission's Packages page:",
     "  Keyware-$version.msixupload",
-    "Partner Center also accepts Keyware-$version.msixbundle or the two",
-    "architecture .msix files. Upload one of those, not all three.",
-    "Do not upload a file whose name starts with NOT-STORE-READY.",
-    "Leave the package unsigned. The Store re-signs it."
+    "",
+    "That file is the Store upload. It is unsigned on purpose. Partner Center",
+    "re-signs an MSIX after certification. No code-signing certificate was",
+    "bought or created for it.",
+    "",
+    "Do not install this file on a PC to test it. Windows will not trust an",
+    "unsigned package whose publisher is the Partner Center CN. Installing it",
+    "for sideload would need a certificate whose subject is that exact CN.",
+    "This build does not create that certificate.",
+    "",
+    "Partner Center also accepts Keyware-$version.msixbundle, or the separate",
+    "x64 and ARM64 .msix files. Upload one of those, not all three.",
+    "Remove the older 1.3.6 package from the submission when you add this one.",
+    "The runFullTrust warning on that older package is the Store asking for",
+    "the restricted-capability note. Paste store/RUNFULLTRUST.txt into",
+    "Submission options. The warning is not a reason to sign the package."
   ) | Set-Content -Path $note -Encoding ascii
 }
 

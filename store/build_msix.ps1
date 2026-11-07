@@ -190,7 +190,18 @@ if ($PfxPath) {
 }
 
 $expect = if ($Prototype) { "prototype" } else { "store" }
-python (Join-Path $Root "store\validate_msix.py") $Msix --expect $expect --arch $Architecture --version $Version4
+$validate = @(
+  (Join-Path $Root "store\validate_msix.py"),
+  $Msix,
+  "--expect", $expect,
+  "--arch", $Architecture,
+  "--version", $Version4
+)
+$IdentityFile = Join-Path $PSScriptRoot "partner-identity.json"
+if (-not $Prototype -and (Test-Path $IdentityFile)) {
+  $validate += @("--identity", $IdentityFile)
+}
+python @validate
 if ($LASTEXITCODE) { throw "package validation failed" }
 
 if ($Prototype) {
