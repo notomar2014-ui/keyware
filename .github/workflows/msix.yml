@@ -1,0 +1,158 @@
+name: Microsoft Store MSIX
+
+# Packs Keyware  as unsigned MSIX packages on the public Windows runners.
+# Pushing this branch builds a labelled prototype: real x64 and ARM64 packages
+# whose publisher is the Windows unsigned-package marker, not a Partner Center
+# publisher. Run the workflow by hand and fill in all four identity fields only
+# after those values have been copied from Partner Center > Product identity.
+# This workflow does not create a certificate, read secrets, or publish a release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      identity_name:
+        description: "Package/Identity/Name from Partner Center. Leave empty for the labelled prototype."
+        required: false
+        default: ""
+      publisher:
+        description: "Package/Identity/Publisher from Partner Center (CN=...). Leave empty for the prototype."
+        required: false
+        default: ""
+      publisher_display_name:
+        description: "Package/Properties/PublisherDisplayName. Leave empty for the prototype."
+        required: false
+        default: ""
+      display_name:
+        description: "Reserved app name. Leave empty for the prototype."
+        required: false
+        default: ""
+  push:
+    branches:
+      - cursor/keyware-store-package-259b
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+            python-architecture: x64
+            pe: "8664"
+          - arch: arm64
+            runner: windows-11-arm
+            python-architecture: arm64
+            pe: AA64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: ${{ matrix.python-architecture }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            requirements-store.txt
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements-store.txt
+
+      - name: Confirm the runner CPU
+        shell: pwsh
+        run: |
+          $got = (python -c "import platform; print(platform.machine())").Trim().ToLower()
+          Write-Host "platform.machine=$got"
+          if ('${{ matrix.arch }}' -eq 'arm64' -and $got -ne 'arm64') { throw "This job needs a native ARM64 runner, got $got. PyInstaller cannot cross-compile." }
+          if ('${{ matrix.arch }}' -eq 'x64' -and $got -notin @('amd64', 'x86_64')) { throw "This job needs an x64 runner, got $got." }
+
+      - name: Headless tests
+        run: python -m pytest -q
+
+      - name: Build Keyware.exe for the MSIX
+        shell: pwsh
+        run: |
+          $env:KEYWARE_MSIX = "1"
+          python build.py
+
+      - name: Confirm PE architecture
+        run: python tools/pe_machine.py dist/Keyware.exe ${{ matrix.pe }}
+
+      - name: Smoke-test the exe (no window, no hook)
+        shell: pwsh
+        run: |
+          $v = Start-Process dist/Keyware.exe -ArgumentList '--version','--out','version.txt' -Wait -PassThru
+          if ($v.ExitCode -ne 0) { throw "--version exited $($v.ExitCode)" }
+          $want = python -c "from engine import __version__; print(__version__)"
+          $got = (Get-Content version.txt -Raw).Trim()
+          if ($got -ne $want) { throw "exe reports $got, source is $want" }
+          $s = Start-Process dist/Keyware.exe -ArgumentList '--self-test' -Wait -PassThru
+          if ($s.ExitCode -ne 0) { throw "--self-test exited $($s.ExitCode)" }
+
+      - name: Pack the unsigned MSIX
+        shell: pwsh
+        run: |
+          $pack = @{
+            Architecture = "${{ matrix.arch }}"
+            SkipExeBuild = $true
+            ExePath = "dist\Keyware.exe"
+          }
+          $id = "${{ github.event_name == 'workflow_dispatch' && inputs.identity_name || '' }}"
+          $pub = "${{ github.event_name == 'workflow_dispatch' && inputs.publisher || '' }}"
+          $pdn = "${{ github.event_name == 'workflow_dispatch' && inputs.publisher_display_name || '' }}"
+          $dn = "${{ github.event_name == 'workflow_dispatch' && inputs.display_name || '' }}"
+          $idFile = "store/partner-identity.json"
+          if ($id -and $pub -and $pdn -and $dn) {
+            ./store/build_msix.ps1 @pack -IdentityName $id -Publisher $pub -PublisherDisplayName $pdn -DisplayName $dn
+          } elseif (Test-Path $idFile) {
+            $saved = Get-Content $idFile -Raw -Encoding utf8 | ConvertFrom-Json
+            ./store/build_msix.ps1 @pack -IdentityName $saved.identity_name -Publisher $saved.publisher -PublisherDisplayName $saved.publisher_display_name -DisplayName $saved.display_name
+          } elseif ($id -or $pub -or $pdn -or $dn) {
+            throw "Pass all four Partner Center fields, or leave all four empty for the labelled prototype."
+          } else {
+            ./store/build_msix.ps1 @pack -Prototype
+          }
+
+      - name: Upload the package
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyware-msix-${{ matrix.arch }}
+          path: |
+            dist/msix/*.msix
+            dist/msix/*.sha256
+            dist/msix/*.WHY.txt
+          if-no-files-found: error
+
+  bundle:
+    name: Bundle x64 and ARM64
+    needs: package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: keyware-msix-*
+          path: dist/msix-parts
+
+      - name: Make the bundle and the upload file
+        shell: pwsh
+        run: ./store/bundle_msix.ps1 -InputDir dist/msix-parts -OutDir dist/msix-bundle
+
+      - name: Upload the bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyware-msix-bundle
+          path: dist/msix-bundle/
+          if-no-files-found: error

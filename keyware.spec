@@ -26,6 +26,19 @@ hidden = [
 ]
 hidden += collect_submodules("customtkinter")
 
+# Microsoft Store (MSIX) build only: set KEYWARE_MSIX=1 and pip install -r requirements-store.txt.
+# The plain Keyware.exe build is unchanged when the variable is not set.
+import os
+
+if os.environ.get("KEYWARE_MSIX") == "1":
+    hidden += [
+        "winrt.runtime",
+        "winrt.system",
+        "winrt.windows.applicationmodel",
+        "winrt.windows.applicationmodel.activation",
+        "winrt.windows.foundation",
+    ]
+
 a = Analysis(
     ["main.py"],
     pathex=[],
