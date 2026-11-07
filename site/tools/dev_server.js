@@ -45,7 +45,9 @@ http
       res.statusCode = 404;
       return res.end('Not found');
     }
-    res.setHeader('Content-Type', TYPES[path.extname(file)] || 'application/octet-stream');
+    const ext = path.extname(file);
+    res.setHeader('Content-Type', TYPES[ext] || 'application/octet-stream');
+    if (ext === '.exe') res.setHeader('Content-Disposition', `attachment; filename="${path.basename(file)}"`);
     return fs.createReadStream(file).pipe(res);
   })
   .listen(port, '127.0.0.1', () => {
