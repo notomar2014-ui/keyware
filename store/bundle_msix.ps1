@@ -71,7 +71,8 @@ $bundleLeaf = if ($expect -eq "prototype") { "NOT-STORE-READY-Keyware-$version.m
 $bundle = Join-Path $OutDir $bundleLeaf
 $makeappx = Find-MakeAppx
 Write-Host "MakeAppx: $makeappx"
-& $makeappx bundle /d $stage /p $bundle /o
+# Without /bv, MakeAppx stamps the bundle with a date-based version instead of the app version.
+& $makeappx bundle /d $stage /p $bundle /bv $version /o
 if ($LASTEXITCODE) { throw "makeappx bundle failed" }
 
 python (Join-Path $Root "store\validate_msix.py") $bundle --expect $expect --bundle --version $version
