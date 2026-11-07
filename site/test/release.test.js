@@ -13,8 +13,8 @@ const { Stats } = require('../api/_lib/stats');
 const { MemoryKV } = require('../api/_lib/kv');
 
 const ROOT = path.join(__dirname, '..');
-const HASH = '9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09';
-const ARM_HASH = '84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D';
+const HASH = 'C6BE4CA7A748D2315941AB7E717325C197DF03CC3B4D9DBC9DFCED5240008BA8';
+const ARM_HASH = '30A166A9A141EE83D833AE338C7686F94420CA7AC9195E91A2A34EBDE01A4B1C';
 const CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';
 
 function armAsset(extra = {}) {
@@ -53,11 +53,11 @@ test('x64 release constants match the published file for this version', () => {
   assert.equal(release.VERSION, '1.3.9');
   assert.equal(release.X64.sha256, HASH);
   assert.equal(release.SHA256, HASH);
-  assert.equal(release.X64.bytes, 21173481);
-  assert.equal(release.X64.size, '20.2 MB');
+  assert.equal(release.X64.bytes, 21784866);
+  assert.equal(release.X64.size, '20.8 MB');
   assert.equal(release.ARM_SHA256, ARM_HASH);
-  assert.equal(release.ARM_BYTES, 16203491);
-  assert.equal(release.formatSize(release.ARM_BYTES), '15.5 MB');
+  assert.equal(release.ARM_BYTES, 16807123);
+  assert.equal(release.formatSize(release.ARM_BYTES), '16.0 MB');
   assert.notEqual(release.ARM_SHA256, HASH);
   assert.equal(release.X64.version, release.VERSION);
   assert.equal(release.FILE_PATH, '/download/1.3.9/Keyware.exe');
@@ -66,7 +66,7 @@ test('x64 release constants match the published file for this version', () => {
   assert.match(config, new RegExp(`FILE_SIZE: "${release.X64.size}"`));
   assert.match(config, new RegExp(`SHA256: "${HASH}"`));
   assert.match(config, new RegExp(`ARM_SHA256: "${ARM_HASH}"`));
-  assert.match(config, /ARM_FILE_SIZE: "15\.5 MB"/);
+  assert.match(config, /ARM_FILE_SIZE: "16\.0 MB"/);
   for (const file of ['index.html', 'guide.html', 'thanks.html']) {
     const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
     assert.ok(html.includes(HASH), file);
