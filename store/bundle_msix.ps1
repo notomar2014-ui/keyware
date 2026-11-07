@@ -90,6 +90,8 @@ if ($LASTEXITCODE) { throw "could not create the upload zip" }
 Move-Item $zip $upload
 python (Join-Path $Root "store\validate_msix.py") $upload --expect $expect --upload --version $version
 if ($LASTEXITCODE) { throw "msixupload validation failed" }
+Remove-Item $stage -Recurse -Force
+Remove-Item $uploadStage -Recurse -Force
 
 $note = Join-Path $OutDir "WHICH-FILE-TO-UPLOAD.txt"
 if ($expect -eq "prototype") {
