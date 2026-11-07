@@ -26,3 +26,4 @@ Key facts:
 ## Optional
 
 - [Privacy statement](https://keyware.site/privacy)
+- [Support](https://keyware.site/support)
