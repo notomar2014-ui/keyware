@@ -12,6 +12,8 @@ window.KEYWARE_CONFIG = {
   ARM_URL: "/download/Keyware-arm64.exe",
   ARM_FILE_SIZE: "15.5 MB",
   ARM_SHA256: "84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D",
-  // [data-download] starts the x64 file. [data-arm] starts the ARM64 file.
+  // [data-download] opens the thanks page and starts the x64 file.
+  // [data-arm] opens the thanks page and starts the ARM64 file.
+  // [data-dl-direct] is the file itself, used for "download again" on the thanks page.
   THANKS_URL: "/thanks"
 };

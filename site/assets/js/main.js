@@ -9,10 +9,20 @@
   if (cfg.VERSION) document.querySelectorAll("[data-version]").forEach(function (el) { el.textContent = cfg.VERSION; });
   if (cfg.FILE_SIZE) document.querySelectorAll("[data-size]").forEach(function (el) { el.textContent = cfg.FILE_SIZE; });
   if (cfg.SHA256) document.querySelectorAll("[data-sha]").forEach(function (el) { el.textContent = cfg.SHA256; });
-  if (cfg.DOWNLOAD_URL) document.querySelectorAll("[data-download]").forEach(function (el) { el.setAttribute("href", cfg.DOWNLOAD_URL); });
+  var thanksBase = String(cfg.THANKS_URL || "").trim();
+  function thanksHref(arch) {
+    return thanksBase + (thanksBase.indexOf("?") === -1 ? "?" : "&") + "arch=" + arch;
+  }
+  // Marketing buttons go to the thanks page. Direct file links on that page stay direct,
+  // so "download again" does not loop and still hits the counted download URL.
+  document.querySelectorAll("[data-download]:not([data-dl-direct])").forEach(function (el) {
+    el.setAttribute("href", thanksBase ? thanksHref("x64") : (cfg.DOWNLOAD_URL || "/download/Keyware.exe"));
+  });
+  document.querySelectorAll("[data-arm]:not([data-dl-direct])").forEach(function (el) {
+    el.setAttribute("href", thanksBase ? thanksHref("arm64") : (cfg.ARM_URL || "/download/Keyware-arm64.exe"));
+  });
   if (cfg.ARM_FILE_SIZE) document.querySelectorAll("[data-arm-size]").forEach(function (el) { el.textContent = cfg.ARM_FILE_SIZE; });
   if (cfg.ARM_SHA256) document.querySelectorAll("[data-arm-sha]").forEach(function (el) { el.textContent = cfg.ARM_SHA256; });
-  if (cfg.ARM_URL) document.querySelectorAll("[data-arm]").forEach(function (el) { el.setAttribute("href", cfg.ARM_URL); });
   if (window.fetch && document.querySelector("[data-arm]")) {
     fetch("/api/release", { headers: { Accept: "application/json" } })
       .then(function (r) { return r.ok ? r.json() : null; })
@@ -24,7 +34,6 @@
         if (!/^[0-9A-F]{64}$/.test(arm.sha256 || "")) return;
         document.querySelectorAll("[data-arm-sha]").forEach(function (el) { el.textContent = arm.sha256; });
         if (arm.size) document.querySelectorAll("[data-arm-size]").forEach(function (el) { el.textContent = arm.size; });
-        document.querySelectorAll("[data-arm]").forEach(function (el) { el.setAttribute("href", arm.url); });
       })
       .catch(function () { /* keep the published ARM64 hash already on the page */ });
   }
