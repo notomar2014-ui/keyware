@@ -15,7 +15,7 @@ import customtkinter as ctk
 from engine import __version__
 
 DONATE_URL = "https://ko-fi.com/keyware_donate"
-from engine.keys import format_keys, parse_key_expression
+from engine.keys import PICKER_KEYS, format_key, format_keys, insert_key, parse_key_expression
 from engine.models import (
     parse_setup_text,
     setup_text,
@@ -284,6 +284,7 @@ class KeywareApp(ctk.CTk):
         self.grid_rowconfigure(3, weight=1)
 
         self._build_header()
+        self._build_update_banner()
         self._build_banner()
         self._build_body()
         self._build_console()
@@ -420,6 +421,76 @@ class KeywareApp(ctk.CTk):
         self.power = ctk.CTkButton(hidden, text="TURN ON", command=self._toggle_power)
         self._theme_caption()
 
+    def _build_update_banner(self) -> None:
+        """A quiet row under the header. It never takes focus and never raises the window."""
+        bar = ctk.CTkFrame(self, fg_color=CARD, corner_radius=8, border_width=1, border_color=LINE)
+        self.update_bar = bar
+        self._update_version = ""
+        self._update_url = ""
+        bar.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 6))
+        bar.grid_columnconfigure(0, weight=1)
+        self.update_label = ctk.CTkLabel(bar, text="", anchor="w", font=self._font(12), text_color=INK)
+        self.update_label.grid(row=0, column=0, sticky="ew", padx=(12, 8), pady=6)
+        buttons = ctk.CTkFrame(bar, fg_color="transparent", border_width=0)
+        buttons.grid(row=0, column=1, sticky="e", padx=(0, 8), pady=4)
+        self._ghost(buttons, "Update", self._open_update, width=76).pack(side="left", padx=(0, 6))
+        self._ghost(buttons, "Later", self._later_update, width=64).pack(side="left", padx=(0, 6))
+        self._ghost(buttons, "Skip this version", self._skip_update, width=140).pack(side="left")
+        bar.grid_remove()
+
+    def _show_update(self, version: str, url: str) -> None:
+        self._update_version = version
+        self._update_url = url
+        self.update_label.configure(text=f"Keyware {version} is available.")
+        self.update_bar.grid()
+
+    def _hide_update(self) -> None:
+        self.update_bar.grid_remove()
+
+    def _open_update(self) -> None:
+        import webbrowser
+
+        url = self._update_url
+        if not url:
+            return
+        try:
+            if url.startswith("ms-windows-store:") and sys.platform == "win32":
+                os.startfile(url)  # type: ignore[attr-defined]
+            else:
+                webbrowser.open(url)
+        except Exception:
+            self._append("Could not open the update page.")
+
+    def _later_update(self) -> None:
+        self.service.snooze_update()
+        self._hide_update()
+
+    def _skip_update(self) -> None:
+        if self._update_version:
+            self.service.skip_update(self._update_version)
+        self._hide_update()
+
+    def _attach_key_picker(self, parent, entry, **grid):
+        """A menu of keys that are easy to miss while recording (Tab, navigation, Pause)."""
+        labels = ["Insert key", *[format_key(name) for name in PICKER_KEYS]]
+        holder: dict = {}
+
+        def choose(label: str) -> None:
+            if label == "Insert key":
+                return
+            name = next(item for item in PICKER_KEYS if format_key(item) == label)
+            try:
+                self._set_entry(entry, insert_key(entry.get(), name))
+            except ValueError as exc:
+                self.form_error.configure(text=str(exc))
+            holder["menu"].set("Insert key")
+
+        menu = ctk.CTkOptionMenu(parent, values=labels, width=124, command=choose)
+        menu.set("Insert key")
+        holder["menu"] = menu
+        menu.grid(**grid)
+        return menu
+
     def _build_banner(self) -> None:
         self.banner = ctk.CTkLabel(self, text="", font=self._font(12), anchor="w", justify="left")
         self.banner.grid(row=2, column=0, sticky="ew", padx=20, pady=(0, 4))
@@ -514,6 +585,7 @@ class KeywareApp(ctk.CTk):
         self._recorder_field(self.trigger, "trigger")
         self.capture_button = self._ghost(trigger_row, "Capture", self._capture)
         self.capture_button.grid(row=0, column=1)
+        self._attach_key_picker(trigger_row, self.trigger, row=0, column=2, padx=(8, 0))
         self.key_hint = ctk.CTkLabel(trigger_row, text="", text_color=MUTED, font=self._font(12), anchor="w",
                                      justify="left", wraplength=360)
 
@@ -557,7 +629,7 @@ class KeywareApp(ctk.CTk):
         self.url = ctk.CTkEntry(form, placeholder_text="https://www.youtube.com")
         self.app_box = ctk.CTkFrame(form, fg_color="transparent", border_width=0)
         self.app_box.grid_columnconfigure(0, weight=1)
-        self.app_path = ctk.CTkEntry(self.app_box, placeholder_text="notepad.exe or a full path")
+        self.app_path = ctk.CTkEntry(self.app_box, placeholder_text="Phone Link, notepad.exe, or a full path")
         self.app_path.grid(row=0, column=0, sticky="ew")
         self.app_args = ctk.CTkEntry(self.app_box, placeholder_text="Open with: links or files, ; between (optional)")
         self.app_args.grid(row=1, column=0, sticky="ew", pady=(6, 0))
@@ -597,8 +669,12 @@ class KeywareApp(ctk.CTk):
         self.simple_note = ctk.CTkLabel(form, text="", text_color=MUTED, font=self._font(12), anchor="w",
                                         justify="left", wraplength=360)
         self.text = ctk.CTkTextbox(form, height=80)
-        self.combo = ctk.CTkEntry(form, placeholder_text="Click here, then press the keys to send")
+        self.combo_box = ctk.CTkFrame(form, fg_color="transparent", border_width=0)
+        self.combo_box.grid_columnconfigure(0, weight=1)
+        self.combo = ctk.CTkEntry(self.combo_box, placeholder_text="Click here, then press the keys to send")
+        self.combo.grid(row=0, column=0, sticky="ew", padx=(0, 8))
         self._recorder_field(self.combo, "combo")
+        self._attach_key_picker(self.combo_box, self.combo, row=0, column=1)
         self.macro_box = ctk.CTkFrame(form, fg_color="transparent", border_width=0)
         self.macro_box.grid_columnconfigure(0, weight=1)
         ctk.CTkLabel(self.macro_box, text="Steps run in order. Delays are exact. Keys get a 5–15 ms human jitter.", text_color=MUTED, font=self._font(12), wraplength=360, justify="left").grid(
@@ -893,7 +969,7 @@ class KeywareApp(ctk.CTk):
         return url if is_web_url(url) else ""
 
     def _open_donate(self) -> None:
-        url = self._donate_url()
+        url = self._donate_url() or DONATE_URL
         if not url:
             return
         try:
@@ -1429,13 +1505,6 @@ class KeywareApp(ctk.CTk):
         feedback.grid_columnconfigure(1, weight=1)
         self._build_feedback(feedback)
 
-    def _open_donate(self) -> None:
-        import webbrowser
-        try:
-            webbrowser.open(DONATE_URL)
-        except Exception:
-            pass
-
     def _toggle_settings(self) -> None:
         if self._settings_open:
             self._close_settings()
@@ -1521,6 +1590,17 @@ class KeywareApp(ctk.CTk):
         self._ghost(leader_row, "Clear", self._clear_leader).grid(row=0, column=2)
         self.settings_note = ctk.CTkLabel(box, text="", text_color=MUTED, anchor="w", wraplength=420, justify="left")
         self.settings_note.grid(row=7, column=0, sticky="ew", pady=(8, 0))
+        self.update_switch = ctk.CTkSwitch(box, text="Check for updates", command=self._on_check_updates)
+        self.update_switch.grid(row=8, column=0, sticky="w", pady=(10, 0))
+        if self.service.config.check_updates:
+            self.update_switch.select()
+        ctk.CTkLabel(
+            box,
+            text="Once a day, Keyware asks GitHub which release is current. "
+                 "It does not download anything. Update opens the Microsoft Store for the Store app, "
+                 "or keyware.site for the portable exe. Turn this off to stay on this version.",
+            text_color=MUTED, font=self._font(12), wraplength=360, justify="left",
+        ).grid(row=9, column=0, sticky="ew", pady=(4, 0))
 
     def _on_startup(self) -> None:
         want = bool(self.startup_switch.get())
@@ -1538,6 +1618,16 @@ class KeywareApp(ctk.CTk):
             self.startup_switch.select()
         else:
             self.startup_switch.deselect()
+
+    def _on_check_updates(self) -> None:
+        enabled = bool(self.update_switch.get())
+        self.service.set_check_updates(enabled)
+        if not enabled:
+            self._hide_update()
+        self.settings_note.configure(
+            text="Keyware will look for a newer version once a day." if enabled
+            else "Update check off. Keyware will stay on this version."
+        )
 
     # --- AI key (optional) -------------------------------------------------
 
@@ -2180,7 +2270,7 @@ class KeywareApp(ctk.CTk):
             "Open URL": (self.url, {"row": 7, **place}),
             "Open app": (self.app_box, {"row": 8, **place}),
             "Type text": (self.text, {"row": 9, **place}),
-            "Key combo": (self.combo, {"row": 10, **place}),
+            "Key combo": (self.combo_box, {"row": 10, **place}),
             "Macro": (self.macro_box, {"row": 11, **place}),
             "Auto-click": (self.autoclick_box, {"row": 11, "column": 0, "sticky": "ew", "pady": (2, 8)}),
             "Open file or folder": (self.path_entry, {"row": 8, **place}),
@@ -2295,7 +2385,7 @@ class KeywareApp(ctk.CTk):
         hint = next((KEY_HINTS[key] for key in keys if key in KEY_HINTS), "")
         if hint:
             self.key_hint.configure(text=hint)
-            self.key_hint.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+            self.key_hint.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(6, 0))
         else:
             self.key_hint.grid_remove()
 
@@ -2322,12 +2412,13 @@ class KeywareApp(ctk.CTk):
         entry.grid(row=0, column=3, sticky="ew", padx=(0, 4))
         # Key and Combo steps record keys like the trigger field. Everything else is typed.
         self._recorder_field(entry, "combo", when=lambda: menu.get() in ("Key", "Combo"))
+        picker = self._attach_key_picker(row, entry, row=0, column=4, padx=(0, 4))
         remove = ctk.CTkButton(row, text="", image=self._trash(), width=28, height=28, corner_radius=6,
                                fg_color="transparent", hover_color=HOVER, border_width=0,
                                command=lambda: self._remove_step(record))
         if self._trash() is None:
             remove.configure(text="✕", text_color=MUTED)
-        remove.grid(row=0, column=4)
+        remove.grid(row=0, column=5)
         Tooltip(remove, "Remove step")
         extra_entry = ctk.CTkEntry(row)
         if extra:
@@ -2336,7 +2427,7 @@ class KeywareApp(ctk.CTk):
         if fallback:
             fallback_entry.insert(0, fallback)
         record.update({"op": menu, "value": entry, "extra": extra_entry, "fallback": fallback_entry,
-                       "up": up, "down": down, "remove": remove})
+                       "up": up, "down": down, "remove": remove, "picker": picker})
         self._macro_rows.append(record)
         self._regrid_steps()
         self._sync_step(record)
@@ -2360,6 +2451,12 @@ class KeywareApp(ctk.CTk):
         else:
             extra.grid_remove()
             fallback.grid_remove()
+        picker = record.get("picker")
+        if picker is not None:
+            if op in ("Key", "Combo"):
+                picker.grid()
+            else:
+                picker.grid_remove()
 
     def _regrid_steps(self) -> None:
         last = len(self._macro_rows) - 1
@@ -2416,10 +2513,21 @@ class KeywareApp(ctk.CTk):
         def on_key(event, pressed: bool):
             if self._record_target is not entry:
                 return None
+            if (event.keysym or "").lower() in ("tab", "iso_left_tab"):
+                return "break"  # the Tab binding records it; Tk must not move focus
             name = tk_key_name(event.keysym)
             if name:
                 self.service.feed_recording(name, pressed)
             return "break"  # never type the key name into the field
+
+        def on_tab(_event):
+            # Tk does not deliver Tab to <KeyPress> in a way that survives focus traversal.
+            if self._record_target is not entry:
+                return "break"
+            if getattr(self.service, "_record_source", "") != "hook":
+                self.service.feed_recording("tab", True)
+                self.service.feed_recording("tab", False)
+            return "break"
 
         def on_mouse(event, button: str, pressed: bool):
             # While recording, Middle/X1/X2 record as triggers; Left/Right only with a modifier held.
@@ -2433,8 +2541,12 @@ class KeywareApp(ctk.CTk):
         x_buttons = (4, 5) if sys.platform == "win32" else (8, 9)
         for number, button in ((1, "mouse_left"), (3, "mouse_right"), (2, "mouse_middle"),
                                (x_buttons[0], "mouse_x1"), (x_buttons[1], "mouse_x2")):
-            inner.bind(f"<ButtonPress-{number}>", lambda e, b=button: on_mouse(e, b, True), add="+")
-            inner.bind(f"<ButtonRelease-{number}>", lambda e, b=button: on_mouse(e, b, False), add="+")
+            try:
+                inner.bind(f"<ButtonPress-{number}>", lambda e, b=button: on_mouse(e, b, True), add="+")
+                inner.bind(f"<ButtonRelease-{number}>", lambda e, b=button: on_mouse(e, b, False), add="+")
+            except Exception:
+                # Linux Tk rejects the Windows X-button numbers. Recording still works on Windows.
+                continue
         def on_wheel(event):
             # Wheel up/down record as triggers only with a modifier held (plain scrolling stays normal).
             if self._record_target is not entry or not (int(event.state) & 0x2000D):
@@ -2452,6 +2564,8 @@ class KeywareApp(ctk.CTk):
         inner.bind("<FocusOut>", on_blur, add="+")
         inner.bind("<KeyPress>", lambda e: on_key(e, True), add="+")
         inner.bind("<KeyRelease>", lambda e: on_key(e, False), add="+")
+        for sequence in ("<Tab>", "<Shift-Tab>", "<ISO_Left_Tab>"):
+            inner.bind(sequence, on_tab, add="+")
 
     def _start_recording(self, entry, kind: str) -> None:
         if self._record_target is entry:
@@ -2941,6 +3055,8 @@ class KeywareApp(ctk.CTk):
                 self._flash(message.text)
                 if self.selected_id:
                     self._refresh_bindings()
+            elif message.kind == "update":
+                self._show_update(message.text, message.mode)
             elif message.text:
                 self._append(message.text)
 
@@ -3116,6 +3232,9 @@ def run(minimized: bool = False, background: bool = False) -> None:
     ))
     if on_windows:
         service.command_confirmer = confirm_command_dialog
+    from assist.update_check import fetch_latest_version
+
+    service.update_fetch = fetch_latest_version
     from engine import nudge
 
     service.apply_startup_default()

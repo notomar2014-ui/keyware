@@ -39,6 +39,24 @@ bindings you review before saving. Nothing is ever saved automatically.
   a *Play* song or video), also use the network. What each one sends is on the
   [privacy page](https://keyware.site/privacy).
 
+## New in 1.4.0
+
+- **Store apps open.** Phone Link and other Microsoft Store apps have no normal
+  exe. Keyware opens them from the Start menu name (an app id such as
+  `Microsoft.YourPhone_8wekyb3d8bbwe!App`), a shortcut, App Paths, or PATH.
+  A missing path is reported and not launched.
+- **Text mode knows those names.** Phone Link, Settings, Calculator, Edge,
+  Chrome, VS Code, Spotify, WhatsApp, Discord, and Teams are matched to what
+  is installed. The check stays on your PC.
+- **Tab works in a shortcut**, as the key you press and as the key Keyware sends.
+- **More keys:** Scroll Lock, Page Up, Page Down, Home, End, Delete, Insert,
+  Print Screen, and Pause/Break. The editor has a picker for them.
+- **Update check.** Once a day Keyware asks GitHub which release is current
+  (`notomar2014-ui/keyware`). A small banner can open the Microsoft Store
+  (product `9NGDP5BL0105`) or [keyware.site](https://keyware.site/#install).
+  Nothing is downloaded. Later and Skip this version hide it. Settings can
+  turn the check off. Offline stays quiet.
+
 ## New in 1.3.9
 
 - **Text mode is a normal sentence.** The box asks what the key should do and

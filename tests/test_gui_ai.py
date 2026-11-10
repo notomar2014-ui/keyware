@@ -72,7 +72,7 @@ def test_toggle_switches_between_manual_fields_and_the_text_box(tmp_path):
         app.update()
         assert app.ai_panel.winfo_ismapped() and app.ai_box.winfo_ismapped()
         assert not app.action.winfo_ismapped() and not app.trigger.winfo_ismapped() and not app.url.winfo_ismapped()
-        assert app._ai_text() == "" and "Describe what this key should do" in app.ai_box.get("1.0", "end")
+        assert app._ai_text() == "" and "Write a normal sentence" in app.ai_box.get("1.0", "end")
         app._set_binder_mode("Manual")
         app.update()
         assert app.action.winfo_ismapped() and app.url.winfo_ismapped() and not app.ai_panel.winfo_ismapped()

@@ -499,6 +499,23 @@ def _protected_blob(value: Any) -> str:
     return text if re.fullmatch(r"[A-Za-z0-9+/=]{16,8000}", text) else ""
 
 
+def _version_text(value: Any) -> str:
+    text = str(value or "").strip()
+    if text.lower().startswith("v"):
+        text = text[1:]
+    return text if re.fullmatch(r"\d+\.\d+\.\d+", text) else ""
+
+
+def _epoch(value: Any) -> float:
+    try:
+        number = float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    if number < 0 or number > 4e10:
+        return 0.0
+    return number
+
+
 @dataclass
 class Config:
     version: int = SCHEMA_VERSION
@@ -539,6 +556,11 @@ class Config:
     startup_default_applied: bool = False
     ai_provider: str = "gemini"  # gemini | groq
     ai_key_protected: str = ""  # Windows DPAPI blob (base64) of the user's own key; never the key itself
+    # Update check (v1.4.0). GitHub releases/latest. Off skips the network entirely.
+    check_updates: bool = True
+    update_skipped: str = ""  # x.y.z the user chose not to hear about
+    update_later_until: float = 0  # unix time; "Later" hides the notice until then
+    update_checked_at: float = 0  # unix time of the last successful check
     profiles: list[Profile] = field(default_factory=list)
 
     def global_profile(self) -> Profile:
@@ -586,6 +608,10 @@ class Config:
             "startup_default_applied": bool(self.startup_default_applied),
             "ai_provider": self.ai_provider if self.ai_provider in AI_PROVIDERS else "gemini",
             "ai_key_protected": self.ai_key_protected,
+            "check_updates": bool(self.check_updates),
+            "update_skipped": self.update_skipped,
+            "update_later_until": float(self.update_later_until or 0),
+            "update_checked_at": float(self.update_checked_at or 0),
             "profiles": [profile.to_dict() for profile in self.profiles],
         }
 
@@ -636,6 +662,10 @@ class Config:
             ai_provider=str(raw.get("ai_provider", "gemini") or "gemini").strip().lower()
             if str(raw.get("ai_provider", "gemini") or "gemini").strip().lower() in AI_PROVIDERS else "gemini",
             ai_key_protected=_protected_blob(raw.get("ai_key_protected")),
+            check_updates=bool(raw.get("check_updates", True)),
+            update_skipped=_version_text(raw.get("update_skipped")),
+            update_later_until=_epoch(raw.get("update_later_until")),
+            update_checked_at=_epoch(raw.get("update_checked_at")),
             profiles=profiles,
         )
 
