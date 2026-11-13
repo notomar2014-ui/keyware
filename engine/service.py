@@ -130,6 +130,11 @@ class KeywareService:
         self._ui: queue.Queue[UiMessage] = queue.Queue()
         self._actions: queue.Queue = queue.Queue()
         self._replay_queue: queue.Queue = queue.Queue()
+        self._log_lines: queue.Queue[str] = queue.Queue()
+        self._mouse_bound_cache: frozenset[str] | None = None
+        self._reload_at = -1.0
+        # Script variables live in this process only. The hook never touches them.
+        self.script_vars: dict[str, int] = {}
         self._stop = threading.Event()
         self._workers = False
         self.hook_status = "off"
@@ -190,6 +195,7 @@ class KeywareService:
 
     def shutdown(self) -> None:
         self._stop.set()
+        self._flush_logs()
         self.clicker.close()
         self.executor.cancel()
         with self._lock:
@@ -212,18 +218,33 @@ class KeywareService:
     def wants_mouse(self, button: str) -> bool:
         """Mouse-hook filter: Middle/X1/X2 always (cheap, unbound ones pass through);
         Left/Right only when some enabled binding uses them."""
-        from engine.keys import MOUSE_ONLY_WHEN_BOUND as MOUSE_NEEDS_MODIFIER
+        from engine.keys import MOUSE_ONLY_WHEN_BOUND
 
         extra_button = button.startswith("mouse_x") and button not in ("mouse_x1", "mouse_x2")
-        if button not in MOUSE_NEEDS_MODIFIER and not extra_button:
+        if button not in MOUSE_ONLY_WHEN_BOUND and not extra_button:
             return True
         if self.recording:
             return False
         try:
-            return any(b.enabled and button in b.keys
-                       for p in self.config.profiles for b in p.bindings)
+            return button in self._mouse_bound()
         except Exception:
             return False
+
+    def _mouse_bound(self) -> frozenset[str]:
+        cached = self._mouse_bound_cache
+        if cached is not None:
+            return cached
+        found: set[str] = set()
+        for profile in self.config.profiles:
+            for binding in profile.bindings:
+                if binding.enabled:
+                    found.update(key for key in binding.keys if key.startswith("mouse_"))
+        cached = frozenset(found)
+        self._mouse_bound_cache = cached
+        return cached
+
+    def _invalidate_mouse_cache(self) -> None:
+        self._mouse_bound_cache = None
 
     def hook_event(self, key: str, pressed: bool) -> bool:
         """Hook-thread entry. Never runs macros or disk writes on this thread."""
@@ -398,12 +419,18 @@ class KeywareService:
         return filtered
 
     def tick(self, now: float | None = None) -> None:
+        self._flush_logs()
+        moment = self._clock() if now is None else now
+        # The hold timer runs every 20 ms. Statting the config that often
+        # wakes the disk on the same cadence as the hook's timer thread.
+        if moment - self._reload_at >= 0.5:
+            self._reload_at = moment
+            self.maybe_reload()
         self.consider_update()
         if self._recorder is not None:
             self._tick_recorder(self._clock() if now is None else now)
         elif self._record_stop_pending:
             self._end_recording()
-        self.maybe_reload()
         self._poll_elevation()
         with self._lock:
             moment = self._clock() if now is None else now
@@ -739,6 +766,23 @@ class KeywareService:
         with self._lock:
             self._detector.cancel_capture()
 
+    def run_saved(self, binding: Binding) -> None:
+        """Run a binding the way its key would: the script if it has one, otherwise the action."""
+        script = (binding.script or "").strip()
+        if not script:
+            self.run_action(binding.action)
+            return
+        from engine.detector import Effect
+
+        effect = Effect(
+            kind="fire",
+            binding_id=binding.id,
+            action=binding.action,
+            script=script,
+            mods=tuple(sorted(self._detector.modifiers)),
+        )
+        self._start_script(effect, from_hook=False)
+
     def run_action(self, action) -> None:
         if getattr(action, "type", "") == "auto_click":
             self._log("Auto-click runs from its trigger key, not the Run button.")
@@ -970,6 +1014,12 @@ class KeywareService:
         with self._lock:
             self.config.audio_enabled = bool(enabled)
             self.audio.enabled = bool(enabled)
+        self._save()
+
+    def set_scripting(self, enabled: bool) -> None:
+        """Reveal the script box. Does not change whether a saved script runs."""
+        with self._lock:
+            self.config.scripting = bool(enabled)
         self._save()
 
     def set_check_updates(self, enabled: bool) -> None:
@@ -1334,6 +1384,8 @@ class KeywareService:
             elif effect.kind == "fire" and effect.action is not None:
                 if effect.action.type == "auto_click":
                     self._fire_autoclick(effect)
+                elif effect.script:
+                    self._start_script(effect, from_hook=from_hook)
                 else:
                     self._start_action(effect.action, from_hook=from_hook)
             elif effect.kind == "autoclick_stop":
@@ -1393,6 +1445,56 @@ class KeywareService:
         running = self.clicker.running_binding
         if running is not None and running not in self._detector.active_binding_ids:
             self.clicker.stop(running, "profile no longer active")
+
+    def _script_context(self, effect):
+        from engine.script import script_context
+
+        profile = self.config.profile_by_id(self.active_profile_id)
+        return script_context(
+            self.foreground_name,
+            profile.name if profile is not None else "",
+            profile.active_setup if profile is not None else 0,
+            effect.mods,
+        )
+
+    def _start_script(self, effect, *, from_hook: bool) -> None:
+        """Queue a script. from_hook never runs it on this thread."""
+        ctx = self._script_context(effect)
+        if self.synchronous and not from_hook:
+            self._run_script_job(effect.script, effect.action, ctx, self._fire_window())
+            return
+        if not self._workers:
+            self._start_workers()
+        self._actions.put(("script", effect.script, effect.action, ctx, self._fire_window()))
+
+    def _run_script_job(self, source: str, action, ctx, hwnd) -> None:
+        from engine.models import Action
+        from engine.script import ScriptLimit, execute_script, script_sends_input
+
+        if self.executor.cancelled:
+            return
+        sends = False
+        try:
+            sends = script_sends_input(source, action)
+        except Exception as exc:
+            self._log(f"Script failed: {exc}")
+            return
+        probe = Action(type="type_text", text=" ") if sends else action
+        if not self._wait_modifiers_up(probe):
+            self._log("Skipped a script: release Ctrl, Alt, Shift, and Win first.")
+            return
+        if sends and hwnd is not None:
+            self.executor.guard = lambda hwnd=hwnd: self._same_window(probe, hwnd)
+        else:
+            self.executor.guard = None
+        try:
+            execute_script(source, executor=self.executor, action=action, ctx=ctx, variables=self.script_vars)
+        except ScriptLimit as exc:
+            self._log(str(exc))
+        except Exception as exc:
+            self._log(f"Script failed: {exc}")
+        finally:
+            self.executor.guard = None
 
     def _start_action(self, action, *, from_hook: bool) -> None:
         if self.synchronous and not from_hook:
@@ -1457,6 +1559,11 @@ class KeywareService:
                     self.audio.play(action[1])
                 except Exception:
                     pass
+                continue
+            if isinstance(action, tuple) and action and action[0] == "script":
+                _tag, source, script_action, ctx, hwnd = action
+                if not self.executor.cancelled:
+                    self._run_script_job(source, script_action, ctx, hwnd)
                 continue
             hwnd = None
             if isinstance(action, tuple) and action and action[0] == "run":
@@ -1608,6 +1715,7 @@ class KeywareService:
             self.executor.jitter_min_ms = config.jitter_min_ms
             self.executor.jitter_max_ms = config.jitter_max_ms
             self._detector.config = config
+            self._invalidate_mouse_cache()
             if not config.dry_run:
                 self._detector.disarm()
             active = match_profile(self.config.profiles, self.foreground_name)
@@ -1633,6 +1741,7 @@ class KeywareService:
 
     def _save_and_sync(self) -> None:
         self._save()
+        self._invalidate_mouse_cache()
         with self._lock:
             self._detector.config = self.config
             active = match_profile(self.config.profiles, self.foreground_name)
@@ -1676,10 +1785,26 @@ class KeywareService:
 
     def _log(self, text: str) -> None:
         self._put(UiMessage(kind="log", text=text))
-        self._file_log(text)
+        if self.synchronous:
+            self._write_log(text)
+        else:
+            # The hook thread calls _log for a dry-run line or a fail-open.
+            # The file write happens on the timer thread instead.
+            self._log_lines.put(text)
+
+    def _flush_logs(self) -> None:
+        while True:
+            try:
+                text = self._log_lines.get_nowait()
+            except queue.Empty:
+                return
+            self._write_log(text)
 
     def _file_log(self, text: str) -> None:
         """Mirror the log to keyware.log next to config.json. Never raises."""
+        self._write_log(text)
+
+    def _write_log(self, text: str) -> None:
         try:
             path = self.store.path.parent / "keyware.log"
             if path.exists() and path.stat().st_size > 512_000:

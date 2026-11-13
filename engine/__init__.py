@@ -1,6 +1,6 @@
 """Keyware engine: keyboard remapping, chords, holds, and macros."""
 
-__version__ = "1.4.0"
+__version__ = "1.4.1"
 
 PROFILE_POLL_SECONDS = 0.5
 HOLD_TICK_SECONDS = 0.02

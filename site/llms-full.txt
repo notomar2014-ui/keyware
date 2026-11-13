@@ -322,7 +322,7 @@ Opens a web page in your default browser. Links must start with http:// or https
 
 ### ▢Open app
 
-Starts a program. Pick the .exe or paste its path. Command-line arguments and scripts aren't allowed, by design.
+Starts a program by its Start menu name, .exe, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused.
 
 ### TType text
 

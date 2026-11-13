@@ -53,6 +53,16 @@ It compares `tag_name` with `engine.__version__`. The request uses a Keyware use
 
 When a newer x.y.z tag exists, the open window shows a dismissible row: **Update**, **Later** (hide for a day), **Skip this version**. Update opens `ms-windows-store://pdp/?productid=9ngdp5bl0105` when the process has package identity, and `https://keyware.site/#install` for the portable exe. Settings has **Check for updates** (`check_updates` in the config, on by default).
 
+## Scripts (optional, 1.4.1)
+
+Settings has **Advanced scripting**. It is off until someone turns it on, and Manual and Text mode do not show a script box while it is off. A binding that already has a script still runs it, and Edit shows the text so it can be read.
+
+The language is line oriented. `do` runs the binding's normal action. `if app is chrome.exe` / `else` / `end`, `if profile is Gaming`, `if setup is 2`, `if mod ctrl`, `if n > 3`, `repeat 4` / `end` (at most 8, nested at most 4), `set n = n + 1`, `toggle flag`, `type "..."`, `key a`, `combo ctrl c`, `click left`, `url https://...`, `app notepad.exe`, `path C:\Notes`, `media volume_up`, `wait 40`, `lock`, `screenshot`, `stop`. `#` comments. Text mode never writes a script, and an AI reply whose action type is `script` is rejected.
+
+Limits, checked again at runtime: 2000 characters, 80 lines, 128 steps, 500 ms per wait, 2000 ms of waits in total, 16 variables. A script cannot open a shell or a script file, run a command, play media from the network, or loop without `repeat`. `do` is the one way to reach a Manual action, including a command that was already confirmed there. Compilation happens when the binding is saved or loaded. The hook only copies the script text onto the effect. The action worker runs it. Pause, panic, and a focus change cancel it between steps and release every key it pressed. Variables live in the process and are not written to `config.json`. Dry run logs the fire and does not run the script. Conflict checks are still about the trigger, so two scripts on the same key still clash.
+
+The hold timer still wakes every 20 ms, but the config file is statted at most twice a second. A log line from the hook is queued and written on that timer, not in the hook callback. The mouse hook keeps a set of bound mouse buttons and rebuilds it when bindings change.
+
 ## Describe it (Text mode)
 
 The binding editor has a small **Manual / Text** toggle. Manual is the usual
@@ -212,6 +222,7 @@ engine/sendinput.py     KEYWARE_EXTRA and tagged SendInput
 engine/hook_engine.py   Windows WH_KEYBOARD_LL adapter
 engine/watchdog.py      reinstall after sleep, lock, or UAC
 engine/detector.py      taps, holds, chords, tap-dance, leader, panic
+engine/script.py        optional bounded script, compiled off the hook
 engine/service.py       queue between the hook and the window
 ui/app.py               CustomTkinter window
 ui/tray.py              pause, reload, open config, quit

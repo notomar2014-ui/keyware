@@ -39,6 +39,19 @@ bindings you review before saving. Nothing is ever saved automatically.
   a *Play* song or video), also use the network. What each one sends is on the
   [privacy page](https://keyware.site/privacy).
 
+## New in 1.4.1
+
+- **Scripts, if you want them.** Settings has **Advanced scripting**, off by default.
+  Manual and Text mode stay the same. Turn it on and a binding can carry a short
+  script: branch on the app, profile, setup, or held modifiers, then type, click,
+  open something, or run the normal action with `do`. A script cannot open a
+  shell or run a command, and it cannot wait more than 2 seconds in total.
+  The keyboard hook never runs it. Pause and **Ctrl + Alt + Shift + Esc** stop
+  it between steps and release any key it was holding.
+- **Quieter hook path.** Keyware checks the config file at most twice a second,
+  writes log lines off the hook thread, and remembers which mouse buttons are
+  bound instead of scanning every binding on each click.
+
 ## New in 1.4.0
 
 - **Store apps open.** Phone Link and other Microsoft Store apps have no normal
