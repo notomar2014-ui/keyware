@@ -20,6 +20,14 @@ FONT = "/usr/share/fonts/truetype/macos/Inter-Bold.ttf"
 FONT_SMALL = "/usr/share/fonts/truetype/macos/Inter-SemiBold.ttf"
 
 # Captions are the Store listing lines. Each source is a real Keyware 1.4.1 window.
+# Website frames (07+) come from store/capture_site.py photographs of keyware.site.
+SITE_SHOTS = [
+    ("hero.png", "07-site-home.png", "Make your keys your own"),
+    ("features.png", "08-site-features.png", "Every key can do more"),
+    ("gallery.png", "09-site-gallery.png", "A look at the app"),
+    ("guide.png", "10-site-guide.png", "How to use Keyware"),
+    ("whats-new.png", "11-site-whats-new.png", "What's new in 1.4.1"),
+]
 SHOTS = [
     ("01-text.png", "01-plain-english.png", "Remap any key in plain English"),
     ("02-profiles.png", "02-per-app.png", "Per-app shortcuts"),
@@ -91,18 +99,25 @@ def square(app: Image.Image, title: str) -> Image.Image:
     return canvas.convert("RGB")
 
 
-def main(src_dir: str, out_dir: str) -> None:
-    src = Path(src_dir)
-    out = Path(out_dir)
+def _frame(src: Path, out: Path, shots) -> None:
     wide_dir = out / "1920x1080"
     square_dir = out / "1080x1080"
     wide_dir.mkdir(parents=True, exist_ok=True)
     square_dir.mkdir(parents=True, exist_ok=True)
-    for source, name, title in SHOTS:
+    for source, name, title in shots:
         app = Image.open(src / source).convert("RGB")
         wide(app, title).save(wide_dir / name, optimize=True)
         square(app, title).save(square_dir / name, optimize=True)
         print(name, title)
+
+
+def frame_site(src_dir: str, out_dir: str) -> None:
+    """Frame live keyware.site captures. App shots stay numbered 01-06."""
+    _frame(Path(src_dir), Path(out_dir), SITE_SHOTS)
+
+
+def main(src_dir: str, out_dir: str) -> None:
+    _frame(Path(src_dir), Path(out_dir), SHOTS)
 
 
 if __name__ == "__main__":
