@@ -141,11 +141,11 @@ Pick the category **"Utility, Productivity, Communication or Other"** (not Game)
 
 Expected result: the lowest rating in every region (for example 3+ / Everyone).
 
-## 8. Screenshots (1920 x 1080 PNG; Store minimum 1366 x 768, up to 10)
+## 8. Screenshots and listing images
 
-Import listings wants one folder: the exported listing CSV plus these PNGs beside it. The files are in `store/import-listing/`. Captions are already drawn on the images. The Store form accepts 10 screenshots; leave out `09-gallery.png` if it stops at 10, because that photo repeats an app shot.
+Import listings wants one folder: the exported listing CSV plus these PNGs beside it. They are in `store/import-listing/`. Desktop screenshots are PNG, 1920×1080, under 50 MB. Ten total: the app first, then the site. The gallery shot is not included.
 
-| File | What it shows |
+| File | Caption (under 200 characters) |
 | --- | --- |
 | 01-remap.png | Remap any key in plain English |
 | 02-per-app.png | Per-app shortcuts |
@@ -153,16 +153,16 @@ Import listings wants one folder: the exported listing CSV plus these PNGs besid
 | 04-scripting.png | Optional Advanced scripting (1.4.1) |
 | 05-update.png | Built-in update check / pause & panic stop |
 | 06-free.png | x64 + ARM64, free & open source |
-| 07-home.png | keyware.site homepage: Make your keys your own |
-| 08-features.png | keyware.site features: Every key can do more |
-| 09-gallery.png | keyware.site gallery: A look at the app |
-| 10-guide.png | keyware.site guide: How to use Keyware |
-| 11-whats-new.png | keyware.site What's new: What's new in 1.4.1 |
+| 07-home.png | Make your keys your own |
+| 08-features.png | Every key can do more |
+| 09-guide.png | How to use Keyware |
+| 10-whats-new.png | What's new in 1.4.1 |
+| StoreLogo1080x1080.png | Keyware |
+| StoreLogo720x1080.png | Keyware. Make your keys your own |
+| PromoImage1920x1080.png | Make your keys your own. Free for Windows 10 and 11. x64 and ARM64. |
+| PromoImage2400x1200.png | Make your keys your own. Free for Windows 10 and 11. x64 and ARM64. |
 
-The listing CSV is not in this folder yet. When Partner Center exports one, drop it next to these files and point the screenshot columns at these names.
-- Store logos for Partner Center (optional but recommended, the Store prefers them over the package icon):
-  `StoreListingImages/StoreLogo_300.png` (1:1 app tile icon 300 x 300), `StoreLogo_1080.png` and `StoreLogo_2160.png`
-  (1:1 box art).
+Square box art at other sizes remains in `StoreListingImages/`.
 
 ## 9. Submission options: restricted capability justification (runFullTrust)
 
