@@ -1,98 +1,108 @@
-"""Compose Microsoft Store screenshots (1920x1080 PNG) from Keyware v1.3.4 UI captures.
+"""Frame real Keyware window captures as Microsoft Store screenshots.
 
-Store rule: PNG, at least 1366x768, up to 10 per language. Run:  python store/make_screenshots.py SRC_DIR OUT_DIR
-Only v1.3.4 captures are used: older ones show a Windows user folder in the log and the donation button.
-The one v1.3.4 capture that still shows the "Support Keyware" button gets it painted over, matching the
-current build where donation buttons are hidden.
+1920x1080 is the Store set. 1080x1080 is the square set.
+  python3 store/capture_ui.py /tmp/kw-shots/raw
+  python3 store/make_screenshots.py /tmp/kw-shots/raw site/assets/store
 """
+from __future__ import annotations
+
 import sys
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H = 1920, 1080
+SQ = 1080
 BG = (9, 9, 11)
-FONT = "/usr/share/fonts/truetype/sand-box/google/Inter/Inter-VariableFont_opsz,wght.ttf"
+INK = (245, 245, 246)
+MUTED = (139, 156, 255)
+FONT = "/usr/share/fonts/truetype/macos/Inter-Bold.ttf"
+FONT_SMALL = "/usr/share/fonts/truetype/macos/Inter-SemiBold.ttf"
 
+# Captions are the Store listing lines. Each source is a real Keyware 1.4.1 window.
 SHOTS = [
-    ("ui_v134_text.png", "01_text_mode.png", "Describe it, get a binding",
-     "Type what you want in plain words. Keyware drafts the binding, you review it and save."),
-    ("ui_v134_gear.png", "02_bindings.png", "Chords, holds and leader keys",
-     "Bind key combos, timed holds or a leader key to open sites, type text, launch apps and more."),
-    ("ui_v134_profiles.png", "03_profiles.png", "Profiles per app",
-     "Gaming, Browser, Code: each profile turns on only in the apps you choose."),
-    ("ui_v134_settings.png", "04_settings.png", "Start with Windows, your way",
-     "Dry run, audio ticks, a pause hotkey (Ctrl+Alt+F12) and an optional own AI key."),
-    ("ui_v134_feedback.png", "05_feedback.png", "Free and open source",
-     "No accounts, no ads, no tracking. Send ideas or bug reports right from Settings."),
+    ("01-text.png", "01-plain-english.png", "Remap any key in plain English"),
+    ("02-profiles.png", "02-per-app.png", "Per-app shortcuts"),
+    ("03-macro.png", "03-macros.png", "Macros & hotkeys"),
+    ("04-script.png", "04-scripting.png", "Optional Advanced scripting (1.4.1)"),
+    ("05-safety.png", "05-safety.png", "Built-in update check / pause & panic stop"),
+    ("06-home.png", "06-free.png", "x64 + ARM64, free & open source"),
 ]
 
 
-def mask_support_button(im: Image.Image) -> Image.Image:
-    """Paint over the pink 'Support Keyware' button (bbox found by its pink text/heart)."""
-    px = im.load()
-    pink = [(x, y) for y in range(im.height) for x in range(im.width)
-            if px[x, y][0] > 200 and px[x, y][1] < 140 and px[x, y][2] > 120]
-    if not pink:
-        return im
-    x0, y0 = min(p[0] for p in pink), min(p[1] for p in pink)
-    x1, y1 = max(p[0] for p in pink), max(p[1] for p in pink)
-    # The button is a rounded rect about 22 px left/right and 12 px above/below its pink label.
-    ImageDraw.Draw(im).rectangle([x0 - 30, y0 - 17, min(x1 + 24, im.width - 1), y1 + 14], fill=BG)
-    return im
+def font(path: str, size: int) -> ImageFont.FreeTypeFont:
+    return ImageFont.truetype(path, size)
 
 
-def font(size: int, weight: int) -> ImageFont.FreeTypeFont:
-    f = ImageFont.truetype(FONT, size)
-    try:
-        f.set_variation_by_axes([14 if size < 30 else 32, weight])
-    except Exception:
-        pass
-    return f
+def fit_title(draw: ImageDraw.ImageDraw, text: str, width: int, start: int, floor: int) -> ImageFont.FreeTypeFont:
+    size = start
+    while size > floor and draw.textlength(text, font=font(FONT, size)) > width:
+        size -= 2
+    return font(FONT, size)
 
 
-def wrap(draw, text, f, width):
-    lines, cur = [], ""
-    for word in text.split():
-        trial = (cur + " " + word).strip()
-        if draw.textlength(trial, font=f) <= width:
-            cur = trial
-        else:
-            lines.append(cur)
-            cur = word
-    lines.append(cur)
-    return lines
+def rounded(im: Image.Image, radius: int) -> Image.Image:
+    out = im.convert("RGBA")
+    mask = Image.new("L", out.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, out.width - 1, out.height - 1), radius, fill=255)
+    out.putalpha(mask)
+    return out
 
 
-def compose(src: Path, title: str, body: str) -> Image.Image:
-    app = mask_support_button(Image.open(src).convert("RGB"))
-    scale = min(1300 / app.width, 960 / app.height)
-    app = app.resize((round(app.width * scale), round(app.height * scale)), Image.LANCZOS)
-    canvas = Image.new("RGB", (W, H), BG)
-    ax, ay = W - app.width - 60, (H - app.height) // 2
-    d = ImageDraw.Draw(canvas)
-    d.rounded_rectangle([ax - 2, ay - 2, ax + app.width + 1, ay + app.height + 1], 10, outline=(48, 48, 56), width=2)
-    canvas.paste(app, (ax, ay))
-    text_w = ax - 60 - 70
-    ft, fb = font(52, 700), font(28, 400)
-    y = H // 2 - 140
-    for line in wrap(d, title, ft, text_w):
-        d.text((60, y), line, font=ft, fill=(245, 245, 247))
-        y += 64
-    y += 24
-    for line in wrap(d, body, fb, text_w):
-        d.text((60, y), line, font=fb, fill=(170, 170, 180))
-        y += 40
-    return canvas
+def shadow(base: Image.Image, box: tuple[int, int, int, int], radius: int) -> None:
+    layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    x0, y0, x1, y1 = box
+    draw.rounded_rectangle((x0, y0 + 18, x1, y1 + 28), radius + 8, fill=(0, 0, 0, 170))
+    layer = layer.filter(ImageFilter.GaussianBlur(22))
+    base.alpha_composite(layer)
+
+
+def place_app(canvas: Image.Image, app: Image.Image, top: int, side: int, bottom: int) -> None:
+    avail_w = canvas.width - side * 2
+    avail_h = canvas.height - top - bottom
+    scale = min(avail_w / app.width, avail_h / app.height)
+    resized = app.resize((round(app.width * scale), round(app.height * scale)), Image.LANCZOS)
+    framed = rounded(resized, 22)
+    x = (canvas.width - framed.width) // 2
+    y = top + (avail_h - framed.height) // 2
+    shadow(canvas, (x, y, x + framed.width, y + framed.height), 22)
+    canvas.alpha_composite(framed, (x, y))
+
+
+def wide(app: Image.Image, title: str) -> Image.Image:
+    canvas = Image.new("RGBA", (W, H), BG + (255,))
+    draw = ImageDraw.Draw(canvas)
+    eyebrow = font(FONT_SMALL, 22)
+    draw.text((72, 48), "KEYWARE", font=eyebrow, fill=MUTED)
+    title_font = fit_title(draw, title, W - 144, 64, 36)
+    draw.text((72, 84), title, font=title_font, fill=INK)
+    place_app(canvas, app, 176, 72, 48)
+    return canvas.convert("RGB")
+
+
+def square(app: Image.Image, title: str) -> Image.Image:
+    canvas = Image.new("RGBA", (SQ, SQ), BG + (255,))
+    draw = ImageDraw.Draw(canvas)
+    draw.text((48, 36), "KEYWARE", font=font(FONT_SMALL, 18), fill=MUTED)
+    title_font = fit_title(draw, title, SQ - 96, 42, 26)
+    draw.text((48, 64), title, font=title_font, fill=INK)
+    place_app(canvas, app, 140, 36, 36)
+    return canvas.convert("RGB")
 
 
 def main(src_dir: str, out_dir: str) -> None:
+    src = Path(src_dir)
     out = Path(out_dir)
-    out.mkdir(parents=True, exist_ok=True)
-    for src, name, title, body in SHOTS:
-        img = compose(Path(src_dir) / src, title, body)
-        assert img.size[0] >= 1366 and img.size[1] >= 768
-        img.save(out / name, optimize=True)
-        print(name, img.size)
+    wide_dir = out / "1920x1080"
+    square_dir = out / "1080x1080"
+    wide_dir.mkdir(parents=True, exist_ok=True)
+    square_dir.mkdir(parents=True, exist_ok=True)
+    for source, name, title in SHOTS:
+        app = Image.open(src / source).convert("RGB")
+        wide(app, title).save(wide_dir / name, optimize=True)
+        square(app, title).save(square_dir / name, optimize=True)
+        print(name, title)
 
 
 if __name__ == "__main__":

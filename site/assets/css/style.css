@@ -98,6 +98,8 @@ strong{color:var(--fg);font-weight:600}
 .frame{margin:0;border-radius:18px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.02));border:1px solid var(--line);box-shadow:0 40px 120px -30px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.6)}
 .frame img{border-radius:12px;width:100%}
 .frame figcaption{color:var(--fg-3);font-size:13px;text-align:center;padding:10px 8px 4px}
+.shot-grid{display:grid;gap:22px;max-width:1040px;margin:0 auto}
+.shot-grid .frame{background:#09090b}
 
 /* Marquee */
 .marquee{border-block:1px solid var(--line);background:var(--bg-2);overflow:hidden;margin-top:72px;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
