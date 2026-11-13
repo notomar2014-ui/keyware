@@ -3,18 +3,18 @@
 //
 // x64 is the file deployed with the site at /download/<version>/Keyware.exe.
 // Its SHA-256 is the hash of that published file. ARM64 is not stored in this
-// repo. ARM_SHA256 is the published v1.3.9 Keyware-arm64.exe, which the page
+// repo. ARM_SHA256 is the published v1.4.1 Keyware-arm64.exe, which the page
 // shows next to the x64 hash. The download redirect still checks the live
 // GitHub digest, and the page script replaces the ARM hash if that digest
 // changes, so the hash on the button matches the file it downloads.
 
-const VERSION = '1.3.9';
+const VERSION = '1.4.1';
 const GITHUB_REPO = 'notomar2014-ui/keyware';
 const ARM_FILE = 'Keyware-arm64.exe';
-const X64_SHA256 = 'C6BE4CA7A748D2315941AB7E717325C197DF03CC3B4D9DBC9DFCED5240008BA8';
-const X64_BYTES = 21784866;
-const ARM_SHA256 = '30A166A9A141EE83D833AE338C7686F94420CA7AC9195E91A2A34EBDE01A4B1C';
-const ARM_BYTES = 16807123;
+const X64_SHA256 = '6EE816FD5706AD91FF13F1C6FA97E6EDA4E9738E884C7D10AD08BBE0A21554A0';
+const X64_BYTES = 21831697;
+const ARM_SHA256 = 'D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D';
+const ARM_BYTES = 16854622;
 
 function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;

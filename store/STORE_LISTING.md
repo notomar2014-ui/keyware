@@ -1,8 +1,8 @@
 # Keyware: Microsoft Store listing (ready to paste)
 
 Everything below goes into Partner Center after the parent's account exists and the name is reserved.
-The package version follows `engine/__init__.py` (1.3.8, stored as 1.3.8.0). No Partner Center identity
-is in this repository, so this text is listing copy, not an upload.
+The package version follows `engine/__init__.py` (1.4.1, stored as 1.4.1.0). The Partner Center
+identity used for the 1.3.9.0 upload is in `store/partner-identity.json`. This file is listing copy, not an upload.
 Nothing here names the developer. Keep it that way (see "Things that would reveal the developer" at the end).
 
 Limits checked on 31 Oct 2026 in Microsoft's docs:
