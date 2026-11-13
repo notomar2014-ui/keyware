@@ -372,6 +372,9 @@ class Binding:
     app_rules: dict[str, str] = field(default_factory=dict)
     # Setups: 0 = always active; 1-9 = only while that setup of its profile is active.
     setup: int = 0
+    # Optional Keyware script. Empty means the action runs exactly as saved.
+    # The hook never reads this. See engine/script.py.
+    script: str = ""
 
     def is_tap_hold(self) -> bool:
         return self.mode == "hold" and (self.tap_action is not None or bool(self.hold_press))
@@ -398,6 +401,7 @@ class Binding:
             **({"hold_press": True} if self.hold_press else {}),
             **({"app_rules": dict(self.app_rules)} if self.app_rules else {}),
             **({"setup": int(self.setup)} if self.setup else {}),
+            **({"script": self.script} if self.script else {}),
         }
 
     @staticmethod
@@ -418,6 +422,7 @@ class Binding:
             hold_press=bool(raw.get("hold_press", False)),
             app_rules=parse_app_rules(raw.get("app_rules")),
             setup=_setup_number(raw.get("setup")),
+            script=_script_text(raw.get("script")),
         )
 
 
@@ -558,6 +563,9 @@ class Config:
     ai_key_protected: str = ""  # Windows DPAPI blob (base64) of the user's own key; never the key itself
     # Update check (v1.4.0). GitHub releases/latest. Off skips the network entirely.
     check_updates: bool = True
+    # Shows the script box in the Quick binder. Off by default. Saved scripts
+    # still run when this is off; the flag only reveals the editor.
+    scripting: bool = False
     update_skipped: str = ""  # x.y.z the user chose not to hear about
     update_later_until: float = 0  # unix time; "Later" hides the notice until then
     update_checked_at: float = 0  # unix time of the last successful check
@@ -612,6 +620,7 @@ class Config:
             "update_skipped": self.update_skipped,
             "update_later_until": float(self.update_later_until or 0),
             "update_checked_at": float(self.update_checked_at or 0),
+            **({"scripting": True} if self.scripting else {}),
             "profiles": [profile.to_dict() for profile in self.profiles],
         }
 
@@ -666,6 +675,7 @@ class Config:
             update_skipped=_version_text(raw.get("update_skipped")),
             update_later_until=_epoch(raw.get("update_later_until")),
             update_checked_at=_epoch(raw.get("update_checked_at")),
+            scripting=bool(raw.get("scripting", False)),
             profiles=profiles,
         )
 
@@ -1132,6 +1142,15 @@ def validate_step(step: MacroStep) -> None:
         raise ValueError(f"Unknown macro step '{step.op}'.")
 
 
+def _script_text(value: Any) -> str:
+    """A script is text. Anything else is kept as a marker that validation turns off."""
+    if value is None or value == "":
+        return ""
+    if isinstance(value, str):
+        return value
+    return "invalid"
+
+
 def _string_list(raw: Any, default: list[str]) -> list[str]:
     if not isinstance(raw, list) or not raw:
         return list(default)
@@ -1171,6 +1190,7 @@ def validate_binding(binding: Binding, config: Config, *, check_leader: bool = T
     if set(binding.keys) == set(PANIC_KEYS):
         raise ValueError("Ctrl + Alt + Shift + Esc is the panic switch and cannot be bound.")
     binding.app_rules = validate_app_rules(binding.app_rules)
+    binding.script = binding.script.replace("\r\n", "\n").replace("\r", "\n").strip()
     validate_action(binding.action)
     if (
         binding.action.type == "auto_click"
@@ -1212,6 +1232,14 @@ def validate_binding(binding: Binding, config: Config, *, check_leader: bool = T
     leader = config.leader_key
     if check_leader and leader and binding.mode != "leader" and leader in binding.keys:
         raise ValueError(f"{format_key(leader)} is the leader key. Pick a different trigger.")
+    if binding.script:
+        if binding.action.type == "auto_click":
+            raise ValueError("Auto-click runs from the key. Remove the script or pick another action.")
+        if binding.hold_press:
+            raise ValueError("A script cannot run while keys stay held. Turn off “Keep held” or clear the script.")
+        from engine.script import compile_script
+
+        compile_script(binding.script)
 
 
 def _canonical_list(keys: list[str]) -> list[str] | None:

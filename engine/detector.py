@@ -43,6 +43,9 @@ class Effect:
     hz: int = 0
     key: str = ""
     keys: tuple[str, ...] = ()
+    # Set only when this fire runs a script. The hook copies the text; it does not run it.
+    script: str = ""
+    mods: tuple[str, ...] = ()
 
 
 def _clicks_while_held(binding: Binding) -> bool:
@@ -632,23 +635,31 @@ class InputDetector:
     def _fire(self, binding: Binding, tier: int | None = None, key: str = "", action: Action | None = None) -> list[Effect]:
         if action is None and key and _clicks_while_held(binding):
             self.autoclick_keys[key] = binding.id
+        chosen = binding.action if action is None else action
+        script = (binding.script or "").strip() if action is None else ""
+        message = self._fire_message(binding, scripted=bool(script))
         effects = [
             Effect(
                 kind="fire",
                 binding_id=binding.id,
-                action=action if action is not None else binding.action,
-                message=self._fire_message(binding),
+                action=chosen,
+                message=message,
                 key=key,
+                script=script,
+                mods=tuple(sorted(name for name in self.modifiers if name in ("ctrl", "alt", "shift", "win"))) if script else (),
             ),
-            Effect(kind="log", message=self._fire_message(binding)),
+            Effect(kind="log", message=message),
         ]
         if binding.mode == "hold" and self.config.audio_enabled:
             hz = self.config.audio_tier1_hz if tier == 1 else self.config.audio_tier2_hz
             effects.append(Effect(kind="audio", hz=hz))
         return effects
 
-    def _fire_message(self, binding: Binding) -> str:
-        return f"Fired {trigger_text(binding, self.config.leader_key)} → {binding.label or trigger_text(binding, self.config.leader_key)}"
+    def _fire_message(self, binding: Binding, *, scripted: bool = False) -> str:
+        text = f"Fired {trigger_text(binding, self.config.leader_key)} → {binding.label or trigger_text(binding, self.config.leader_key)}"
+        if scripted:
+            text += " (script)"
+        return text
 
     def _finish(self, key: str, now: float, result: HandleResult) -> HandleResult:
         """Keep a passthrough key behind any replay already decided in this event."""

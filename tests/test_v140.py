@@ -40,8 +40,8 @@ def _catalog(*apps, protocols=(), enumerated=True) -> Catalog:
     return Catalog(apps=list(apps), protocols=set(protocols), packaged_enumerated=enumerated)
 
 
-def test_version_is_1_4_0():
-    assert __version__ == "1.4.0"
+def test_version_is_current():
+    assert __version__ == "1.4.1"
 
 
 def test_phone_link_uses_the_store_id_not_a_missing_exe():

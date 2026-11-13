@@ -1,7 +1,7 @@
 """Windows low-level keyboard hook.
 
 The callback stays on the hook thread only long enough to classify the event
-and queue a decision. It does not sleep, touch Tk, run macros, read
+and queue a decision. It does not sleep, touch Tk, run macros, run scripts, read
 GetAsyncKeyState, or call SendInput.
 
 Selective suppression only: nothing is swallowed unless the detector asks for

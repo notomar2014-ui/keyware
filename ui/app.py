@@ -140,9 +140,13 @@ def _mode_label(binding: Binding) -> str:
 
 def _row_action_text(binding: Binding) -> str:
     main = f"{action_type_label(binding.action.type)}   ·   {action_summary(binding.action)}"
+    if (binding.script or "").strip():
+        main += "   ·   script"
     if not binding.is_tap_hold():
         return main
     hold = f"Hold: {'keeps ' if binding.hold_press else ''}{action_summary(binding.action)}"
+    if (binding.script or "").strip():
+        hold += " (script)"
     tap = binding.tap_action
     tap_text = "types the key" if tap is None else "nothing" if tap.type == "none" else action_summary(tap)
     return f"{hold}   ·   Tap: {tap_text}"
@@ -688,10 +692,11 @@ class KeywareApp(ctk.CTk):
         self._build_ai_panel(form)
         self._build_app_rules(form)
 
+        self._build_script_box(form)
         self.form_error = ctk.CTkLabel(form, text="", text_color=INK, anchor="w", justify="left", wraplength=420)
-        self.form_error.grid(row=12, column=0, sticky="ew", pady=(0, 8))
+        self.form_error.grid(row=13, column=0, sticky="ew", pady=(0, 8))
         buttons = ctk.CTkFrame(form, fg_color="transparent", border_width=0)
-        buttons.grid(row=13, column=0, sticky="ew", pady=(0, 12))
+        buttons.grid(row=14, column=0, sticky="ew", pady=(0, 12))
         ctk.CTkButton(buttons, text="Save binding", command=self._save_binding, height=36).pack(side="left")
         self._ghost(buttons, "Clear", self._clear_form).pack(side="left", padx=(8, 0))
         # Shown only when the trigger clashes with another binding.
@@ -699,6 +704,61 @@ class KeywareApp(ctk.CTk):
             buttons, text="Replace it", height=36, fg_color=OFF_RED, hover_color=("#991b1b", "#ef4444"),
             text_color="#ffffff", command=lambda: self._save_binding(replace=True),
         )
+
+    def _build_script_box(self, form) -> None:
+        """Hidden unless Settings turns scripting on, or this binding already has a script."""
+        box = ctk.CTkFrame(form, fg_color=CARD, border_width=1, border_color=LINE, corner_radius=10)
+        box.grid_columnconfigure(0, weight=1)
+        self.script_box = box
+        ctk.CTkLabel(box, text="SCRIPT (OPTIONAL)", text_color=MUTED, font=self._font(11), anchor="w").grid(
+            row=0, column=0, sticky="w", padx=12, pady=(10, 0))
+        ctk.CTkLabel(
+            box,
+            text="Leave this empty and the action above runs as usual. do runs that action. "
+                 "A script cannot open a shell, run a command, or wait more than 2 seconds. "
+                 "The keyboard hook never runs it.",
+            text_color=MUTED, font=self._font(12), anchor="w", justify="left", wraplength=360,
+        ).grid(row=1, column=0, sticky="w", padx=12, pady=(2, 6))
+        self.script_text = ctk.CTkTextbox(box, height=96, font=self._font(12), border_width=1, border_color=LINE)
+        self.script_text.grid(row=2, column=0, sticky="ew", padx=12)
+        row = ctk.CTkFrame(box, fg_color="transparent", border_width=0)
+        row.grid(row=3, column=0, sticky="ew", padx=12, pady=(6, 10))
+        row.grid_columnconfigure(1, weight=1)
+        self._ghost(row, "Check", self._check_script, width=72).grid(row=0, column=0, sticky="w")
+        self.script_note = ctk.CTkLabel(row, text="", text_color=MUTED, font=self._font(12), anchor="w",
+                                        justify="left", wraplength=260)
+        self.script_note.grid(row=0, column=1, sticky="ew", padx=(8, 0))
+        self._sync_script_editor()
+
+    def _script_source(self) -> str:
+        try:
+            return self.script_text.get("1.0", "end").strip()
+        except Exception:
+            return ""
+
+    def _sync_script_editor(self) -> None:
+        if self._binder_mode == "Text":
+            self.script_box.grid_remove()
+            return
+        show = bool(self.service.config.scripting) or bool(self._script_source())
+        if show:
+            self.script_box.grid(row=12, column=0, sticky="ew", pady=(0, 8))
+        else:
+            self.script_box.grid_remove()
+
+    def _check_script(self) -> None:
+        from engine.script import compile_script
+
+        source = self._script_source()
+        if not source:
+            self.script_note.configure(text="Empty. The action above runs as usual.")
+            return
+        try:
+            program = compile_script(source)
+        except ValueError as exc:
+            self.script_note.configure(text=str(exc))
+            return
+        self.script_note.configure(text=f"Looks good. {len(program)} steps.")
 
     # --- Per-app rules ------------------------------------------------------
     def _build_app_rules(self, form) -> None:
@@ -1164,7 +1224,7 @@ class KeywareApp(ctk.CTk):
         self._paint_mode_toggle()
         if value == "Text":
             self._stop_recording(cancel=True)
-            for widget in self._manual_widgets() + [self.hold_box, self.app_rules_box, *self._action_widgets()]:
+            for widget in self._manual_widgets() + [self.hold_box, self.app_rules_box, self.script_box, *self._action_widgets()]:
                 widget.grid_remove()
             self.ai_panel.grid(row=1, column=0, rowspan=11, sticky="ew", pady=(0, 4))
             return
@@ -1174,6 +1234,7 @@ class KeywareApp(ctk.CTk):
             widget.grid()
         self._on_mode(self.mode.get())
         self._show_action_fields()
+        self._sync_script_editor()
 
     def _make_binder(self):
         if self._ai_binder is not None:
@@ -1430,6 +1491,9 @@ class KeywareApp(ctk.CTk):
         self._fill_action(binding.action)
         self._show_action_fields()
         self._update_key_hint(binding.keys)
+        self.script_text.delete("1.0", "end")
+        self.script_note.configure(text="")
+        self._sync_script_editor()
         self.form_error.configure(text="")
         self._editing_id = merged.id if merged is not None else None
         self._ai_proposal = proposal
@@ -1601,6 +1665,16 @@ class KeywareApp(ctk.CTk):
                  "or keyware.site for the portable exe. Turn this off to stay on this version.",
             text_color=MUTED, font=self._font(12), wraplength=360, justify="left",
         ).grid(row=9, column=0, sticky="ew", pady=(4, 0))
+        self.script_switch = ctk.CTkSwitch(box, text="Advanced scripting", command=self._on_scripting)
+        self.script_switch.grid(row=10, column=0, sticky="w", pady=(12, 0))
+        if self.service.config.scripting:
+            self.script_switch.select()
+        ctk.CTkLabel(
+            box,
+            text="Shows a script box in the Quick binder. Manual and Text mode stay the same until you turn this on. "
+                 "A binding that already has a script keeps working either way.",
+            text_color=MUTED, font=self._font(12), wraplength=360, justify="left",
+        ).grid(row=11, column=0, sticky="ew", pady=(4, 0))
 
     def _on_startup(self) -> None:
         want = bool(self.startup_switch.get())
@@ -1618,6 +1692,15 @@ class KeywareApp(ctk.CTk):
             self.startup_switch.select()
         else:
             self.startup_switch.deselect()
+
+    def _on_scripting(self) -> None:
+        enabled = bool(self.script_switch.get())
+        self.service.set_scripting(enabled)
+        self._sync_script_editor()
+        self.settings_note.configure(
+            text="Script box is in the Quick binder." if enabled
+            else "Script box hidden. A binding that already has a script still runs it."
+        )
 
     def _on_check_updates(self) -> None:
         enabled = bool(self.update_switch.get())
@@ -2195,6 +2278,11 @@ class KeywareApp(ctk.CTk):
         self._fill_action(binding.action)
         self._on_action(self.action.get())
         self._update_key_hint(binding.keys)
+        self.script_text.delete("1.0", "end")
+        if binding.script:
+            self.script_text.insert("1.0", binding.script)
+        self.script_note.configure(text="")
+        self._sync_script_editor()
         self.form_error.configure(text="")
 
     def _delete_binding(self, binding: Binding) -> None:
@@ -2217,7 +2305,7 @@ class KeywareApp(ctk.CTk):
         self._show_toast(f"Deleted {short}.")
 
     def _run_binding(self, binding: Binding) -> None:
-        self.service.run_action(binding.action)
+        self.service.run_saved(binding)
         self._append(f"Ran {binding.label or trigger_text(binding, self.service.config.leader_key)}")
 
     def _on_mode(self, value: str) -> None:
@@ -2718,6 +2806,7 @@ class KeywareApp(ctk.CTk):
                 action=self._collect_action(),
                 app_rules=self._collect_app_rules(),
                 setup=self._collect_setup(),
+                script=self._script_source() if self._binder_mode == "Manual" and self.script_box.winfo_ismapped() else "",
             )
             if mode == "hold":
                 binding.tap_action = self._collect_tap_action()
@@ -2912,6 +3001,9 @@ class KeywareApp(ctk.CTk):
         self._set_entry(self.tap_value, "")
         self._on_tap_choice("Type the key")
         self.keep_held.deselect()
+        self.script_text.delete("1.0", "end")
+        self.script_note.configure(text="")
+        self._sync_script_editor()
         self.key_hint.grid_remove()
         self._clear_macro_steps()
         self._reset_autoclick()

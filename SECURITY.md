@@ -18,11 +18,11 @@ release notes unless you prefer otherwise.
 ## Scope
 
 In scope: the app in this repository (keyboard hook, actions, macro and command
-safety checks, the DPAPI key store, Text-mode parsing) and the website API in `site/api`.
+safety checks, optional scripts, the DPAPI key store, Text-mode parsing) and the website API in `site/api`.
 
 Things we especially want to hear about:
 
-- a way for a binding, macro or AI reply to run a program, script or command without
+- a way for a binding, macro, Keyware script, or AI reply to run a program, script, or command without
   the one-time confirmation;
 - a key that gets stuck or swallowed, or a way to defeat the panic chord;
 - an API key, install ID or feedback text leaking into logs, errors or responses.
