@@ -143,21 +143,23 @@ Expected result: the lowest rating in every region (for example 3+ / Everyone).
 
 ## 8. Screenshots (1920 x 1080 PNG; Store minimum 1366 x 768, up to 10)
 
-In `screenshots/` (made by `make_screenshots.py` from the v1.3.4 captures, with captions on the image):
+Import listings wants one folder: the exported listing CSV plus these PNGs beside it. The files are in `store/import-listing/`. Captions are already drawn on the images. The Store form accepts 10 screenshots; leave out `09-gallery.png` if it stops at 10, because that photo repeats an app shot.
 
-| File | Caption to paste (200 characters max) |
+| File | What it shows |
 | --- | --- |
-| 01_text_mode.png | Describe a binding in plain words. Keyware drafts it, you review it and save. |
-| 02_bindings.png | Bind chords, timed holds and leader keys to websites, apps, text and more. |
-| 03_profiles.png | Profiles switch on by themselves in the apps you choose. |
-| 04_settings.png | Dry run, audio ticks, a pause hotkey and an optional start with Windows. |
-| 05_feedback.png | No accounts, no ads, no tracking. Send ideas and bug reports from Settings. |
+| 01-remap.png | Remap any key in plain English |
+| 02-per-app.png | Per-app shortcuts |
+| 03-macros.png | Macros & hotkeys |
+| 04-scripting.png | Optional Advanced scripting (1.4.1) |
+| 05-update.png | Built-in update check / pause & panic stop |
+| 06-free.png | x64 + ARM64, free & open source |
+| 07-home.png | keyware.site homepage: Make your keys your own |
+| 08-features.png | keyware.site features: Every key can do more |
+| 09-gallery.png | keyware.site gallery: A look at the app |
+| 10-guide.png | keyware.site guide: How to use Keyware |
+| 11-whats-new.png | keyware.site What's new: What's new in 1.4.1 |
 
-Notes:
-- 03_profiles.png came from a capture that still showed the "Support Keyware" button. The button is painted
-  out so it matches the current build (donation buttons hidden).
-- Older v1.3.1 to v1.3.3 captures were not used: their log shows a Windows user folder path containing a name.
-- Best option before submitting: take fresh 1920 x 1080 captures of the actual Store build on Windows.
+The listing CSV is not in this folder yet. When Partner Center exports one, drop it next to these files and point the screenshot columns at these names.
 - Store logos for Partner Center (optional but recommended, the Store prefers them over the package icon):
   `StoreListingImages/StoreLogo_300.png` (1:1 app tile icon 300 x 300), `StoreLogo_1080.png` and `StoreLogo_2160.png`
   (1:1 box art).
