@@ -279,6 +279,7 @@ _BINDING_WORDS = {
     "send", "sends", "toggle", "toggles", "spam", "cps", "double", "triple", "combo",
     "ctrl", "control", "alt", "shift", "win", "windows", "cmd", "super", "esc", "escape", "enter", "return",
     "tab", "space", "spacebar", "backspace", "delete", "del", "insert", "home", "end", "pgup", "pgdn",
+    "page", "scroll", "print", "pause", "break",
     "capslock", "caps", "numpad", "f-key", "mouse", "button",
 }
 
@@ -311,7 +312,7 @@ def looks_like_binding(text: str) -> bool:
 
 # Shared with the proxy (site/api/_lib/prompt.js, written by tools/sync_prompt.py).
 # Bump PROMPT_VERSION whenever the prompt text changes.
-PROMPT_VERSION = "2026.11.07-1"
+PROMPT_VERSION = "2026.11.10-1"
 
 SYSTEM_PROMPT = r"""You are Keyware's binding builder. Keyware is a Windows key remapper. A user describes, in plain words, what a key should do. You reply with ONE JSON object describing a single binding. You never run anything; a human reviews your JSON in an editor and saves it.
 
@@ -338,11 +339,13 @@ If the text is NOT about key bindings at all (questions, chat, poems, weather, m
 # Key names (lowercase canonical names ONLY)
 Letters a-z, digits 0-9, f1-f24, modifiers ctrl alt shift win,
 esc enter tab space backspace delete insert home end page_up page_down up down left right
-caps_lock print_screen menu, numpad0-numpad9 numpad_add numpad_subtract numpad_multiply numpad_divide numpad_decimal,
+caps_lock print_screen scroll_lock pause menu, numpad0-numpad9 numpad_add numpad_subtract numpad_multiply numpad_divide numpad_decimal,
 semicolon equals comma minus period slash backtick bracket_left bracket_right backslash quote,
 media keys volume_mute volume_up volume_down media_play_pause media_next media_prev media_stop,
 copilot = the Copilot key on newer Windows laptops ("Copilot key", "Copilot button", "co-pilot"). It is a TRIGGER only, never part of an action. Use mode tap/hold/double_tap/triple_tap with keys ["copilot"], never a chord, never ["win","shift","f23"].
-"Control"→ctrl, "Windows"/"Win"→win, "Escape"→esc, "Return"→enter, "PgUp"→page_up, "Del"→delete, "Caps"/"Caps Lock"→caps_lock.
+"Control"→ctrl, "Windows"/"Win"→win, "Escape"→esc, "Return"→enter, "PgUp"→page_up, "PgDn"→page_down, "Del"→delete, "Ins"→insert, "Caps"/"Caps Lock"→caps_lock.
+"Scroll Lock"→scroll_lock, "Print Screen"/"PrtSc"→print_screen, "Pause"/"Pause/Break"/"Break"→pause (the Pause/Break KEY, not media play/pause).
+Tab is a normal key in a chord and in a key_combo. "Ctrl+Tab" is ["ctrl","tab"]. Never drop Tab from a shortcut.
 Macropads and stream decks usually send f13-f24 (often with ctrl/alt/shift); treat them like any other key.
 Never invent other names (no "mouse4", "fn").
 
@@ -365,7 +368,7 @@ Never invent other names (no "mouse4", "fn").
    Searches: YouTube https://www.youtube.com/results?search_query=WORDS ; Google https://www.google.com/search?q=WORDS ;
    Wikipedia https://en.wikipedia.org/w/index.php?search=WORDS ; Amazon https://www.amazon.com/s?k=WORDS ; Spotify web https://open.spotify.com/search/WORDS .
    Plain sites: "open gmail" → https://mail.google.com , "open YouTube" → https://www.youtube.com .
-2. "open_app": {"type":"open_app","app":"notepad.exe"} — an exe name on PATH or a full path. Common: notepad.exe, calc.exe (Calculator), mspaint.exe, explorer.exe, code (VS Code), cursor.exe (Cursor), chrome.exe, msedge.exe, spotify.exe, discord.exe, slack.exe, steam.exe, obs64.exe, winword.exe (Word), excel.exe, figma.exe, blender.exe, photoshop.exe. "Open Calculator" is open_app calc.exe. There is no action type named open_calculator. No command-line arguments. NEVER cmd, powershell, pwsh, wscript, cscript, mshta, rundll32, regsvr32, reg, regedit, bcdedit, diskpart, shutdown, taskkill, schtasks, netsh, certutil, or any .bat/.cmd/.ps1/.vbs/.js/.hta/.msi/.reg file.
+2. "open_app": {"type":"open_app","app":"notepad.exe"} — an exe name on PATH, a full path, or the Start menu name of a Microsoft Store app. Store apps have no normal exe: use the Start menu name, never a guessed path under WindowsApps. Phone Link (not PhoneExperienceHost.exe or YourPhone.exe), Settings, WhatsApp, Teams. Desktop apps: notepad.exe, calc.exe (Calculator; "Open Calculator" is open_app calc.exe; there is no action type named open_calculator), mspaint.exe, explorer.exe, code (VS Code), cursor.exe (Cursor), chrome.exe (Google Chrome), msedge.exe (Microsoft Edge), spotify.exe, discord.exe, slack.exe, steam.exe, obs64.exe, winword.exe (Word), excel.exe, figma.exe, blender.exe, photoshop.exe. No command-line arguments. NEVER cmd, powershell, pwsh, wscript, cscript, mshta, rundll32, regsvr32, reg, regedit, bcdedit, diskpart, shutdown, taskkill, schtasks, netsh, certutil, or any .bat/.cmd/.ps1/.vbs/.js/.hta/.msi/.reg file.
 3. "type_text": {"type":"type_text","text":"exact text"} — types literal text (max 8000 chars). Use only when there are no extra key presses.
 4. "key_combo": {"type":"key_combo","keys":["ctrl","shift","t"]} — sends one shortcut once (also a single key like ["enter"] or ["f5"]).
 5. "macro": {"type":"macro","steps":[...]} — ordered steps, 1-64 of them. Use whenever more than one thing happens (text then Enter, several keys, clicks, waits). Step shapes:
@@ -439,6 +442,12 @@ User: ctrl alt n opens notepad
 
 User: F7 opens Calculator
 {"ok":true,"label":"Open Calculator","profile":{"scope":"global"},"trigger":{"mode":"tap","keys":["f7"]},"action":{"type":"open_app","app":"calc.exe"},"notes":""}
+
+User: F8 opens Phone Link
+{"ok":true,"label":"Open Phone Link","profile":{"scope":"global"},"trigger":{"mode":"tap","keys":["f8"]},"action":{"type":"open_app","app":"Phone Link"},"notes":""}
+
+User: Ctrl+Tab sends Ctrl+Page Down
+{"ok":true,"label":"Ctrl+Tab to Page Down","profile":{"scope":"global"},"trigger":{"mode":"chord","keys":["ctrl","tab"]},"action":{"type":"key_combo","keys":["ctrl","page_down"]},"notes":""}
 
 User: double tap F8 to reopen the last closed tab in chrome
 {"ok":true,"label":"Reopen closed tab","profile":{"scope":"app","name":"Chrome","process_names":["chrome.exe"]},"trigger":{"mode":"double_tap","keys":["f8"]},"action":{"type":"key_combo","keys":["ctrl","shift","t"]},"notes":""}
@@ -687,7 +696,9 @@ def _parse_action(raw: Any) -> Action:
             raise AIBinderError(final=True, message="Rejected: only http and https links are allowed.")
         return Action(type=kind, url=url)
     if kind == "open_app":
-        app = str(raw.get("app", "")).strip()
+        from engine.applaunch import canonical_app_query
+
+        app = canonical_app_query(str(raw.get("app", "")).strip())
         _check_app(app)
         action = Action(type=kind, app=app, args=_str_list(raw.get("args")), fallback=str(raw.get("fallback", "") or "").strip())
         return _checked(action)
@@ -816,7 +827,9 @@ def _parse_new_step(op: str, item: dict) -> MacroStep:
         if not step.target.lower().startswith(("http://", "https://", "spotify:")):
             raise AIBinderError(final=True, message="Rejected: only http and https links are allowed.")
     elif op == "app":
-        target = str(item.get("target", item.get("app", "")) or "").strip()
+        from engine.applaunch import canonical_app_query
+
+        target = canonical_app_query(str(item.get("target", item.get("app", "")) or "").strip())
         _check_app(target)
         args = _str_list(item.get("args"))
         # From the AI, app arguments are links or files only (the prompt says so); a switch such as

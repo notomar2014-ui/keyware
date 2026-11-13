@@ -179,6 +179,9 @@ _PRETTY = {
     "left": "Left",
     "right": "Right",
     "print_screen": "Print Screen",
+    "scroll_lock": "Scroll Lock",
+    "pause": "Pause/Break",
+    "num_lock": "Num Lock",
     "menu": "Menu",
     "semicolon": ";",
     "equals": "=",
@@ -260,6 +263,16 @@ _ALIASES = {
     "printscreen": "print_screen",
     "print screen": "print_screen",
     "prtsc": "print_screen",
+    "prt sc": "print_screen",
+    "prtscn": "print_screen",
+    "prt scn": "print_screen",
+    "snapshot": "print_screen",
+    "scroll lock": "scroll_lock",
+    "scrolllock": "scroll_lock",
+    "pause/break": "pause",
+    "pause break": "pause",
+    "break": "pause",
+    "pause key": "pause",
     "apps": "menu",
     "back": "backspace",
     **{f"numpad {index}": f"numpad{index}" for index in range(10)},
@@ -387,6 +400,25 @@ def format_key(name: str) -> str:
     if len(name) == 1:
         return name.upper()
     return name.replace("_", " ").title()
+
+
+# Keys the editor offers in a picker. Recording still accepts every other key.
+PICKER_KEYS = (
+    "tab", "scroll_lock", "page_up", "page_down", "home", "end",
+    "delete", "insert", "print_screen", "pause",
+)
+
+
+def insert_key(expression: str, key: str) -> str:
+    """Add one canonical key to a combo the user is editing."""
+    name = canonicalize(key)
+    if name is None:
+        raise ValueError(f"Unknown key '{key}'.")
+    current = (expression or "").strip()
+    keys = parse_key_expression(current) if current else []
+    if name not in keys:
+        keys.append(name)
+    return format_keys(keys)
 
 
 def ordered_keys(keys: list[str] | tuple[str, ...]) -> list[str]:

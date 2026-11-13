@@ -8,6 +8,7 @@ name: Microsoft Store MSIX
 # This workflow does not create a certificate, read secrets, or publish a release.
 
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       identity_name:

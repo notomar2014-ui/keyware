@@ -157,6 +157,25 @@ def classify_hook_event(msg: int, vk: int, flags: int, extra: int, *, already_do
     )
 
 
+# Hardware scan, extended flag, and whether SendInput must honor the scan.
+# Tab's scan is ignored unless KEYEVENTF_SCANCODE is set, so Ctrl+Tab never
+# arrives while a low-level hook is installed. Navigation keys and Print
+# Screen are E0-prefixed. Pause is not: Windows builds its E1 sequence from
+# VK_PAUSE alone, and scan 0x45 would be Num Lock.
+_SEND_SCAN = {
+    0x09: (0x0F, False, True),   # tab
+    0x13: (0x00, False, False),  # pause / break
+    0x21: (0x49, True, True),    # page up
+    0x22: (0x51, True, True),    # page down
+    0x23: (0x4F, True, True),    # end
+    0x24: (0x47, True, True),    # home
+    0x2C: (0x37, True, True),    # print screen
+    0x2D: (0x52, True, True),    # insert
+    0x2E: (0x53, True, True),    # delete
+    0x91: (0x46, False, True),   # scroll lock
+}
+
+
 def build_keyboard_event(
     vk: int,
     *,
@@ -164,13 +183,20 @@ def build_keyboard_event(
     extended: bool | None = None,
     extra: int = KEYWARE_EXTRA,
     scan: int = 0,
+    use_scan: bool = False,
 ) -> InputEvent:
-    """A virtual-key event tagged with ``extra``. Extended is chosen from the VK."""
+    """A virtual-key event tagged with ``extra``. Extended is chosen from the VK.
+
+    ``use_scan`` sets KEYEVENTF_SCANCODE so Windows uses ``scan`` instead of
+    inventing one. Leave it off for letters: their scan depends on the layout.
+    """
     flags = KEYEVENTF_KEYUP if key_up else 0
     if extended is None:
         extended = int(vk) in EXTENDED_VKS
     if extended:
         flags |= KEYEVENTF_EXTENDEDKEY
+    if use_scan and scan:
+        flags |= KEYEVENTF_SCANCODE
     return InputEvent(kind="key", vk=int(vk) & 0xFFFF, scan=int(scan) & 0xFFFF, flags=flags, extra=int(extra) & 0xFFFFFFFF)
 
 
@@ -336,28 +362,30 @@ class TaggedInjector:
             return 0
 
     def press(self, key: str) -> None:
-        from engine.keys import name_to_vk
-
         special = _replay_special(key, up=False)
         if special is not None:
             self._send(special)
             return
-        vk = name_to_vk(key)
-        if vk is None:
-            raise ValueError(f"Unknown key '{key}'.")
-        self._send([build_keyboard_event(vk, key_up=False, scan=self._scan(vk))])
+        self._send([self._key_event(key, key_up=False)])
 
     def release(self, key: str) -> None:
-        from engine.keys import name_to_vk
-
         special = _replay_special(key, up=True)
         if special is not None:
             self._send(special)
             return
+        self._send([self._key_event(key, key_up=True)])
+
+    def _key_event(self, key: str, *, key_up: bool) -> InputEvent:
+        from engine.keys import name_to_vk
+
         vk = name_to_vk(key)
         if vk is None:
             raise ValueError(f"Unknown key '{key}'.")
-        self._send([build_keyboard_event(vk, key_up=True, scan=self._scan(vk))])
+        spec = _SEND_SCAN.get(vk)
+        if spec is not None:
+            scan, extended, use_scan = spec
+            return build_keyboard_event(vk, key_up=key_up, scan=scan, extended=extended, use_scan=use_scan)
+        return build_keyboard_event(vk, key_up=key_up, scan=self._scan(vk))
 
     def type_text(self, text: str) -> None:
         if text:

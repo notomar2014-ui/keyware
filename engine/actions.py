@@ -239,7 +239,9 @@ class ActionExecutor:
         if not links and fallback:
             self.opener.open_url(validate_url(fallback))
         if not links and not fallback:
-            raise ValueError(f"{name} is not installed.")
+            from engine.applaunch import not_installed_message
+
+            raise ValueError(not_installed_message(name))
         self._focus_moves()
 
     def _open_path(self, path: str) -> None:
@@ -454,25 +456,35 @@ class SystemOpener:
         os.startfile(target)  # type: ignore[attr-defined]
 
     def open_app(self, app: str, args: list[str] | None = None) -> None:
+        from engine.applaunch import activate_aumid, perform_launch
+
         target = validate_app(app)
         if sys.platform != "win32":
             raise OSError("Opening an application requires Windows.")
+        resolved = self.resolve_app(target)
+        if not resolved:
+            from engine.applaunch import not_installed_message
+
+            raise ValueError(not_installed_message(target))
         extra = [str(item) for item in args or []]
-        if os.path.exists(target):
-            resolved = target
-        else:
-            found = shutil.which(target)
-            if found and found.lower().endswith(".exe"):
-                subprocess.Popen([found, *extra], shell=False)
-                return
-            resolved = self.resolve_app(target) or target
-        if extra:
-            os.startfile(resolved, "open", subprocess.list2cmdline(extra))  # type: ignore[attr-defined]
-        else:
-            os.startfile(resolved)  # type: ignore[attr-defined]
+
+        def startfile(path, params=None):
+            if params:
+                os.startfile(path, "open", subprocess.list2cmdline(params))  # type: ignore[attr-defined]
+            else:
+                os.startfile(path)  # type: ignore[attr-defined]
+
+        def popen(argv):
+            flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            subprocess.Popen(argv, shell=False, creationflags=flags)
+
+        perform_launch(
+            resolved, extra, exists=os.path.exists, startfile=startfile, popen=popen,
+            activate=activate_aumid, trust=True,
+        )
 
     def resolve_app(self, app: str) -> str | None:
-        """A launchable path for the app, or None when it is not installed."""
+        """A launchable path, shortcut, protocol, or packaged-app id. None if it is not installed."""
         return resolve_installed_app(app)
 
     def open_path(self, path: str) -> None:
@@ -508,90 +520,33 @@ class SystemOpener:
         return self._fetcher(url, USER_AGENT)
 
 
-_KNOWN_APP_PATHS = {
-    "spotify": [r"%APPDATA%\Spotify\Spotify.exe"],
-    "code": [r"%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe", r"%ProgramFiles%\Microsoft VS Code\Code.exe"],
-    "chrome": [r"%ProgramFiles%\Google\Chrome\Application\chrome.exe",
-               r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe",
-               r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"],
-    "msedge": [r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe",
-               r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"],
-    "firefox": [r"%ProgramFiles%\Mozilla Firefox\firefox.exe"],
-    "steam": [r"%ProgramFiles(x86)%\Steam\steam.exe"],
-    "cursor": [r"%LOCALAPPDATA%\Programs\cursor\Cursor.exe", r"%ProgramFiles%\cursor\Cursor.exe"],
-    "slack": [r"%LOCALAPPDATA%\slack\slack.exe"],
-    "figma": [r"%LOCALAPPDATA%\Figma\Figma.exe"],
-    "obs64": [r"%ProgramFiles%\obs-studio\bin\64bit\obs64.exe"],
-    "blender": [r"%ProgramFiles%\Blender Foundation\Blender\blender.exe"],
-}
-# Store apps register a link protocol instead of a path.
-_PROTOCOL_APPS = {"spotify": "spotify"}
-
-
 def resolve_installed_app(app: str) -> str | None:
+    """A path, ``spotify:``, or ``appsfolder:<AUMID>``. None when nothing on this PC can open it.
+
+    Off Windows this is always None: tests never launch a real program.
+    An explicit packaged id is returned as-is so a saved binding still opens.
+    """
+    from engine.applaunch import (
+        APPS_PREFIX, is_packaged_token, launch_token, packaged_aumid, resolve_launch, windows_app_path,
+        windows_catalog,
+    )
+
+    text = (app or "").strip().strip('"')
+    if is_packaged_token(text):
+        aumid = packaged_aumid(text)
+        return text if text.lower().startswith(APPS_PREFIX) else APPS_PREFIX + aumid
     if sys.platform != "win32":
         return None
-    text = os.path.expandvars(app.strip().strip('"'))
-    if os.path.isabs(text):
-        return text if os.path.exists(text) else None
-    found = shutil.which(text)
-    if found:
-        return found
-    stem = os.path.splitext(os.path.basename(text))[0].lower()
-    exe = stem + ".exe"
-    try:
-        import winreg
-
-        for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
-            try:
-                with winreg.OpenKey(root, rf"Software\Microsoft\Windows\CurrentVersion\App Paths\{exe}") as key:
-                    value = winreg.QueryValue(key, None).strip('"')
-                    if value and os.path.exists(value):
-                        return value
-            except OSError:
-                pass
-        protocol = _PROTOCOL_APPS.get(stem)
-        if protocol:
-            try:
-                with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, rf"{protocol}\shell\open\command"):
-                    return f"{protocol}:"
-            except OSError:
-                pass
-    except ImportError:
-        pass
-    for candidate in _KNOWN_APP_PATHS.get(stem, []):
-        path = os.path.expandvars(candidate)
-        if "%" not in path and os.path.exists(path):
-            return path
-    return _start_menu_shortcut(stem)
-
-
-_SHORTCUT_NAMES = {"code": "visual studio code", "msedge": "microsoft edge", "chrome": "google chrome",
-                   "obs64": "obs studio", "winword": "word", "excel": "excel", "powerpnt": "powerpoint",
-                   "cursor": "cursor", "slack": "slack", "figma": "figma"}
-# Versioned Start menu names ("Adobe Photoshop 2026", "Blender 4.5").
-_SHORTCUT_PREFIXES = {"photoshop": "adobe photoshop", "adobe premiere pro": "adobe premiere pro",
-                      "afterfx": "adobe after effects", "blender": "blender"}
-
-
-def _start_menu_shortcut(stem: str) -> str | None:
-    """Installed apps without a PATH entry (Discord, games) still have a Start menu shortcut."""
-    wanted = {stem, _SHORTCUT_NAMES.get(stem, stem)}
-    roots = [os.path.expandvars(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs"),
-             os.path.expandvars(r"%ProgramData%\Microsoft\Windows\Start Menu\Programs")]
-    for root in roots:
-        if "%" in root or not os.path.isdir(root):
-            continue
-        for folder, _dirs, files in os.walk(root):
-            for name in files:
-                base, ext = os.path.splitext(name)
-                if ext.lower() != ".lnk":
-                    continue
-                lowered = base.lower()
-                prefix = _SHORTCUT_PREFIXES.get(stem)
-                if lowered in wanted or (prefix and lowered.startswith(prefix)):
-                    return os.path.join(folder, name)
-    return None
+    result = resolve_launch(
+        text,
+        windows_catalog(),
+        which=shutil.which,
+        exists=os.path.exists,
+        app_path=windows_app_path,
+    )
+    if result.launch is None:
+        return None
+    return launch_token(result.launch)
 
 
 def wait_for_window(process: str, title: str, timeout: float, cancelled: Callable[[], bool]) -> bool:

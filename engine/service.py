@@ -148,6 +148,10 @@ class KeywareService:
         # Caps Lock light probe (GetKeyState). Tests replace it.
         self._caps_probe = _caps_lock_on
         self._caps_bound_before = False
+        self._update_inflight = False
+        self._update_next_attempt = 0.0
+        # Set by the window to the GitHub release check. The engine does not import it.
+        self.update_fetch = None
         self._config_mtime = self._config_mtime_value()
         self._elevation_at = -1.0
         self._detector = InputDetector(self.config)
@@ -182,6 +186,7 @@ class KeywareService:
 
         state = "ON" if self.hook_status == "on" else "OFF"
         self._log(f"Keyware {__version__} started. {state}.")
+        self.consider_update()
 
     def shutdown(self) -> None:
         self._stop.set()
@@ -393,6 +398,7 @@ class KeywareService:
         return filtered
 
     def tick(self, now: float | None = None) -> None:
+        self.consider_update()
         if self._recorder is not None:
             self._tick_recorder(self._clock() if now is None else now)
         elif self._record_stop_pending:
@@ -965,6 +971,83 @@ class KeywareService:
             self.config.audio_enabled = bool(enabled)
             self.audio.enabled = bool(enabled)
         self._save()
+
+    def set_check_updates(self, enabled: bool) -> None:
+        with self._lock:
+            self.config.check_updates = bool(enabled)
+        self._save()
+        self._log("Update check on." if enabled else "Update check off.")
+
+    def snooze_update(self) -> None:
+        """Later: hide the notice for a day. The version is not skipped."""
+        from engine.updates import SNOOZE_SECONDS
+
+        with self._lock:
+            self.config.update_later_until = time.time() + SNOOZE_SECONDS
+        self._save()
+
+    def skip_update(self, version: str) -> None:
+        from engine.updates import version_tuple
+
+        found = version_tuple(version)
+        if found is None:
+            return
+        with self._lock:
+            self.config.update_skipped = ".".join(str(part) for part in found)
+            self.config.update_later_until = 0
+        self._save()
+
+    def consider_update(self, *, fetch=None, now: float | None = None) -> None:
+        """Start one quiet check when a day has passed. Tests (synchronous) never do."""
+        if self.synchronous or not self.config.check_updates:
+            return
+        wall = time.time() if now is None else float(now)
+        from engine.updates import check_due
+
+        with self._lock:
+            if self._update_inflight or wall < self._update_next_attempt:
+                return
+            if not check_due(self.config.update_checked_at, wall):
+                return
+            self._update_inflight = True
+        threading.Thread(target=self._update_worker, args=(fetch,), name="keyware-update", daemon=True).start()
+
+    def _update_worker(self, fetch) -> None:
+        from engine import __version__
+        from engine.updates import notice_for
+
+        getter = fetch if fetch is not None else self.update_fetch
+        try:
+            latest = getter() if getter is not None else None
+        except Exception:
+            latest = None
+        wall = time.time()
+        if latest is None:
+            # Offline or a bad reply: say nothing, and don't wait a full day to try again.
+            self._update_next_attempt = wall + 60 * 60
+            self._update_inflight = False
+            return
+        packaged = bool(getattr(self.startup, "packaged", False))
+        with self._lock:
+            self.config.update_checked_at = wall
+            offer = notice_for(
+                __version__,
+                latest,
+                enabled=self.config.check_updates,
+                skipped=self.config.update_skipped,
+                later_until=self.config.update_later_until,
+                now=wall,
+                packaged=packaged,
+            )
+        try:
+            self._save()
+        except Exception:
+            pass
+        self._update_next_attempt = wall + 60 * 60
+        self._update_inflight = False
+        if offer is None:
+            return
+        self._put(UiMessage(kind="update", text=offer.latest, mode=offer.url))
 
     def ensure_install_id(self) -> str:
         """A random UUID for the Text mode proxy's daily limit. Made once, then kept in config."""

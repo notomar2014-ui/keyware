@@ -45,6 +45,9 @@ class HookEngine:
         self._listener = None
         self._lock = threading.Lock()
         self._down: set[int] = set()
+        # Print Screen and Pause often arrive as only a down or only an up.
+        self._oneshot_swallow: set[int] = set()
+        self._oneshot_done: set[int] = set()
         self.flags_for_callback: Annotate | None = None
         # Every keyboard event the hook was called for. Read by the silent-removal check.
         self.events_seen = 0
@@ -119,6 +122,8 @@ class HookEngine:
             return False
         if event.kind != "key":
             return False
+        if event.name in ("print_screen", "pause"):
+            return self._oneshot(event)
         if event.pressed:
             self._down.add(event.vk)
         else:
@@ -139,6 +144,60 @@ class HookEngine:
             if listener is not None:
                 listener.suppress_event()
         return False
+
+    def _oneshot(self, event) -> bool:
+        """Finish Print Screen / Pause even when Windows omits half of the pair.
+
+        A tap binding fires on key-up. These keys often never send one, so the
+        hook completes the pair itself. The real leftover event is swallowed
+        only when the binding swallowed the key, so an unbound Print Screen
+        still takes a screenshot.
+        """
+        vk = event.vk
+        if event.pressed:
+            self._down.add(vk)
+            down = self._emit(event.name, True)
+            up = self._emit(event.name, False)
+            suppress = down or up
+            self._down.discard(vk)
+            self._oneshot_done.add(vk)
+            if suppress:
+                self._oneshot_swallow.add(vk)
+                self._suppress_current()
+            else:
+                self._oneshot_swallow.discard(vk)
+            return False
+        swallowed = vk in self._oneshot_swallow
+        self._oneshot_swallow.discard(vk)
+        if vk in self._oneshot_done:
+            self._oneshot_done.discard(vk)
+            if swallowed:
+                self._suppress_current()
+            return False
+        if vk not in self._down and not swallowed:
+            down = self._emit(event.name, True)
+            up = self._emit(event.name, False)
+            suppress = down or up
+            if suppress:
+                self._suppress_current()
+            return False
+        self._down.discard(vk)
+        if swallowed:
+            self._suppress_current()
+        return False
+
+    def _emit(self, name: str, pressed: bool) -> bool:
+        try:
+            return bool(self._on_event(name, pressed))
+        except Exception as exc:
+            if type(exc).__name__ == "SuppressException":
+                raise
+            return False
+
+    def _suppress_current(self) -> None:
+        listener = self._listener
+        if listener is not None:
+            listener.suppress_event()
 
 
 def _pynput_listener(event_filter):

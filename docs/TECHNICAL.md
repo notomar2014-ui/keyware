@@ -41,7 +41,17 @@ Win and Alt chords also tap an unassigned key (virtual key `0xE8`) so the Start 
 
 Panic clears timers, releases keys Keyware replayed (not a modifier you are still holding), and cancels a macro between steps. A key that stays logically down for 30 seconds with no repeat is released. On Windows, the timer also drops keys the system says are already up, which covers a missed key-up after locking the screen. One process per session holds the mutex `Local\Keyware.single`. A second launch prints `Keyware is already running.` and exits. Shutdown releases replayed keys and the hook.
 
-URLs must be `http` or `https` (or `spotify:` links, which become web-player links when the app isn't installed). Application launches do not go through a shell. **Run command** is the one exception: it runs through `cmd.exe /c` with no window, only after you confirm that exact command once (the confirmation is stored as a SHA-256 hash in the config; any edit asks again). Keyware never runs commands that shut down, restart, sign out, delete files, format or partition disks, edit the registry, download code, or change the default audio device; it never offers shutdown or sign-out actions. Media keys act on the whole system and never switch audio devices. **Open file or folder** refuses programs and scripts (`.exe`, `.bat`, `.ps1`, `.lnk` ...).
+URLs must be `http` or `https` (or `spotify:` links, which become web-player links when the app isn't installed). Application launches do not go through a shell. A normal program is started with `CreateProcess` (`subprocess` with an argument list). A Microsoft Store app is activated by its AUMID (`IApplicationActivationManager`, or `explorer.exe shell:AppsFolder\<AUMID>` when COM is unavailable). Phone Link is `Microsoft.YourPhone_8wekyb3d8bbwe!App`. A path that does not exist is not passed to the shell. **Run command** is the one exception: it runs through `cmd.exe /c` with no window, only after you confirm that exact command once (the confirmation is stored as a SHA-256 hash in the config; any edit asks again). Keyware never runs commands that shut down, restart, sign out, delete files, format or partition disks, edit the registry, download code, or change the default audio device; it never offers shutdown or sign-out actions. Media keys act on the whole system and never switch audio devices. **Open file or folder** refuses programs and scripts (`.exe`, `.bat`, `.ps1`, `.lnk` ...).
+
+## Updates
+
+On startup, and again after 24 hours while Keyware is running, a background thread reads the latest GitHub release:
+
+`https://api.github.com/repos/notomar2014-ui/keyware/releases/latest`
+
+It compares `tag_name` with `engine.__version__`. The request uses a Keyware user agent and a short timeout. A network error, including being offline, produces no notice and no log line. Nothing is downloaded and the window is not raised.
+
+When a newer x.y.z tag exists, the open window shows a dismissible row: **Update**, **Later** (hide for a day), **Skip this version**. Update opens `ms-windows-store://pdp/?productid=9ngdp5bl0105` when the process has package identity, and `https://keyware.site/#install` for the portable exe. Settings has **Check for updates** (`check_updates` in the config, on by default).
 
 ## Describe it (Text mode)
 
