@@ -56,7 +56,7 @@ test('robots.txt allows search and AI crawlers, hides admin and api, and points 
 
 test('sitemap lists every public page with a lastmod', () => {
   const xml = read('sitemap.xml');
-  for (const p of ['/', '/guide', '/privacy', '/whats-new']) assert.ok(xml.includes(`<loc>${BASE}${p}</loc><lastmod>`), p);
+  for (const p of ['/', '/guide', '/privacy', '/whats-new', '/support']) assert.ok(xml.includes(`<loc>${BASE}${p}</loc><lastmod>`), p);
 });
 
 test('llms.txt and llms-full.txt exist, follow the format, and cover the new features and every guide section', () => {
@@ -90,6 +90,18 @@ test('new pages copy: Copilot, Caps Lock, tap/hold and macropad sections; honest
     assert.ok(guide.includes(`href="#${id}"`), `toc ${id}`);
   }
   assert.match(guide, /Macropads and stream decks/);
+});
+
+test('the support page is a mailto link and every public page can reach it', () => {
+  const support = read('support.html');
+  assert.match(support, /href="mailto:notomar2014@gmail\.com"/);
+  assert.ok(!/<form[\s>]/i.test(support), 'support page has no form');
+  assert.ok(!/api\/feedback|fetch\(/.test(support), 'support page does not send mail');
+  for (const file of ['index.html', 'guide.html', 'privacy.html', 'whats-new.html', 'thanks.html', 'support.html']) {
+    const html = read(file);
+    assert.ok(html.includes('href="/support"'), `${file} links to support`);
+    assert.ok(html.includes('aria-label="Footer"'), `${file} has a footer`);
+  }
 });
 
 test('donate buttons stay hidden and no personal details appear on public pages', () => {

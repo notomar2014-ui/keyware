@@ -225,10 +225,17 @@ class Action:
 
     @staticmethod
     def from_dict(raw: dict[str, Any]) -> Action:
+        # open_calculator was a broken preset. Keep the binding and open calc.exe.
+        kind = str(raw.get("type", "")).strip()
+        app = str(raw.get("app", "") or "")
+        if kind.lower() in ("open_calculator", "calculator"):
+            kind = "open_app"
+            if not app.strip():
+                app = "calc.exe"
         return Action(
-            type=str(raw.get("type", "")).strip(),
+            type=kind,
             url=str(raw.get("url", "") or ""),
-            app=str(raw.get("app", "") or ""),
+            app=app,
             text=str(raw.get("text", "") or ""),
             keys=[str(item) for item in _list_or_empty(raw.get("keys"))],
             steps=[MacroStep.from_dict(item) for item in _list_or_empty(raw.get("steps")) if isinstance(item, dict)],
@@ -258,7 +265,7 @@ def _int_or(value: Any, default: int) -> int:
 
 
 APP_RULE_MODES = ("keyware", "app", "both")
-APP_RULE_LABELS = {"keyware": "Keyware only", "app": "App only", "both": "Both"}
+APP_RULE_LABELS = {"keyware": "Keyware handles it", "app": "App only", "both": "Both"}
 
 
 def app_rule_key(name: Any) -> str:
@@ -291,7 +298,7 @@ def validate_app_rules(rules: dict[str, str]) -> dict[str, str]:
         if not re.fullmatch(r"[^<>:\"/\\|?*\x00-\x1f]{1,60}\.exe", key or ""):
             raise ValueError(f"Per-app rule: “{app}” is not an app name like Cursor.exe.")
         if mode not in APP_RULE_MODES:
-            raise ValueError(f"Per-app rule for {key}: choose Keyware only, App only or Both.")
+            raise ValueError(f"Per-app rule for {key}: choose Keyware handles it, App only or Both.")
         clean[key] = mode
     if len(clean) > 50:
         raise ValueError("Up to 50 per-app rules per binding.")

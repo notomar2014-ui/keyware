@@ -50,7 +50,9 @@ dropdown and fields. In Text, write what a key should do in plain words
 ("F2 opens YouTube and searches minecraft") and press Generate (or Ctrl+Enter).
 A free model turns it into a binding and fills the Manual fields; a summary
 card shows the result. Switch to Manual to tweak it, then press Save.
-Nothing is ever saved automatically.
+Nothing is ever saved automatically. If the sentence does not name an app, the
+binding works in every window. Opening Calculator opens calc.exe. There is no
+separate Calculator action, and the app being opened is not treated as a profile.
 
 - Models, free tiers only, in order: `gemini-3.5-flash-lite`,
   `gemini-3.1-flash-lite`, Groq `openai/gpt-oss-120b`, `openai/gpt-oss-20b`.

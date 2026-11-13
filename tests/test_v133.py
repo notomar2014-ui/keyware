@@ -43,7 +43,7 @@ def armed(tmp_path, binding, profile="global"):
 # ---- version + rename ----------------------------------------------------
 
 def test_version_is_134():
-    assert __version__ == "1.3.8"
+    assert __version__ == "1.3.9"
 
 
 def test_default_config_has_gaming_not_minecraft():

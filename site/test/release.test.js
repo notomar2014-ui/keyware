@@ -13,8 +13,8 @@ const { Stats } = require('../api/_lib/stats');
 const { MemoryKV } = require('../api/_lib/kv');
 
 const ROOT = path.join(__dirname, '..');
-const HASH = '9B792C19FA2D2684DFD2D64BC252A1F0DF5114084667E1A5AC930DB48063BF09';
-const ARM_HASH = '84C97246CCB947643E0BD76B75921EDDA047B906A8E558A03B3BEA4142332E6D';
+const HASH = 'C6BE4CA7A748D2315941AB7E717325C197DF03CC3B4D9DBC9DFCED5240008BA8';
+const ARM_HASH = '30A166A9A141EE83D833AE338C7686F94420CA7AC9195E91A2A34EBDE01A4B1C';
 const CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';
 
 function armAsset(extra = {}) {
@@ -49,24 +49,24 @@ async function run(handler, opts) {
   return r;
 }
 
-test('x64 release constants match the published 1.3.8 file', () => {
-  assert.equal(release.VERSION, '1.3.8');
+test('x64 release constants match the published file for this version', () => {
+  assert.equal(release.VERSION, '1.3.9');
   assert.equal(release.X64.sha256, HASH);
   assert.equal(release.SHA256, HASH);
-  assert.equal(release.X64.bytes, 21173481);
-  assert.equal(release.X64.size, '20.2 MB');
+  assert.equal(release.X64.bytes, 21784866);
+  assert.equal(release.X64.size, '20.8 MB');
   assert.equal(release.ARM_SHA256, ARM_HASH);
-  assert.equal(release.ARM_BYTES, 16203491);
-  assert.equal(release.formatSize(release.ARM_BYTES), '15.5 MB');
+  assert.equal(release.ARM_BYTES, 16807123);
+  assert.equal(release.formatSize(release.ARM_BYTES), '16.0 MB');
   assert.notEqual(release.ARM_SHA256, HASH);
   assert.equal(release.X64.version, release.VERSION);
-  assert.equal(release.FILE_PATH, '/download/1.3.8/Keyware.exe');
+  assert.equal(release.FILE_PATH, '/download/1.3.9/Keyware.exe');
   const config = fs.readFileSync(path.join(ROOT, 'assets/js/config.js'), 'utf8');
   assert.match(config, new RegExp(`VERSION: "${release.VERSION}"`));
   assert.match(config, new RegExp(`FILE_SIZE: "${release.X64.size}"`));
   assert.match(config, new RegExp(`SHA256: "${HASH}"`));
   assert.match(config, new RegExp(`ARM_SHA256: "${ARM_HASH}"`));
-  assert.match(config, /ARM_FILE_SIZE: "15\.5 MB"/);
+  assert.match(config, /ARM_FILE_SIZE: "16\.0 MB"/);
   for (const file of ['index.html', 'guide.html', 'thanks.html']) {
     const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
     assert.ok(html.includes(HASH), file);
@@ -98,9 +98,9 @@ test('lookup uses the release tag for this version and caches one answer', async
   const first = await release.lookupArm({ fetchImpl, now: () => 1000, cache, cacheMs: 5000 });
   const second = await release.lookupArm({ fetchImpl, now: () => 2000, cache, cacheMs: 5000 });
   assert.equal(urls.length, 1);
-  assert.match(urls[0], /\/releases\/tags\/v1\.3\.8$/);
+  assert.match(urls[0], /\/releases\/tags\/v1\.3\.9$/);
   assert.equal(first.sha256, second.sha256);
-  assert.equal(first.version, '1.3.8');
+  assert.equal(first.version, '1.3.9');
 });
 
 test('the release API lists x64 always and ARM64 only when the asset is real', async () => {
@@ -108,7 +108,7 @@ test('the release API lists x64 always and ARM64 only when the asset is real', a
   assert.equal(none.statusCode, 200);
   assert.deepEqual(none.json.builds.map((b) => b.arch), ['x64']);
   assert.equal(none.json.builds[0].sha256, HASH);
-  assert.equal(none.json.version, '1.3.8');
+  assert.equal(none.json.version, '1.3.9');
   const listed = await run(createReleaseHandler({ lookup: async () => release.armFromAsset(armAsset()) }));
   assert.deepEqual(listed.json.builds.map((b) => b.arch), ['x64', 'arm64']);
   assert.equal(listed.json.builds[1].version, listed.json.version);

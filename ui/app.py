@@ -58,7 +58,7 @@ AI_KEY_STEPS = (
     "2. Alternative: a Groq API key (free) from console.groq.com/keys. It starts with gsk_.\n"
     "Keyware detects which one you pasted. Press Save, then Test."
 )
-AI_PLACEHOLDER = "Describe what this key should do…\n\ne.g. F2 opens YouTube and searches minecraft\ne.g. Ctrl+Q types my email then presses Enter"
+AI_PLACEHOLDER = "Write a normal sentence. No special format.\n\nF2 opens YouTube\nF7 opens Calculator\nCtrl+Q types hello and presses Enter"
 CARD = ("#fafafa", "#18181b")
 ACTIONS = (
     "Open URL", "Open app", "Type text", "Key combo", "Macro", "Auto-click",
@@ -632,8 +632,8 @@ class KeywareApp(ctk.CTk):
         self.app_rules_box = box
         ctk.CTkLabel(box, text="PER-APP RULES", text_color=MUTED, font=self._font(11), anchor="w").grid(
             row=0, column=0, sticky="w", padx=12, pady=(10, 0))
-        ctk.CTkLabel(box, text="Default for all other apps: Keyware only", text_color=MUTED, font=self._font(12),
-                     anchor="w").grid(row=1, column=0, sticky="w", padx=12, pady=(0, 6))
+        ctk.CTkLabel(box, text="If you don't name an app, this works in every window.", text_color=MUTED, font=self._font(12),
+                     anchor="w", justify="left", wraplength=360).grid(row=1, column=0, sticky="w", padx=12, pady=(0, 6))
         self.app_rule_list = ctk.CTkFrame(box, fg_color="transparent", border_width=0)
         self.app_rule_list.grid(row=2, column=0, sticky="ew", padx=12)
         self.app_rule_list.grid_columnconfigure(0, weight=1)
@@ -652,7 +652,7 @@ class KeywareApp(ctk.CTk):
         entry.grid(row=0, column=0, sticky="ew", padx=(0, 6))
         if app:
             entry.insert(0, app)
-        menu = ctk.CTkOptionMenu(row, values=list(APP_RULE_LABELS.values()), width=130)
+        menu = ctk.CTkOptionMenu(row, values=list(APP_RULE_LABELS.values()), width=168)
         menu.set(APP_RULE_LABELS.get(mode, APP_RULE_LABELS["keyware"]))
         menu.grid(row=0, column=1, padx=(0, 6))
         item = (row, entry, menu)
@@ -994,15 +994,20 @@ class KeywareApp(ctk.CTk):
         panel = ctk.CTkFrame(form, fg_color="transparent", border_width=0)
         panel.grid_columnconfigure(0, weight=1)
         self.ai_panel = panel
+        ctk.CTkLabel(panel, text="What should this key do?", font=self._font(14, "bold"), anchor="w").grid(
+            row=0, column=0, sticky="w", pady=(0, 4))
         self.ai_box = ctk.CTkTextbox(panel, height=120, wrap="word", font=self._font(13), border_width=1, border_color=LINE)
-        self.ai_box.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        self.ai_box.grid(row=1, column=0, sticky="ew", pady=(0, 4))
+        ctk.CTkLabel(panel, text="A normal sentence is enough. If you don't name an app, it works in every window.",
+                     text_color=MUTED, font=self._font(12), anchor="w", justify="left", wraplength=360).grid(
+            row=2, column=0, sticky="w", pady=(0, 8))
         self.ai_box.bind("<FocusIn>", lambda _e: self._ai_placeholder(False))
         self.ai_box.bind("<FocusOut>", lambda _e: self._ai_placeholder(True))
         self.ai_box.bind("<Control-Return>", lambda _e: (self._ai_generate(), "break")[1])
         self._ai_placeholder(True)
 
         row = ctk.CTkFrame(panel, fg_color="transparent", border_width=0)
-        row.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        row.grid(row=3, column=0, sticky="ew", pady=(0, 8))
         row.grid_columnconfigure(1, weight=1)
         self.ai_button = ctk.CTkButton(row, text="Generate", width=104, height=30, command=self._ai_generate)
         self.ai_button.grid(row=0, column=0, sticky="w")
@@ -1083,10 +1088,11 @@ class KeywareApp(ctk.CTk):
         self._paint_mode_toggle()
         if value == "Text":
             self._stop_recording(cancel=True)
-            for widget in self._manual_widgets() + [self.hold_box, *self._action_widgets()]:
+            for widget in self._manual_widgets() + [self.hold_box, self.app_rules_box, *self._action_widgets()]:
                 widget.grid_remove()
             self.ai_panel.grid(row=1, column=0, rowspan=11, sticky="ew", pady=(0, 4))
             return
+        self.app_rules_box.grid()
         self.ai_panel.grid_remove()
         for widget in self._manual_widgets():
             widget.grid()
@@ -1262,7 +1268,7 @@ class KeywareApp(ctk.CTk):
         else:
             self.batch_add.configure(state="normal", text=f"Add all ({ready})")
             self.batch_hint.configure(text="Nothing is saved until you press Add all.", text_color=MUTED)
-        self.batch_card.grid(row=2, column=0, sticky="ew", pady=(0, 8))
+        self.batch_card.grid(row=4, column=0, sticky="ew", pady=(0, 8))
         self._batch_flags = flags
 
     def _remove_batch_item(self, index: int) -> None:
@@ -1371,7 +1377,7 @@ class KeywareApp(ctk.CTk):
             self.ai_notes.grid()
         else:
             self.ai_notes.grid_remove()
-        self.ai_card.grid(row=2, column=0, sticky="ew", pady=(0, 8))
+        self.ai_card.grid(row=4, column=0, sticky="ew", pady=(0, 8))
         self._ai_set_status(f"Filled in by {proposal.model} · {proposal.seconds:.1f} s. Review, then Save.")
 
         profile = self.service.config.profile_by_id(self.selected_id)

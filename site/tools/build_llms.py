@@ -67,7 +67,7 @@ SUMMARY = f"""# Keyware
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20 MB, and native ARM64 Keyware-arm64.exe, about 15.5 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: {{version}}.
+- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20.8 MB, and native ARM64 Keyware-arm64.exe, about 16.0 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: {{version}}.
 - Download (x64): {BASE}/download/Keyware.exe
 - Download (ARM64): {BASE}/download/Keyware-arm64.exe
 - SHA-256 (x64 Keyware.exe {{version}}): {{sha256}}

@@ -1,0 +1,195 @@
+<#
+.SYNOPSIS
+  Bundle the x64 and ARM64 Keyware packages and write the upload note.
+
+.DESCRIPTION
+  MakeAppx bundle needs a directory that contains only the .msix files.
+  The .msixupload file is a zip of that bundle, which is the file shape
+  Partner Center prefers. A prototype bundle is named NOT-STORE-READY and
+  must not be uploaded.
+#>
+[CmdletBinding()]
+param(
+  [Parameter(Mandatory = $true)]
+  [string]$InputDir,
+  [Parameter(Mandatory = $true)]
+  [string]$OutDir
+)
+
+$ErrorActionPreference = "Stop"
+$Root = Resolve-Path (Join-Path $PSScriptRoot "..")
+
+function Find-MakeAppx {
+  $hostArch = switch ($env:PROCESSOR_ARCHITECTURE) {
+    "ARM64" { "arm64" }
+    "X86" { "x86" }
+    default { "x64" }
+  }
+  $roots = @()
+  foreach ($base in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
+    if (-not $base) { continue }
+    $kits = Join-Path $base "Windows Kits\10\bin"
+    if (Test-Path $kits) { $roots += $kits }
+  }
+  $hit = Get-ChildItem -Path $roots -Filter "makeappx.exe" -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -match "\\$hostArch\\" } |
+    Sort-Object { try { [version]$_.Directory.Parent.Name } catch { [version]"0.0" } } -Descending |
+    Select-Object -First 1
+  if (-not $hit) { throw "makeappx.exe for $hostArch was not found." }
+  return $hit.FullName
+}
+
+$packages = Get-ChildItem -Path $InputDir -Filter "*.msix" -Recurse | Where-Object { $_.Name -notlike "*.msixupload" }
+if ($packages.Count -lt 2) { throw "Expected the x64 and ARM64 .msix files under $InputDir." }
+$prototype = @($packages | Where-Object { $_.Name -like "NOT-STORE-READY-*" })
+$store = @($packages | Where-Object { $_.Name -notlike "NOT-STORE-READY-*" })
+if ($prototype.Count -gt 0 -and $store.Count -gt 0) {
+  throw "Refusing to mix prototype packages with identity packages."
+}
+$expect = if ($prototype.Count -gt 0) { "prototype" } else { "store" }
+$identityFile = Join-Path $Root "store\partner-identity.json"
+$identityArg = @()
+if ($expect -eq "store" -and (Test-Path $identityFile)) {
+  $identityArg = @("--identity", $identityFile)
+}
+$selected = if ($expect -eq "prototype") { $prototype } else { $store }
+
+$stage = Join-Path $OutDir "bundle-input"
+if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
+New-Item -ItemType Directory -Path $stage | Out-Null
+foreach ($package in $selected) {
+  Copy-Item $package.FullName (Join-Path $stage $package.Name)
+  python (Join-Path $Root "store\validate_msix.py") $package.FullName --expect $expect @identityArg
+  if ($LASTEXITCODE) { throw "validation failed for $($package.Name)" }
+}
+
+$version = $null
+foreach ($package in $selected) {
+  if ($package.Name -match 'Keyware-([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)-') {
+    if ($version -and $version -ne $Matches[1]) { throw "Package versions differ." }
+    $version = $Matches[1]
+  }
+}
+if (-not $version) { throw "Could not read the package version from the file names." }
+
+$bundleLeaf = if ($expect -eq "prototype") { "NOT-STORE-READY-Keyware-$version.msixbundle" } else { "Keyware-$version.msixbundle" }
+$bundle = Join-Path $OutDir $bundleLeaf
+$makeappx = Find-MakeAppx
+Write-Host "MakeAppx: $makeappx"
+# Without /bv, MakeAppx stamps the bundle with a date-based version instead of the app version.
+& $makeappx bundle /d $stage /p $bundle /bv $version /o
+if ($LASTEXITCODE) { throw "makeappx bundle failed" }
+
+python (Join-Path $Root "store\validate_msix.py") $bundle --expect $expect --bundle --version $version @identityArg
+if ($LASTEXITCODE) { throw "bundle validation failed" }
+
+$uploadLeaf = [System.IO.Path]::ChangeExtension($bundleLeaf, ".msixupload")
+$upload = Join-Path $OutDir $uploadLeaf
+$uploadStage = Join-Path $OutDir "upload-input"
+New-Item -ItemType Directory -Path $uploadStage | Out-Null
+Copy-Item $bundle (Join-Path $uploadStage $bundleLeaf)
+# .msixupload is a zip of the bundle. tar -a only picks zip when the name ends in .zip.
+$zip = Join-Path $OutDir "upload.zip"
+& tar.exe -a -c -f $zip -C $uploadStage $bundleLeaf
+if ($LASTEXITCODE) { throw "could not create the upload zip" }
+Move-Item $zip $upload
+python (Join-Path $Root "store\validate_msix.py") $upload --expect $expect --upload --version $version @identityArg
+if ($LASTEXITCODE) { throw "msixupload validation failed" }
+Remove-Item $stage -Recurse -Force
+Remove-Item $uploadStage -Recurse -Force
+$noteSource = Join-Path $Root "store\RUNFULLTRUST.txt"
+if (Test-Path $noteSource) {
+  Copy-Item $noteSource (Join-Path $OutDir "RUNFULLTRUST.txt")
+}
+
+$note = Join-Path $OutDir "WHICH-FILE-TO-UPLOAD.txt"
+if ($expect -eq "prototype") {
+  @(
+    "Keyware $version Microsoft Store packages",
+    "",
+    "Do not upload any file in this folder to Partner Center.",
+    "",
+    "These are real MSIX packages of the current Keyware build. Each one contains",
+    "that version's executable, logos and manifest. They are not Store-ready.",
+    "The publisher inside them is the Windows unsigned-package marker",
+    "(OID.2.25.311729368913984317654407730594956997722=1), not the publisher",
+    "from a Partner Center account. The real values are applied only when",
+    "store/partner-identity.json is present. Partner Center rejects a package whose",
+    "Package/Identity/Publisher does not match Product identity character for character.",
+    "",
+    "Files:",
+    "- NOT-STORE-READY-Keyware-$version-x64.msix",
+    "    64-bit package. The Keyware.exe inside is a native x64 build.",
+    "- NOT-STORE-READY-Keyware-$version-arm64.msix",
+    "    ARM64 package. The Keyware.exe inside is a native ARM64 build.",
+    "- NOT-STORE-READY-Keyware-$version.msixbundle",
+    "    Both packages in one bundle. This is the right shape for one Store upload",
+    "    once the identity is real.",
+    "- NOT-STORE-READY-Keyware-$version.msixupload",
+    "    A zip of that bundle. Partner Center prefers this file type for Windows 10",
+    "    and Windows 11. This copy is still not upload-ready.",
+    "",
+    "None of these files is signed. No certificate was created for them.",
+    "Windows will not install them by double-click. They are for inspection,",
+    "and for showing exactly which file to upload after the identity exists.",
+    "",
+    "What has to be copied from Partner Center before a real upload exists",
+    "Open the reserved app, then Product management, then Product identity.",
+    "Copy these four values with no extra spaces:",
+    "  1. Package/Identity/Name",
+    "  2. Package/Identity/Publisher          (the whole value, starting with CN=)",
+    "  3. Package/Properties/PublisherDisplayName",
+    "  4. The reserved app name               (this becomes DisplayName)",
+    "",
+    "Re-run the GitHub Actions workflow named Microsoft Store MSIX and paste",
+    "those four values into the form. Leave the form blank only when you want",
+    "another labelled prototype.",
+    "",
+    "The file to upload from that later run is:",
+    "  Keyware-$version.msixupload",
+    "Partner Center also accepts Keyware-$version.msixbundle, or the separate",
+    "x64 and ARM64 .msix files. Upload one of those, not a mix, and not any",
+    "file whose name starts with NOT-STORE-READY.",
+    "The Store re-signs an MSIX upload. A code-signing certificate is not",
+    "required for the Store submission.",
+    "",
+    "The packages declare Windows.Desktop from 10.0.19041.0, internetClient,",
+    "and the restricted runFullTrust capability that a desktop exe needs.",
+    "They also declare a startup task. The low-level keyboard hook is not a",
+    "manifest capability; certification reviews that behaviour separately.",
+    "There is no VC++ framework dependency: the executable is a one-file build."
+  ) | Set-Content -Path $note -Encoding ascii
+} else {
+  @(
+    "Keyware $version Store packages",
+    "",
+    "Upload this file to the existing submission's Packages page:",
+    "  Keyware-$version.msixupload",
+    "",
+    "That file is the Store upload. It is unsigned on purpose. Partner Center",
+    "re-signs an MSIX after certification. No code-signing certificate was",
+    "bought or created for it.",
+    "",
+    "Do not install this file on a PC to test it. Windows will not trust an",
+    "unsigned package whose publisher is the Partner Center CN. Installing it",
+    "for sideload would need a certificate whose subject is that exact CN.",
+    "This build does not create that certificate.",
+    "",
+    "Partner Center also accepts Keyware-$version.msixbundle, or the separate",
+    "x64 and ARM64 .msix files. Upload one of those, not all three.",
+    "Remove the older 1.3.6 package from the submission when you add this one.",
+    "The runFullTrust warning on that older package is the Store asking for",
+    "the restricted-capability note. Paste store/RUNFULLTRUST.txt into",
+    "Submission options. The warning is not a reason to sign the package."
+  ) | Set-Content -Path $note -Encoding ascii
+}
+
+$lines = @()
+Get-ChildItem $OutDir -File | Where-Object { $_.Extension -in ".msix", ".msixbundle", ".msixupload" } | Sort-Object Name | ForEach-Object {
+  $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+  Set-Content -Path ($_.FullName + ".sha256") -Value $hash -Encoding ascii
+  $lines += "$hash  $($_.Name)"
+}
+Set-Content -Path (Join-Path $OutDir "SHA256SUMS") -Value $lines -Encoding ascii
+Write-Host ($lines -join [Environment]::NewLine)
+Write-Host "Wrote $note"
