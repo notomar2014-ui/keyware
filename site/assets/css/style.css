@@ -450,3 +450,39 @@ strong{color:var(--fg);font-weight:600}
 .doc ol+p,.doc ul+p,.doc .flow+p{margin-top:14px}
 @media (max-width:420px){.case li{grid-template-columns:1fr;gap:6px}.case li>.case__a{text-align:left}}
 @media (max-width:480px){.profiles__tabs{flex-wrap:nowrap;gap:4px}.profiles__tabs button{padding:8px 12px;font-size:13.5px}}
+
+/* Homepage polish */
+.nav{border-bottom:1px solid transparent}
+.hero{padding:56px 0 20px}
+.hero__title{font-size:clamp(42px,5.6vw,72px);max-width:16ch;margin-left:auto;margin-right:auto}
+.hero__sub{max-width:38rem}
+.hero__cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+.hero__meta{margin-top:14px}
+.hero__shot{margin-top:36px;max-width:980px}
+.trust{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:22px auto 0;padding:0;list-style:none;max-width:760px}
+.trust li{font-size:13px;color:var(--fg-2);border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:6px 12px}
+.release{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
+.release article{padding:22px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));text-align:left}
+.release h3{font-size:17px;margin:8px 0 8px}
+.release p{color:var(--fg-2);font-size:14.5px}
+.split{display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);gap:40px 48px;align-items:center;margin:0 auto 72px}
+.split--flip .split__copy{order:2}
+.split__copy h2{font-size:clamp(28px,3vw,40px)}
+.split__copy p{color:var(--fg-2);margin-top:12px;font-size:16.5px}
+.split__copy ul{margin:16px 0 0;padding:0;list-style:none;display:grid;gap:8px;color:var(--fg-2);font-size:15px}
+.split__copy li{padding-left:16px;position:relative}
+.split__copy li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.split .frame{margin:0}
+.more{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.more .card{min-height:100%}
+@media (max-width:960px){
+  .release,.more{grid-template-columns:1fr}
+  .split,.split--flip{grid-template-columns:1fr}
+  .split--flip .split__copy{order:0}
+}
+@media (max-width:620px){
+  .hero{padding:48px 0 12px}
+  .hero__cta .btn{width:100%}
+  .hero__shot{margin-top:32px}
+  .trust{justify-content:flex-start}
+}
