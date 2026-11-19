@@ -81,6 +81,7 @@
         "Conflict prevention",
         "Pause, panic stop and dry run",
         "AI Text mode: describe a binding in plain English",
+        "Optional Advanced scripting",
         "No ads, no tracking, no account, no admin rights"
       ],
       "offers": {
@@ -166,257 +167,171 @@
       </a>
       <nav class="nav__links" aria-label="Primary">
         <a href="#features">Features</a>
-        <a href="#screenshots">Screenshots</a>
-        <a href="#text-mode">Text mode</a>
-        <a href="#profiles">Profiles</a>
-        <a href="#faq">FAQ</a>
+        <a href="#install">Download</a>
         <a href="/guide">Guide</a>
         <a href="/whats-new">What's new</a>
         <a href="/support">Support</a>
       </nav>
-      <a class="btn btn--sm btn--light" href="/#install">Download</a>
+      <a class="btn btn--sm btn--light" href="#install">Download</a>
     </div>
   </header>
 
   <main id="main">
-    <!-- HERO -->
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero__glow" aria-hidden="true"></div>
       <div class="hero__grid" aria-hidden="true"></div>
       <div class="container hero__inner">
-        <a class="pill reveal" href="#text-mode">
+        <a class="pill reveal" href="#scripting">
           <span class="pill__dot" aria-hidden="true"></span>
-          New: describe a shortcut in plain English
+          Version 1.4.1 · optional scripting
           <span aria-hidden="true">→</span>
         </a>
-        <h1 id="hero-title" class="hero__title reveal">Make your keys<br> your own.</h1>
-        <p class="hero__sub reveal">Remap any key or mouse button, build macros and hotkeys, and set per-app shortcuts, just by describing them in plain English.</p>
-        <div class="arch-pick reveal" role="group" aria-label="Choose a Windows build">
-          <div class="arch-card">
-            <p class="arch-card__kicker">Most PCs</p>
-            <h3>64-bit (x64)</h3>
-            <p>Windows 10 and 11. On ARM64 Windows this file runs under emulation.</p>
-            <a class="btn btn--primary" href="/thanks?arch=x64" data-download>Download 64-bit (x64)</a>
-            <p class="arch-card__file">Keyware.exe · v<span data-version>1.4.1</span> · <span data-size>20.8 MB</span></p>
-            <p class="hashline">SHA-256 <code data-sha>6EE816FD5706AD91FF13F1C6FA97E6EDA4E9738E884C7D10AD08BBE0A21554A0</code></p>
-          </div>
-          <div class="arch-card">
-            <p class="arch-card__kicker">Windows on ARM</p>
-            <h3>ARM64</h3>
-            <p>Native build for Windows on ARM, including Copilot+ PCs.</p>
-            <a class="btn btn--primary" href="/thanks?arch=arm64" data-arm>Download ARM64</a>
-            <p class="arch-card__file">Keyware-arm64.exe · v<span data-version>1.4.1</span> · <span data-arm-size>16.1 MB</span></p>
-            <p class="hashline">SHA-256 <code data-arm-sha>D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D</code></p>
-          </div>
+        <h1 id="hero-title" class="hero__title reveal">Make your keys your own.</h1>
+        <p class="hero__sub reveal">A free key remapper for Windows. Bind any key or mouse button to a shortcut, a macro, or a plain-English description. Unbound keys pass straight through.</p>
+        <div class="hero__cta reveal">
+          <a class="btn btn--primary btn--lg" href="/thanks?arch=x64" data-download>Download 64-bit</a>
+          <a class="btn btn--ghost btn--lg" href="/thanks?arch=arm64" data-arm>Download ARM64</a>
         </div>
         <p class="hero__meta reveal">
-          <span>v<span data-version>1.4.1</span></span><span class="sep" aria-hidden="true">·</span>
-          <span>Windows 10 &amp; 11</span><span class="sep" aria-hidden="true">·</span>
-          <span>Free, no ads, no tracking</span><span class="sep" aria-hidden="true">·</span>
-          <a href="/guide">How to use Keyware</a>
+          <span>Keyware.exe · v<span data-version>1.4.1</span> · <span data-size>20.8 MB</span></span>
+          <span class="sep" aria-hidden="true">·</span>
+          <span>ARM64 · <span data-arm-size>16.1 MB</span></span>
+          <span class="sep" aria-hidden="true">·</span>
+          <a href="#install">SHA-256 and install steps</a>
         </p>
-        <p class="hero__note reveal">No Mac download, on Apple Silicon or Intel. Keyware remaps keys with a Windows keyboard and mouse hook, so a Mac build of this app would not remap keys.</p>
-        <p class="hero__note reveal">Windows may show a SmartScreen prompt when you open a new download, because Keyware isn't code-signed. Click <strong>More info</strong> → <strong>Run anyway</strong>. <a href="#install">How to install</a></p>
+        <ul class="trust reveal">
+          <li>Free, MIT license</li>
+          <li>No account</li>
+          <li>No ads or tracking</li>
+          <li>No admin rights</li>
+          <li>Windows 10 and 11</li>
+        </ul>
 
         <div class="hero__shot reveal">
-          <div class="keystrip" aria-hidden="true">
-            <span class="kbd">Ctrl</span><span class="plus">+</span><span class="kbd">Shift</span><span class="plus">+</span><span class="kbd kbd--hot">R</span>
-            <span class="arrow">→</span><span class="chip">Open YouTube</span>
-          </div>
           <figure class="frame">
             <img src="/assets/img/app-bindings.webp" width="1320" height="980" alt="Keyware 1.4.1: profiles for Global, Gaming, Browser and Code, bindings such as Ctrl+Win+Shift+R, and the Quick Binder." fetchpriority="high">
           </figure>
         </div>
+        <p class="hero__note reveal">No Mac download. Keyware remaps keys with a Windows keyboard and mouse hook. It isn't code-signed, so SmartScreen may ask you to choose <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
       </div>
     </section>
 
-    <section class="section section--tight" id="screenshots" aria-labelledby="shots-title">
+    <section class="section section--tight" id="features" aria-labelledby="features-title">
       <div class="container">
         <div class="section__head reveal">
-          <p class="eyebrow">Keyware 1.4.1</p>
-          <h2 id="shots-title">A look at the app.</h2>
-          <p class="lead">The same window as the Microsoft Store listing: plain English, per-app shortcuts, macros, optional scripting, and the update check.</p>
+          <p class="eyebrow">Version 1.4.1</p>
+          <h2 id="features-title">The same simple app, with more when you want it.</h2>
+          <p class="lead">Manual and Text mode are unchanged. Scripting stays off until you turn it on. <a href="/whats-new">Full release notes</a></p>
         </div>
-        <div class="shot-grid">
-          <figure class="frame reveal">
-            <img src="/assets/store/1920x1080/01-plain-english.png" width="1920" height="1080" alt="Remap any key in plain English" loading="lazy">
-          </figure>
-          <figure class="frame reveal">
-            <img src="/assets/store/1920x1080/02-per-app.png" width="1920" height="1080" alt="Per-app shortcuts" loading="lazy">
-          </figure>
-          <figure class="frame reveal">
-            <img src="/assets/store/1920x1080/03-macros.png" width="1920" height="1080" alt="Macros and hotkeys" loading="lazy">
-          </figure>
-          <figure class="frame reveal">
-            <img src="/assets/store/1920x1080/04-scripting.png" width="1920" height="1080" alt="Optional Advanced scripting in Keyware 1.4.1" loading="lazy">
-          </figure>
-          <figure class="frame reveal">
-            <img src="/assets/store/1920x1080/05-safety.png" width="1920" height="1080" alt="Built-in update check, pause, and panic stop" loading="lazy">
-          </figure>
-          <figure class="frame reveal">
-            <img src="/assets/store/1920x1080/06-free.png" width="1920" height="1080" alt="Keyware 1.4.1 for x64 and ARM64, free and open source" loading="lazy">
-          </figure>
+        <div class="release">
+          <article class="reveal">
+            <p class="eyebrow">1.4.1</p>
+            <h3>Optional scripting</h3>
+            <p>A small script on a binding can branch on the app, profile, setup, or held modifiers. It cannot open a shell or wait more than 2 seconds.</p>
+          </article>
+          <article class="reveal">
+            <p class="eyebrow">1.4.1</p>
+            <h3>A quieter hook</h3>
+            <p>Keyware checks its config file less often, writes log lines off the hook thread, and remembers which mouse buttons are bound.</p>
+          </article>
+          <article class="reveal">
+            <p class="eyebrow">1.4.0</p>
+            <h3>Store apps, Tab, updates</h3>
+            <p>Store apps open by name. Tab and the navigation keys work as triggers and as keys Keyware sends. A daily update check never downloads anything.</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <!-- TRIGGER MARQUEE -->
-    <section class="marquee" aria-label="Supported triggers">
-      <div class="marquee__track">
-        <ul>
-          <li><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span><em>Chord</em></li>
-          <li><span class="kbd">F2</span><em>Tap</em></li>
-          <li><span class="kbd">P</span><em>Hold 2 s</em></li>
-          <li><span class="kbd">F8</span><span class="kbd">F8</span><em>Double-tap</em></li>
-          <li><span class="kbd">Q</span><span class="kbd">Q</span><span class="kbd">Q</span><em>Triple-tap</em></li>
-          <li><span class="kbd">F13</span>→<span class="kbd">Y</span><em>Leader</em></li>
-          <li><span class="kbd">Ctrl</span>+<span class="kbd">Alt</span>+<span class="kbd">F12</span><em>Pause</em></li>
-        </ul>
-        <ul aria-hidden="true">
-          <li><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span><em>Chord</em></li>
-          <li><span class="kbd">F2</span><em>Tap</em></li>
-          <li><span class="kbd">P</span><em>Hold 2 s</em></li>
-          <li><span class="kbd">F8</span><span class="kbd">F8</span><em>Double-tap</em></li>
-          <li><span class="kbd">Q</span><span class="kbd">Q</span><span class="kbd">Q</span><em>Triple-tap</em></li>
-          <li><span class="kbd">F13</span>→<span class="kbd">Y</span><em>Leader</em></li>
-          <li><span class="kbd">Ctrl</span>+<span class="kbd">Alt</span>+<span class="kbd">F12</span><em>Pause</em></li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- FEATURES -->
-    <section class="section" id="features" aria-labelledby="features-title">
+    <section class="section section--tight" aria-labelledby="show-title">
       <div class="container">
         <div class="section__head reveal">
-          <p class="eyebrow">Features</p>
-          <h2 id="features-title">Every key can do more.</h2>
-          <p class="lead">Pick a trigger, pick an action, press Save. Keyware handles the timing, the conflicts and the switching.</p>
+          <p class="eyebrow">The app</p>
+          <h2 id="show-title">Real windows from Keyware 1.4.1.</h2>
         </div>
 
-        <div class="bento">
-          <article class="card card--wide reveal" id="new-in-137">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c1 4 2 5 6 6-4 1-5 2-6 6-1-4-2-5-6-6 4-1 5-2 6-6z"/></svg></div>
-            <h3>New in 1.3.7: setups</h3>
-            <p>Give a profile up to 9 numbered setups, like <strong>1 Elytra</strong> and <strong>2 Spear</strong> in Minecraft, each with its own keys. Hold the number key for 8 seconds to switch. A quick tap still types the number. <a href="/whats-new">See what's new</a></p>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5"/></svg></div>
-            <h3>One-key on/off</h3>
-            <p><span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">F12</span> turns Keyware off and on, with a small note each time. Pick your own shortcut in Settings.</p>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></div>
-            <h3>Per-app shortcut rules</h3>
-            <p>Let one app keep its own shortcut, run Keyware's action, or both. Just say it in Text mode: <em>"Ctrl+K opens Notion, but not in Cursor"</em>. Version 1.3.8 passes both the key press and the key release, so App or Both no longer leaves a stuck key.</p>
-          </article>
-
-          <article class="card card--wide reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h1M9 10h1M12 10h1M15 10h1M18 10h0M7 14h10"/></svg></div>
-            <h3>Chords &amp; key combos</h3>
-            <p>Map any modifier combo to an action. <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Win</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">R</span> opens YouTube; a single key can fire a whole combo like <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">T</span>.</p>
-            <div class="chordviz" aria-hidden="true">
-              <span class="kbd">Ctrl</span><span class="kbd">Win</span><span class="kbd">Shift</span><span class="kbd kbd--hot">R</span>
-            </div>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-            <h3>Tap, hold, double &amp; triple-tap</h3>
-            <p>One key, several jobs. Give any key a tap action and a separate hold action (200 ms by default, you pick the time), or double- and triple-tap for more. Keys without a hold action are never delayed.</p>
-            <div class="holdbar" aria-hidden="true"><span></span></div>
-          </article>
-
-          <article class="card reveal" id="caps-lock">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 5 11h4v4h6v-4h4z"/><path d="M9 19h6"/></svg></div>
-            <h3>Caps Lock, your way</h3>
-            <p>Tap <span class="kbd kbd--sm">Caps Lock</span> for <span class="kbd kbd--sm">Esc</span>, hold it for <span class="kbd kbd--sm">Ctrl</span>, bind it to anything, or turn it off. <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Caps Lock</span> still toggles capitals, and it never gets stuck on.</p>
-          </article>
-
-          <article class="card card--wide reveal" id="copilot-key">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c1 4 2 5 6 6-4 1-5 2-6 6-1-4-2-5-6-6 4-1 5-2 6-6z"/><path d="M18 15c.5 2 1 2.5 3 3-2 .5-2.5 1-3 3-.5-2-1-2.5-3-3 2-.5 2.5-1 3-3z"/></svg></div>
-            <h3>Remap the Copilot key</h3>
-            <p>Keyware sees the <span class="kbd kbd--sm">Copilot</span> key as one key, so it can open any app, send a shortcut, run a macro, act as <span class="kbd kbd--sm">Ctrl</span> while held, or do different things in different apps. Windows 11 also has a simpler built-in option in <strong>Settings › Bluetooth &amp; devices › Keyboard › Customize Copilot key</strong> (Search, Copilot or an app, and on newer updates Right Ctrl or the Context menu key). Keyware is for when you want more than that.</p>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h4v4H4zM10 13h4v4h-4zM16 7h4v4h-4z"/><path d="M8 9h8M12 13V9"/></svg></div>
-            <h3>Leader-key sequences</h3>
-            <p>Tap a leader such as <span class="kbd kbd--sm">F13</span>, then a follow-up key within 1.5 s. Dozens of shortcuts, zero finger gymnastics. Macropads and stream decks that send F13 to F24 work too.</p>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4v16M5 6h11l-2 3 2 3H5"/></svg></div>
-            <h3>Macros</h3>
-            <p>Chain keys, typed text, mouse clicks and exact waits into one step-by-step macro. Panic cancels it between steps.</p>
-            <ol class="macro" aria-hidden="true">
-              <li><b>Key</b> Ctrl + L</li>
-              <li><b>Text</b> github.com</li>
-              <li><b>Wait</b> 150 ms</li>
-              <li><b>Key</b> Enter</li>
-            </ol>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></div>
-            <h3>Open anything, type anything</h3>
-            <p>Open a URL, launch an app, type a snippet like your email address, or send a key combo. All from a single keypress.</p>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3v4M3 9h4M5.5 5.5l2.5 2.5M11 11l9 3.5-4 1.5-1.5 4z"/></svg></div>
-            <h3>Auto-click</h3>
-            <p>Left, right or middle button at 1 to 50 clicks per second. Run it while you hold a key, or toggle it on and off.</p>
-            <div class="cps" aria-hidden="true"><span class="cps__dot"></span><span class="cps__val">20 CPS</span><span class="cps__mode">Toggle</span></div>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18M8 21h8"/></svg></div>
-            <h3>Per-app profiles</h3>
-            <p>Global, Gaming, Browser and Code profiles switch on their own when the active window changes.</p>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
-            <h3>Conflict prevention</h3>
-            <p>One key can't do two things. If a trigger is already taken, Keyware tells you and offers to replace it.</p>
-          </article>
-
-          <article class="card reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></div>
-            <h3>Pause &amp; dry run</h3>
-            <p><span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">F12</span> pauses everything instantly. Dry-run mode logs what would fire and lets every key through.</p>
-          </article>
-
-          <article class="card card--wide card--light reveal">
-            <div class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg></div>
-            <h3>Lightweight and private</h3>
-            <p>A single small app that sits in your tray. No ads, no tracking, no account and no admin rights. Your settings stay on your PC in a plain JSON file.</p>
-            <ul class="ticks">
-              <li>No ads</li><li>No tracking</li><li>No account</li><li>No admin rights</li>
+        <div class="split">
+          <div class="split__copy reveal">
+            <p class="eyebrow" id="text-mode">Text mode</p>
+            <h2>Describe the shortcut in a normal sentence.</h2>
+            <p>Switch the Quick Binder to Text, write what the key should do, and press Generate. You review the proposal and press Save. Nothing is saved until you do.</p>
+            <ul>
+              <li>Works in every window unless you name an app.</li>
+              <li>Shells, scripts, and non-web links are refused.</li>
+              <li>Free daily limit, or your own Gemini or Groq key.</li>
             </ul>
-          </article>
+          </div>
+          <figure class="frame reveal">
+            <img src="/assets/store/1920x1080/01-plain-english.png" width="1920" height="1080" alt="Remap any key in plain English: Keyware Text mode with the sentence F2 opens YouTube." loading="lazy">
+          </figure>
+        </div>
+
+        <div class="split split--flip">
+          <div class="split__copy reveal">
+            <p class="eyebrow" id="profiles">Profiles</p>
+            <h2>Different shortcuts for each app.</h2>
+            <p>Global works everywhere. Gaming, Browser, and Code turn on when that window is in front. A per-app rule can let the app keep its own shortcut, run Keyware's action, or both.</p>
+          </div>
+          <figure class="frame reveal">
+            <img src="/assets/store/1920x1080/02-per-app.png" width="1920" height="1080" alt="Per-app shortcuts: the Gaming profile for javaw.exe and minecraft.exe." loading="lazy">
+          </figure>
+        </div>
+
+        <div class="split">
+          <div class="split__copy reveal">
+            <p class="eyebrow">Macros</p>
+            <h2>Keys, clicks, and waits, in order.</h2>
+            <p>A macro is a list of steps. Delays are exact. Keys get a small human jitter. Panic cancels a running macro between steps.</p>
+          </div>
+          <figure class="frame reveal">
+            <img src="/assets/store/1920x1080/03-macros.png" width="1920" height="1080" alt="Macros and hotkeys: a hold binding with key, delay, and mouse steps." loading="lazy">
+          </figure>
+        </div>
+
+        <div class="split split--flip" id="scripting">
+          <div class="split__copy reveal">
+            <p class="eyebrow">1.4.1</p>
+            <h2>Scripting is optional.</h2>
+            <p>Turn on Advanced scripting in Settings when you want a script box. Leave it empty and the action runs as usual. <code>do</code> runs that action.</p>
+            <ul>
+              <li>The keyboard hook never runs a script.</li>
+              <li>No shells, no commands, no wait over 2 seconds.</li>
+              <li>Pause and Ctrl+Alt+Shift+Esc stop it between steps.</li>
+            </ul>
+            <p><a href="/guide#scripting">How scripts work</a></p>
+          </div>
+          <figure class="frame reveal">
+            <img src="/assets/store/1920x1080/04-scripting.png" width="1920" height="1080" alt="Optional Advanced scripting in Keyware 1.4.1, with a short script and a Check result." loading="lazy">
+          </figure>
+        </div>
+
+        <div class="split">
+          <div class="split__copy reveal">
+            <p class="eyebrow">Safety</p>
+            <h2>An update check, a pause, and a panic stop.</h2>
+            <p>Once a day Keyware can ask GitHub which release is current. It does not download the file. Ctrl+Alt+F12 pauses. Ctrl+Alt+Shift+Esc releases the hook and every key it was holding.</p>
+          </div>
+          <figure class="frame reveal">
+            <img src="/assets/store/1920x1080/05-safety.png" width="1920" height="1080" alt="Built-in update check, the pause shortcut, and the panic stop log line." loading="lazy">
+          </figure>
         </div>
       </div>
     </section>
 
-    <!-- TEXT MODE -->
-    <section class="section section--ai" id="text-mode" aria-labelledby="ai-title">
+    <section class="section section--ai" aria-labelledby="ai-title">
       <div class="ai__glow" aria-hidden="true"></div>
       <div class="container ai">
         <div class="ai__copy reveal">
-          <p class="eyebrow">Text mode</p>
-          <h2 id="ai-title">Just say what<br> the key should do.</h2>
-          <p class="lead">Switch the Quick Binder to <strong>Text</strong>, describe a shortcut in plain English, and press Generate. AI fills in the trigger, the action and the details for you.</p>
+          <p class="eyebrow">Try the sentence</p>
+          <h2 id="ai-title">Just say what the key should do.</h2>
+          <p class="lead">This is a preview of the review step. The real app asks the model, then waits for you to press Save.</p>
           <ul class="steps">
-            <li><span>1</span>Type “F2 opens YouTube and searches minecraft”.</li>
-            <li><span>2</span>Review the proposed binding. Tweak it in Manual if you like.</li>
-            <li><span>3</span>Press Save. Nothing is ever saved automatically.</li>
+            <li><span>1</span>Type a normal sentence. No special format.</li>
+            <li><span>2</span>Read the proposed trigger, action, and profile.</li>
+            <li><span>3</span>Save it, or edit it in Manual first.</li>
           </ul>
-          <p class="fine">Unsafe requests such as shell commands, scripts or non-web links are rejected, and clashes get the normal conflict check.</p>
+          <p class="fine">Unsafe requests such as shell commands are rejected, and a trigger that is already used gets the normal conflict check.</p>
         </div>
-
         <div class="ai__demo reveal">
           <div class="binder" role="img" aria-label="Animated demo: a sentence is typed into Keyware's Text mode and turned into a binding with a trigger, an action and its details.">
             <div class="binder__top" aria-hidden="true">
@@ -447,96 +362,63 @@
       </div>
     </section>
 
-    <!-- PROFILES -->
-    <section class="section" id="profiles" aria-labelledby="profiles-title">
+    <section class="section" aria-labelledby="more-title">
       <div class="container">
         <div class="section__head reveal">
-          <p class="eyebrow">Profiles</p>
-          <h2 id="profiles-title">The right shortcuts<br> in the right app.</h2>
-          <p class="lead">Keyware watches the window in front and switches profiles on its own. Global bindings work everywhere; app profiles add to them or override them.</p>
+          <p class="eyebrow">Also included</p>
+          <h2 id="more-title">The keys people actually rebind.</h2>
         </div>
-
-        <div class="profiles reveal">
-          <div class="profiles__tabs" role="tablist" aria-label="Profiles">
-            <button role="tab" id="tab-global" aria-controls="panel-global" aria-selected="true" data-app="Every other window">Global</button>
-            <button role="tab" id="tab-gaming" aria-controls="panel-gaming" aria-selected="false" tabindex="-1" data-app="javaw.exe">Gaming</button>
-            <button role="tab" id="tab-browser" aria-controls="panel-browser" aria-selected="false" tabindex="-1" data-app="chrome.exe">Browser</button>
-            <button role="tab" id="tab-code" aria-controls="panel-code" aria-selected="false" tabindex="-1" data-app="Code.exe">Code</button>
-          </div>
-
-          <div class="profiles__window">
-            <div class="winbar" aria-hidden="true"><i></i><i></i><i></i><span>Active window: <b id="activeApp">Every other window</b></span></div>
-
-            <div class="profiles__panel" role="tabpanel" id="panel-global" aria-labelledby="tab-global">
-              <ul class="binds">
-                <li><span class="trg"><span class="kbd kbd--sm">Ctrl</span><span class="kbd kbd--sm">Win</span><span class="kbd kbd--sm">Shift</span><span class="kbd kbd--sm">R</span></span><span class="act">Open YouTube</span></li>
-                <li><span class="trg"><span class="kbd kbd--sm">Ctrl</span><span class="kbd kbd--sm">Q</span></span><span class="act">Type my email, then Enter</span></li>
-                <li><span class="trg"><span class="kbd kbd--sm">F13</span>→<span class="kbd kbd--sm">S</span></span><span class="act">Open Spotify</span></li>
-              </ul>
-            </div>
-            <div class="profiles__panel" role="tabpanel" id="panel-gaming" aria-labelledby="tab-gaming" hidden>
-              <ul class="binds">
-                <li><span class="trg"><span class="kbd kbd--sm">F8</span><span class="kbd kbd--sm">F8</span></span><span class="act">Auto-click left · 20 CPS · toggle</span></li>
-                <li><span class="trg">Hold <span class="kbd kbd--sm">R</span></span><span class="act">Macro: click, wait 50 ms, click</span></li>
-                <li><span class="trg"><span class="kbd kbd--sm">F9</span></span><span class="act">Type “gg wp”, then Enter</span></li>
-              </ul>
-            </div>
-            <div class="profiles__panel" role="tabpanel" id="panel-browser" aria-labelledby="tab-browser" hidden>
-              <ul class="binds">
-                <li><span class="trg"><span class="kbd kbd--sm">F1</span></span><span class="act">Reopen closed tab (Ctrl + Shift + T)</span></li>
-                <li><span class="trg">Hold <span class="kbd kbd--sm">G</span></span><span class="act">Open GitHub</span></li>
-                <li><span class="trg"><span class="kbd kbd--sm">F2</span><span class="kbd kbd--sm">F2</span></span><span class="act">Search YouTube</span></li>
-              </ul>
-            </div>
-            <div class="profiles__panel" role="tabpanel" id="panel-code" aria-labelledby="tab-code" hidden>
-              <ul class="binds">
-                <li><span class="trg"><span class="kbd kbd--sm">F13</span>→<span class="kbd kbd--sm">T</span></span><span class="act">Toggle terminal (Ctrl + `)</span></li>
-                <li><span class="trg"><span class="kbd kbd--sm">Ctrl</span><span class="kbd kbd--sm">Alt</span><span class="kbd kbd--sm">L</span></span><span class="act">Type console.log()</span></li>
-                <li><span class="trg">Hold <span class="kbd kbd--sm">F5</span></span><span class="act">Macro: save all, wait, run</span></li>
-              </ul>
-            </div>
-          </div>
+        <div class="more">
+          <article class="card reveal" id="copilot-key">
+            <h3>Remap the Copilot key</h3>
+            <p>Keyware sees the <span class="kbd kbd--sm">Copilot</span> key as one key. Bind it to an app, a shortcut, a macro, or tap for one thing and hold for another. Windows 11 can also do less, under <strong>Settings › Bluetooth &amp; devices › Keyboard › Customize Copilot key</strong>.</p>
+          </article>
+          <article class="card reveal" id="caps-lock">
+            <h3>Caps Lock, your way</h3>
+            <p>Tap <span class="kbd kbd--sm">Caps Lock</span> for <span class="kbd kbd--sm">Esc</span>, hold it for <span class="kbd kbd--sm">Ctrl</span>, or turn it off. <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Caps Lock</span> still toggles capitals.</p>
+          </article>
+          <article class="card reveal">
+            <h3>Tap, hold, and chords</h3>
+            <p>A short tap and a long hold can do different things. Double-tap, triple-tap, and modifier chords work too. A leader key such as <span class="kbd kbd--sm">F13</span> then a follow-up covers macropads that send F13 to F24.</p>
+          </article>
+          <article class="card reveal">
+            <h3>Auto-click</h3>
+            <p>Left, right, or middle button, from 1 to 50 clicks a second, while a key is held or as a toggle. It always stops on pause, panic, or when Keyware turns off.</p>
+          </article>
+          <article class="card reveal">
+            <h3>Conflicts are refused</h3>
+            <p>One trigger can't do two things. If it is already used, Keyware says so and offers to replace that binding.</p>
+          </article>
+          <article class="card reveal">
+            <h3>Setups inside a profile</h3>
+            <p>Up to 9 numbered setups, each with its own keys. Hold the number for 8 seconds to switch. A quick tap still types the number.</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <!-- REAL APP -->
-    <section class="section section--tight" aria-labelledby="app-title">
-      <div class="container">
-        <div class="section__head reveal">
-          <p class="eyebrow">The app</p>
-          <h2 id="app-title">Manual for control.<br> Text for speed.</h2>
-        </div>
-        <figure class="frame frame--wide reveal">
-          <img src="/assets/img/app-modes.webp" width="1360" height="579" loading="lazy" alt="Three views of Keyware's Quick Binder: Manual mode with trigger and action dropdowns, empty Text mode, and Text mode after Generate showing a proposed binding.">
-        </figure>
-      </div>
-    </section>
-
-    <!-- SAFETY -->
     <section class="section section--tight" aria-labelledby="safe-title">
       <div class="container">
         <div class="section__head reveal">
-          <p class="eyebrow">Built to stay out of your way</p>
-          <h2 id="safe-title">Your keyboard keeps working. Always.</h2>
+          <p class="eyebrow">Trust</p>
+          <h2 id="safe-title">What it does, and what it will not do.</h2>
         </div>
         <div class="safe">
-          <div class="safe__item reveal"><h3>Unbound keys pass straight through</h3><p>Keyware only acts on keys you've bound. Everything else reaches Windows untouched.</p></div>
-          <div class="safe__item reveal"><h3>Panic chord</h3><p><span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Esc</span> drops the keyboard hook immediately and releases every key.</p></div>
-          <div class="safe__item reveal"><h3>No admin rights</h3><p>Runs as a normal app. It won't touch elevated windows, so nothing gets stuck.</p></div>
-          <div class="safe__item reveal"><h3>Quiet in the tray</h3><p><strong>Start with Windows</strong> is on by default: Keyware starts silently in the system tray when you sign in, with no window and your hotkeys working. Turn it off any time in Settings. Closing the window keeps it running in the tray; <strong>Quit</strong> in the tray fully closes it.</p></div>
+          <div class="safe__item reveal"><h3>Unbound keys pass through</h3><p>Keyware only acts on keys you've bound. Everything else reaches Windows untouched.</p></div>
+          <div class="safe__item reveal"><h3>Panic chord</h3><p><span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Esc</span> drops the hook immediately and releases every key.</p></div>
+          <div class="safe__item reveal"><h3>No admin rights</h3><p>It runs as a normal app and does not inject keys into elevated windows.</p></div>
+          <div class="safe__item reveal"><h3>Settings stay on the PC</h3><p>Bindings live in <code>%APPDATA%\Keyware\config.json</code>. The hook engine does not go online. Text mode sends the sentence you typed, not your keystrokes. <a href="/privacy">Privacy statement</a></p></div>
         </div>
       </div>
     </section>
 
-    <!-- INSTALL / DOWNLOAD -->
     <section class="section" id="install" aria-labelledby="install-title">
       <div class="container">
         <div class="cta reveal">
           <div class="cta__glow" aria-hidden="true"></div>
-          <img class="cta__logo" src="/assets/img/logo.svg" alt="Keyware logo" width="72" height="72" loading="lazy">
-          <h2 id="install-title">Make your keys your own.</h2>
-          <p class="lead">Free for Windows 10 and 11. Choose 64-bit (x64) or ARM64. One portable file, no installer, nothing to sign up for.</p>
+          <img class="cta__logo" src="/assets/img/logo.svg" alt="" width="64" height="64" loading="lazy">
+          <h2 id="install-title">Download Keyware 1.4.1.</h2>
+          <p class="lead">One portable file. No installer and no account. Most PCs use 64-bit. Windows on ARM uses ARM64.</p>
           <div class="arch-pick" role="group" aria-label="Choose a Windows build">
             <div class="arch-card">
               <p class="arch-card__kicker">Most PCs</p>
@@ -555,18 +437,16 @@
               <p class="hashline">SHA-256 <code data-arm-sha>D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D</code></p>
             </div>
           </div>
-          <p class="hero__note">No Mac download, on Apple Silicon or Intel. Keyware remaps keys with a Windows keyboard and mouse hook, so a Mac build of this app would not remap keys.</p>
-
+          <p class="hero__note">No Mac download, on Apple Silicon or Intel.</p>
           <ol class="install">
-            <li><span class="install__n">1</span><div><h3>Download</h3><p>Choose <strong>64-bit (x64)</strong> or <strong>ARM64</strong> above and save that file anywhere you like, for example your Desktop. Most PCs use 64-bit. Windows on ARM uses ARM64.</p></div></li>
-            <li><span class="install__n">2</span><div><h3>More info → Run anyway</h3><p>Keyware isn't code-signed, so Windows SmartScreen may say it “protected your PC” when you open a new download. Click <strong>More info</strong>, then <strong>Run anyway</strong>.</p></div></li>
-            <li><span class="install__n">3</span><div><h3>Turn it on</h3><p>Add a binding, press Save, and Keyware switches on. It lives in your system tray.</p></div></li>
+            <li><span class="install__n">1</span><div><h3>Download</h3><p>Choose <strong>64-bit (x64)</strong> or <strong>ARM64</strong> and save that file anywhere, for example your Desktop.</p></div></li>
+            <li><span class="install__n">2</span><div><h3>More info → Run anyway</h3><p>Keyware isn't code-signed, so SmartScreen may say it protected your PC. Click <strong>More info</strong>, then <strong>Run anyway</strong>. Compare the file with the SHA-256 above if you want to check it.</p></div></li>
+            <li><span class="install__n">3</span><div><h3>Turn it on</h3><p>Add a binding and press Save. Keyware stays in the system tray. Closing the window does not quit it. <strong>Quit</strong> in the tray does. <a href="/guide">The guide</a> covers the first launch.</p></div></li>
           </ol>
         </div>
       </div>
     </section>
 
-    <!-- FAQ -->
     <section class="section" id="faq" aria-labelledby="faq-title">
       <div class="container container--narrow">
         <div class="section__head reveal">
@@ -577,15 +457,19 @@
         <div class="faq">
           <details class="reveal" open>
             <summary>Is it free?</summary>
-            <div class="faq__a"><p>Yes. Keyware is completely free: no trial, no paid tier, no ads and no account. Every feature on this page, including Text mode, is included.</p></div>
+            <div class="faq__a"><p>Yes. Keyware is free and open source under the MIT license: no trial, no paid tier, no ads, and no account. Text mode and scripting are included.</p></div>
           </details>
           <details class="reveal">
             <summary>Is it safe?</summary>
             <div class="faq__a">
               <p>Keyware runs as a normal app without admin rights and has no ads or tracking. Your bindings are stored locally in <code>%APPDATA%\Keyware\config.json</code>. Keys you haven't bound pass straight through to Windows, and <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Esc</span> switches everything off instantly.</p>
-              <p>The key engine does not record or upload what you type. Text mode sends the sentence you typed (plus a short summary of your existing triggers and profile names) so the AI can draft a binding for you to review. A Play action looks up the song or video name you entered. Feedback sends the note you write, the email you enter, the app version and a random install ID; the server keeps only a short salted hash of that ID. Details are in the <a href="/privacy">privacy statement</a>.</p>
-              <p>Keyware isn't code-signed, so Windows SmartScreen may warn you when you open a new download. Click <strong>More info</strong> → <strong>Run anyway</strong>. The SHA-256 for this file is listed with the download.</p>
+              <p>The key engine does not record or upload what you type. Text mode sends the sentence you typed, plus a short summary of your existing triggers and profile names, so the AI can draft a binding for you to review. A Play action looks up the song or video name you entered. Feedback sends the note you write, the email you enter, the app version, and a random install ID; the server keeps only a short salted hash of that ID. Details are in the <a href="/privacy">privacy statement</a>.</p>
+              <p>Keyware isn't code-signed, so Windows SmartScreen may warn you. Click <strong>More info</strong> → <strong>Run anyway</strong>. The SHA-256 for each file is listed with the download.</p>
             </div>
+          </details>
+          <details class="reveal">
+            <summary>What is Advanced scripting?</summary>
+            <div class="faq__a"><p>A switch in Settings. Off, and you never see it. On, a binding can carry a short script that branches on the app, profile, setup, or held modifiers, then types, clicks, opens something, or runs the normal action with <code>do</code>. It cannot open a shell, run a command, or wait more than 2 seconds. The keyboard hook never runs it. Pause and <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">Shift</span> <span class="kbd kbd--sm">Esc</span> stop it between steps. <a href="/guide#scripting">How scripts work</a></p></div>
           </details>
           <details class="reveal">
             <summary>Is there a limit on Text mode?</summary>
@@ -597,7 +481,7 @@
           <details class="reveal">
             <summary>Does it work in games?</summary>
             <div class="faq__a">
-              <p>Yes, in most games. The Gaming profile switches on automatically when your game is in front, and auto-click, holds and macros all work there.</p>
+              <p>Yes, in most games. The Gaming profile switches on automatically when your game is in front, and auto-click, holds, and macros all work there.</p>
               <p>Two things to know: if a game runs as administrator, Windows won't let a normal app send it keys, so Keyware's remaps pass through instead. And some competitive online games with strict anti-cheat ban macros or auto-clickers, so check a game's rules before using them there. <span class="kbd kbd--sm">Ctrl</span> <span class="kbd kbd--sm">Alt</span> <span class="kbd kbd--sm">F12</span> pauses Keyware at any time.</p>
             </div>
           </details>
@@ -609,7 +493,7 @@
                 <li>In Settings, turn off <strong>Start Keyware with Windows</strong>. It is on by default. Turning it off deletes the Keyware startup entry for your Windows account. If you skip this, Windows still tries to open Keyware when you sign in.</li>
                 <li>Right-click the Keyware icon in the system tray and choose <strong>Quit</strong>.</li>
                 <li>Delete <code>Keyware.exe</code>. If you also downloaded the ARM64 build, delete <code>Keyware-arm64.exe</code> too.</li>
-                <li>Optional: press <span class="kbd kbd--sm">Win</span> <span class="kbd kbd--sm">R</span>, type <code>%APPDATA%\Keyware</code> and delete that folder. That removes your settings, the install ID and a saved AI key. They stay on the PC until you do.</li>
+                <li>Optional: press <span class="kbd kbd--sm">Win</span> <span class="kbd kbd--sm">R</span>, type <code>%APPDATA%\Keyware</code> and delete that folder. That removes your settings, the install ID, and a saved AI key. They stay on the PC until you do.</li>
               </ol>
             </div>
           </details>
@@ -617,7 +501,7 @@
             <summary>Can it remap the Copilot key?</summary>
             <div class="faq__a">
               <p>Yes. Record it in the Quick binder (it shows as <strong>Copilot key</strong>) and bind it to anything, including tap for one thing and hold for another. While it's bound, Copilot or Search won't open.</p>
-              <p>If you only want it to open Search, Copilot or one app, Windows 11 can do that without any extra software: <strong>Settings › Bluetooth &amp; devices › Keyboard › Customize Copilot key</strong>. Newer Windows 11 updates add Right Ctrl and the Context menu key as choices. See the <a href="/guide#special-keys">guide</a> for details.</p>
+              <p>If you only want it to open Search, Copilot, or one app, Windows 11 can do that without any extra software: <strong>Settings › Bluetooth &amp; devices › Keyboard › Customize Copilot key</strong>. Newer Windows 11 updates add Right Ctrl and the Context menu key as choices. See the <a href="/guide#special-keys">guide</a> for details.</p>
             </div>
           </details>
           <details class="reveal">
@@ -637,13 +521,13 @@
     <div class="container footer__inner">
       <div class="footer__brand">
         <a class="brand" href="#top" aria-label="Back to top">
-          <img src="/assets/img/logo.svg" alt="Keyware logo" width="24" height="24" loading="lazy">
+          <img src="/assets/img/logo.svg" alt="" width="24" height="24" loading="lazy">
           <span>Keyware</span>
         </a>
-        <p>Make your keys your own.</p>
+        <p>A free key remapper for Windows. Make your keys your own.</p>
       </div>
       <nav class="footer__links" aria-label="Footer">
-        <a href="/#install">Download</a>
+        <a href="#install">Download</a>
         <a href="#features">Features</a>
         <a href="/guide">Guide</a>
         <a href="#text-mode">Text mode</a>
@@ -654,7 +538,7 @@
         <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>
         <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>
       </nav>
-      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.4.1</span> · Windows is a trademark of Microsoft.</p>
+      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.4.1</span> · MIT · Windows is a trademark of Microsoft.</p>
     </div>
   </footer>
 </body>
