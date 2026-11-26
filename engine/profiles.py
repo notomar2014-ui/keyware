@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import engine.applaunch  # noqa: F401  registers spoken-name matching (Edge, Settings, ...)
+from engine.appidentity import app_names_match
 from engine.models import Profile
 
 
@@ -19,9 +21,8 @@ def normalize_process(name: str) -> str:
 
 
 def same_process(expected: str, actual: str) -> bool:
-    left = normalize_process(expected)
-    right = normalize_process(actual)
-    return bool(left) and left == right
+    """True for the same exe, or for a known Windows alias (``calc.exe`` and ``CalculatorApp.exe``)."""
+    return app_names_match(expected, actual)
 
 
 def match_profile(profiles: list[Profile], process_name: str) -> Profile:

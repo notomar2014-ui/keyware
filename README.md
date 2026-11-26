@@ -39,6 +39,11 @@ bindings you review before saving. Nothing is ever saved automatically.
   a *Play* song or video), also use the network. What each one sends is on the
   [privacy page](https://keyware.site/privacy).
 
+## New in 1.4.2
+
+- **Windows app names.** `calc.exe`, `notepad.exe`, `mspaint.exe`, and `wt.exe` are recognized with or without `.exe`, in any case. Store aliases under `WindowsApps`, and programs in `System32` or on `PATH`, are not reported as missing.
+- **The window in front.** Calculator runs as `CalculatorApp.exe` (sometimes inside `ApplicationFrameHost`). A per-app rule, profile, or script that says `calc.exe` matches that window. Photos, Paint, Settings, Terminal, and Xbox follow the same idea.
+
 ## New in 1.4.1
 
 - **Scripts, if you want them.** Settings has **Advanced scripting**, off by default.

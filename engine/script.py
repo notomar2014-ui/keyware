@@ -18,6 +18,8 @@ import re
 from functools import lru_cache
 from typing import Any
 
+import engine.applaunch  # noqa: F401  registers spoken-name matching used by "app is"
+from engine.appidentity import app_names_match
 from engine.keys import canonicalize, is_allowed, is_trigger_only, ordered_keys
 from engine.models import (
     BLOCKED_PATH_EXTENSIONS,
@@ -501,7 +503,8 @@ def _value(expr: tuple, variables: dict[str, int]) -> int:
 def _truth(cond: tuple, ctx, variables: dict[str, int]) -> bool:
     kind = cond[0]
     if kind == "app":
-        return (ctx.app.casefold() == cond[2]) is cond[1]
+        # calc.exe matches CalculatorApp.exe, and the comparison ignores case and a missing .exe.
+        return app_names_match(ctx.app, cond[2]) is cond[1]
     if kind == "profile":
         return ctx.profile.casefold() == cond[1]
     if kind == "setup":

@@ -22,6 +22,17 @@ import re
 import sys
 from dataclasses import dataclass, field
 
+from engine.appidentity import (
+    ALIAS_GROUPS,
+    default_search_dirs,
+    identity_keys,
+    is_execution_alias,
+    listed_exe,
+    path_is_listed,
+    register_extra_match,
+    safe_list_dir,
+)
+
 APPS_PREFIX = "appsfolder:"
 
 _AUMID_RE = re.compile(r"^[A-Za-z0-9][\w.]*_[A-Za-z0-9]+![A-Za-z0-9][\w.]*$")
@@ -43,6 +54,8 @@ class Launch:
     kind: str  # exe, shortcut, packaged, protocol
     target: str
     label: str
+    # App Execution Aliases cannot be started with CreateProcess. The shell can.
+    shell: bool = False
 
 
 @dataclass(frozen=True)
@@ -138,6 +151,15 @@ for _app in KNOWN_APPS:
         # Keep a real, well-known exe. Rewrite only the guesses that are not that exe.
         if stem not in _QUERY_LABELS:
             _QUERY_LABELS[stem] = _app.label
+# CalculatorApp.exe, WindowsTerminal.exe, and the other real process names.
+_alias_labels: dict[str, str] = {}
+for _group in ALIAS_GROUPS:
+    _labels = {_QUERY_LABELS[stem] for stem in _group if stem in _QUERY_LABELS}
+    if len(_labels) == 1:
+        _label = next(iter(_labels))
+        for _stem in _group:
+            _alias_labels.setdefault(_stem, _label)
+_QUERY_LABELS.update(_alias_labels)
 _KEEP_EXES = {
     "calc.exe": "calc.exe",
     "notepad.exe": "notepad.exe",
@@ -243,12 +265,19 @@ def resolve_launch(
     which=None,
     exists=None,
     app_path=None,
+    list_dir=None,
+    search_dirs=None,
 ) -> ResolveResult:
-    """Pick a launch target. ``which`` / ``exists`` / ``app_path`` are injected in tests."""
+    """Pick a launch target. ``which`` / ``exists`` / ``app_path`` / ``list_dir`` are injected in tests.
+
+    ``list_dir`` is optional. When it is omitted, no directory is scanned, so tests stay hermetic.
+    The Windows launcher passes a real listing because ``os.path.exists`` is false for App Execution Aliases.
+    """
     catalog = catalog or Catalog()
     exists = exists or (lambda _path: False)
     which = which or (lambda _name: None)
     app_path = app_path or (lambda _exe: None)
+    dirs = list(search_dirs or [])
     raw = (query or "").strip().strip('"')
     if not raw:
         return ResolveResult()
@@ -260,9 +289,12 @@ def resolve_launch(
     if os.path.isabs(expanded):
         if exists(expanded):
             kind = "shortcut" if expanded.lower().endswith(".lnk") else "exe"
-            return ResolveResult(Launch(kind, expanded, os.path.basename(expanded)))
+            shell = kind == "exe" and is_execution_alias(expanded)
+            return ResolveResult(Launch(kind, expanded, os.path.basename(expanded), shell=shell))
         # A versioned WindowsApps path is not a program. Keep looking by name.
-        named = _resolve_name(os.path.splitext(os.path.basename(expanded))[0], catalog, which, exists, app_path)
+        named = _resolve_name(
+            os.path.splitext(os.path.basename(expanded))[0], catalog, which, exists, app_path, list_dir, dirs,
+        )
         if named.launch is not None:
             return named
         return ResolveResult(missing_path=expanded)
@@ -270,35 +302,46 @@ def resolve_launch(
     if "\\" in expanded or "/" in expanded:
         return ResolveResult(missing_path=expanded)
 
-    return _resolve_name(raw, catalog, which, exists, app_path)
+    return _resolve_name(raw, catalog, which, exists, app_path, list_dir, dirs)
 
 
-def _resolve_name(raw: str, catalog: Catalog, which, exists, app_path) -> ResolveResult:
-    direct = _file_hit(raw, which, exists, app_path)
-    if direct is not None:
+def _resolve_name(raw: str, catalog: Catalog, which, exists, app_path, list_dir, search_dirs) -> ResolveResult:
+    direct = _file_hit(raw, which, exists, app_path, list_dir, search_dirs)
+    # A normal exe (System32, a real install path) is launched as that file.
+    # An App Execution Alias is only the fallback: a known Store app id is better,
+    # because CreateProcess cannot open the alias.
+    if direct is not None and not direct.shell:
         return ResolveResult(direct)
     known = _known_for(raw)
     if known is not None:
         found = _from_known(known, catalog, which, exists, app_path)
         if found is not None:
             return ResolveResult(found)
+        if direct is not None and direct.shell and known.aumid:
+            return ResolveResult(Launch("packaged", known.aumid, known.label))
+    if direct is not None:
+        return ResolveResult(direct)
     hit = _from_catalog(normalize_name(raw), catalog)
     if hit is not None:
         return ResolveResult(hit)
     return ResolveResult()
 
 
-def _file_hit(raw: str, which, exists, app_path) -> Launch | None:
+def _file_hit(raw: str, which, exists, app_path, list_dir, search_dirs) -> Launch | None:
     base = raw.replace("/", "\\").rsplit("\\", 1)[-1]
     exe = base if base.lower().endswith(".exe") else base + ".exe"
     # which() already found a program. Do not ask exists() again: a test (and
-    # some app-execution aliases) report the bare name as missing.
+    # App Execution Aliases) report the file as missing even though Windows can launch it.
     found = which(base) or which(exe)
     if found:
-        return Launch("exe", found, base)
+        return Launch("exe", found, base, shell=is_execution_alias(found))
+    if list_dir is not None:
+        listed = listed_exe(exe, list_dir, search_dirs)
+        if listed and (is_execution_alias(listed) or exists(listed)):
+            return Launch("exe", listed, base, shell=is_execution_alias(listed))
     located = app_path(exe)
-    if located and exists(located):
-        return Launch("exe", located, base)
+    if located and (exists(located) or is_execution_alias(located)):
+        return Launch("exe", located, base, shell=is_execution_alias(located))
     for known in KNOWN_APPS:
         if _known_for(raw) is not known:
             continue
@@ -310,14 +353,14 @@ def _file_hit(raw: str, which, exists, app_path) -> Launch | None:
 
 
 def _known_for(raw: str) -> KnownApp | None:
-    key = normalize_name(os.path.basename(raw.replace("/", "\\")))
-    if key.endswith(".exe"):
-        key = key[:-4]
-    compact = key.replace(" ", "")
+    wanted = identity_keys(os.path.basename(str(raw or "").replace("/", "\\")))
+    if not wanted:
+        return None
     for app in KNOWN_APPS:
-        names = {name.replace(" ", "") for name in app.names}
-        exes = {exe[:-4] if exe.endswith(".exe") else exe for exe in app.exes}
-        if compact in names or compact in exes or key in app.names:
+        keys: set[str] = set()
+        for name in (*app.names, *app.exes):
+            keys |= identity_keys(name)
+        if wanted & keys:
             return app
     return None
 
@@ -325,17 +368,20 @@ def _known_for(raw: str) -> KnownApp | None:
 def _from_known(known: KnownApp, catalog: Catalog, which, exists, app_path) -> Launch | None:
     for exe in known.exes:
         for candidate in (which(exe), app_path(exe)):
-            if candidate and exists(candidate):
+            if not candidate or is_execution_alias(candidate):
+                # Aliases are handled by the caller, which prefers the Store app id.
+                continue
+            if exists(candidate):
                 return Launch("exe", candidate, known.label)
         for path in known.paths:
             full = os.path.expandvars(path)
             if "%" not in full and exists(full):
                 return Launch("exe", full, known.label)
-    norm = normalize_name(known.label)
+    labels = [known.label, *known.names]
     for app in catalog.apps:
         if app.kind == "packaged" and known.aumid and app.target.lower() == known.aumid.lower():
             return Launch("packaged", app.target, app.name or known.label)
-        if _name_score(norm, app.name) >= 0.99 or _prefix_hit(known, app.name):
+        if any(_name_score(normalize_name(label), app.name) >= 0.99 for label in labels) or _prefix_hit(known, app.name):
             return _launch_from_installed(app, known.label)
         exe_stem = os.path.splitext(app.exe)[0]
         if exe_stem and exe_stem in {item[:-4] if item.endswith(".exe") else item for item in known.exes}:
@@ -415,6 +461,15 @@ def perform_launch(token: str, args: list[str] | None, *, exists, startfile, pop
         return
     if text.endswith(":") and not os.path.isabs(text) and "\\" not in text:
         startfile(text)
+        return
+    # CreateProcess fails on an App Execution Alias (WinError 1920). ShellExecute opens it.
+    # trust means resolve_launch already accepted the path. A path that was not resolved
+    # and does not exist is still refused, including a made-up WindowsApps path.
+    if is_execution_alias(text) and (trust or exists(text)):
+        if extra:
+            startfile(text, extra)
+        else:
+            startfile(text)
         return
     if not trust and not exists(text):
         raise ValueError(not_installed_message(text))
@@ -556,7 +611,7 @@ def _read_app_paths() -> list[InstalledApp]:
                         value = str(winreg.QueryValue(sub, None) or "").strip().strip('"')
                 except OSError:
                     continue
-                if value and os.path.exists(value):
+                if value and _path_present(value):
                     found.append(InstalledApp(os.path.splitext(name)[0], "exe", value, exe=name.lower()))
         finally:
             winreg.CloseKey(key)
@@ -623,10 +678,39 @@ def _read_protocols() -> set[str]:
     return found
 
 
+def _path_present(path: str) -> bool:
+    """True for a real file, or for an App Execution Alias that a directory listing can see."""
+    if os.path.exists(path):
+        return True
+    return is_execution_alias(path) and path_is_listed(path)
+
+
+def _same_known_app(expected: str, actual: str) -> bool:
+    left = _known_for(expected)
+    right = _known_for(actual)
+    return left is not None and left is right
+
+
+register_extra_match(_same_known_app)
+
+
 def windows_which(name: str) -> str | None:
+    """``shutil.which``, then a directory listing.
+
+    ``shutil.which`` uses ``os.path.exists``, which is false for App Execution
+    Aliases, so ``calc.exe`` on PATH is reported as missing. Listing
+    ``WindowsApps`` still shows the name.
+    """
     import shutil
 
-    return shutil.which(name)
+    found = shutil.which(name)
+    if found:
+        return found
+    return listed_exe(name, safe_list_dir, default_search_dirs())
+
+
+def windows_search_dirs() -> list[str]:
+    return default_search_dirs()
 
 
 def windows_app_path(exe: str) -> str | None:
@@ -642,6 +726,6 @@ def windows_app_path(exe: str) -> str | None:
                 value = str(winreg.QueryValue(key, None) or "").strip().strip('"')
         except OSError:
             continue
-        if value and os.path.exists(value):
+        if value and _path_present(value):
             return value
     return None

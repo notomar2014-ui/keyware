@@ -149,10 +149,13 @@ def test_system_opener_uses_startfile_and_never_a_shell(monkeypatch):
 
     calls: list[str] = []
     popens: list[tuple] = []
+    import shutil
+
     monkeypatch.setattr(sys, "platform", "win32")
     monkeypatch.setattr(os, "startfile", lambda target: calls.append(target), raising=False)
     monkeypatch.setattr(os.path, "exists", lambda _path: False)
-    monkeypatch.setattr("engine.actions.shutil.which", lambda name: r"C:\Windows\notepad.exe" if name == "notepad.exe" else None)
+    # Resolution trusts shutil.which, including an App Execution Alias exists() cannot see.
+    monkeypatch.setattr(shutil, "which", lambda name: r"C:\Windows\notepad.exe" if name == "notepad.exe" else None)
 
     def fake_popen(args, **kwargs):
         popens.append((args, kwargs))
