@@ -56,7 +56,9 @@ function canonKey(raw) {
 const MODES = new Set(['tap', 'hold', 'double_tap', 'triple_tap', 'chord', 'leader']);
 const MODE_ALIASES = { press: 'tap', single: 'tap', single_tap: 'tap', doubletap: 'double_tap', double: 'double_tap', tripletap: 'triple_tap', triple: 'triple_tap', combo: 'chord', shortcut: 'chord', hotkey: 'chord', long_press: 'hold' };
 
-const BLOCKED_APPS = /^(?:cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|reg|regedit|bcdedit|diskpart|shutdown|taskkill|schtasks|netsh|certutil|bitsadmin|wmic|format|del|erase|rmdir|rd|sc|vssadmin|cipher|msiexec|logoff|tsdiscon|mmsys)(?:\.(?:exe|cpl|com))?$/i;
+const BLOCKED_APPS = /^(?:cmd|powershell|pwsh|powershell7|wscript|cscript|mshta|rundll32|regsvr32|reg|regedit|bcdedit|diskpart|shutdown|taskkill|schtasks|netsh|certutil|bitsadmin|wmic|format|del|erase|rmdir|rd|sc|vssadmin|cipher|msiexec|logoff|tsdiscon|mmsys|wt|windowsterminal|terminal|wsl|ubuntu|debian|kali|winget|conhost|bash|sh)(?:\.(?:exe|cpl|com))?$/i;
+// Spaced names ("Windows Terminal", "PowerShell 7") do not fit the regex. Compact them the same way the app does.
+const BLOCKED_IDENTITY = new Set(['cmd', 'powershell', 'pwsh', 'powershell7', 'wt', 'windowsterminal', 'terminal', 'wsl', 'ubuntu', 'debian', 'kali', 'winget', 'conhost', 'bash', 'sh']);
 const BLOCKED_EXT = /\.(?:bat|cmd|ps1|psm1|vbs|vbe|js|jse|wsf|wsh|hta|msi|msp|reg|scr|pif|com|cpl|lnk|jar)$/i;
 const EXEC_EXT = /\.(?:exe|bat|cmd|ps1|psm1|vbs|vbe|js|jse|wsf|wsh|hta|msi|msp|reg|scr|pif|com|cpl|lnk|jar|dll|sys)$/i;
 
@@ -97,12 +99,16 @@ function cleanUrl(raw) {
   return u;
 }
 
+function appIdentity(base) {
+  return String(base || '').toLowerCase().replace(/\.exe$/i, '').replace(/[^a-z0-9]/g, '');
+}
+
 function cleanApp(raw) {
   const a = str(raw).trim().replace(/^"|"$/g, '');
   if (!a || a.length > 260) throw new Bad('app');
   const base = a.split(/[\\/]/).pop();
   if (/\s[-/]\w/.test(a) && !/\\/.test(a)) throw new Unsafe('run apps with switches');
-  if (BLOCKED_APPS.test(base) || BLOCKED_EXT.test(base)) throw new Unsafe(`open ${base}`);
+  if (BLOCKED_APPS.test(base) || BLOCKED_EXT.test(base) || BLOCKED_IDENTITY.has(appIdentity(base))) throw new Unsafe(`open ${base}`);
   return a;
 }
 
@@ -311,7 +317,7 @@ function cleanAction(a, trigger) {
       if (!command || command.length > 500 || /[\r\n]/.test(command)) throw new Bad('command');
       const why = dangerIn(command);
       if (why) throw new Unsafe(why);
-      if (/^\s*(?:cmd|powershell|pwsh)(?:\.exe)?\b/i.test(command)) throw new Unsafe('run shell commands');
+      if (/^\s*(?:cmd|powershell|pwsh|wt|wsl|ubuntu|debian|kali|winget|windowsterminal)(?:\.exe)?\b/i.test(command)) throw new Unsafe('run shell commands');
       // Keyware always asks the user to confirm a command before it first runs.
       return { type, command };
     }

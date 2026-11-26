@@ -7,7 +7,6 @@ They do not use a shell and they do not open a network connection.
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 import sys
 import threading
@@ -528,8 +527,9 @@ def resolve_installed_app(app: str) -> str | None:
     """
     from engine.applaunch import (
         APPS_PREFIX, is_packaged_token, launch_token, packaged_aumid, resolve_launch, windows_app_path,
-        windows_catalog,
+        windows_catalog, windows_search_dirs, windows_which,
     )
+    from engine.appidentity import safe_list_dir
 
     text = (app or "").strip().strip('"')
     if is_packaged_token(text):
@@ -540,13 +540,36 @@ def resolve_installed_app(app: str) -> str | None:
     result = resolve_launch(
         text,
         windows_catalog(),
-        which=shutil.which,
+        which=windows_which,
         exists=os.path.exists,
         app_path=windows_app_path,
+        list_dir=safe_list_dir,
+        search_dirs=windows_search_dirs(),
     )
     if result.launch is None:
         return None
     return launch_token(result.launch)
+
+
+def _frame_children(user32, exe_of, hwnd) -> list[tuple[str, str]]:
+    """Child ``(class, exe)`` pairs for an ApplicationFrameHost window."""
+    import ctypes
+    from ctypes import wintypes
+
+    found: list[tuple[str, str]] = []
+    enum_child = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def visit(child, _param):
+        class_name = ctypes.create_unicode_buffer(256)
+        user32.GetClassNameW(child, class_name, 256)
+        found.append((class_name.value, exe_of(child)))
+        return True
+
+    try:
+        user32.EnumChildWindows(hwnd, enum_child(visit), 0)
+    except Exception:
+        return found
+    return found
 
 
 def wait_for_window(process: str, title: str, timeout: float, cancelled: Callable[[], bool]) -> bool:
@@ -558,9 +581,9 @@ def wait_for_window(process: str, title: str, timeout: float, cancelled: Callabl
 
     user32 = ctypes.windll.user32  # type: ignore[attr-defined]
     kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
-    want_exe = os.path.basename(process or "").lower()
-    if want_exe and not want_exe.endswith(".exe"):
-        want_exe += ".exe"
+    from engine.appidentity import is_frame_host, window_matches
+
+    want_exe = os.path.basename(process or "")
     want_title = (title or "").lower()
     enum_proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
 
@@ -589,7 +612,11 @@ def wait_for_window(process: str, title: str, timeout: float, cancelled: Callabl
             buffer = ctypes.create_unicode_buffer(512)
             user32.GetWindowTextW(hwnd, buffer, 512)
             name_ok = not want_title or want_title in buffer.value.lower()
-            exe_ok = not want_exe or exe_of(hwnd) == want_exe
+            top = exe_of(hwnd)
+            children: list[tuple[str, str]] = []
+            if want_exe and is_frame_host(top) and not window_matches(want_exe, top):
+                children = _frame_children(user32, exe_of, hwnd)
+            exe_ok = not want_exe or window_matches(want_exe, top, children)
             if name_ok and exe_ok:
                 hits.append(hwnd)
                 return False

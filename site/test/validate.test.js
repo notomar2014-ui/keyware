@@ -24,6 +24,29 @@ test('key aliases map to the canonical names', () => {
   assert.equal(canonKey('fn'), null);
 });
 
+test('shell aliases are refused, including Windows Terminal spellings', () => {
+  const shells = [
+    'wt.exe', 'terminal', 'WindowsTerminal', 'WindowsTerminal.exe', 'Windows Terminal',
+    'wsl', 'ubuntu', 'debian', 'kali', 'winget', 'pwsh', 'PowerShell 7',
+  ];
+  for (const app of shells) {
+    const out = validateReply(JSON.stringify({
+      ok: true,
+      label: 'Open shell',
+      trigger: { mode: 'tap', keys: ['f8'] },
+      action: { type: 'open_app', app },
+    }));
+    assert.equal(out.status, 'refusal', `${app} ${JSON.stringify(out)}`);
+  }
+  const calc = validateReply(JSON.stringify({
+    ok: true,
+    label: 'Calc',
+    trigger: { mode: 'tap', keys: ['f8'] },
+    action: { type: 'open_app', app: 'calc.exe' },
+  }));
+  assert.equal(calc.status, 'ok');
+});
+
 test('danger patterns', () => {
   assert.ok(dangerIn('shutdown /r /t 0'));
   assert.ok(dangerIn('Stop-Computer'));

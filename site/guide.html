@@ -365,7 +365,7 @@
           </article>
           <article class="acard">
             <h3><span class="acard__ic" aria-hidden="true">▢</span>Open app</h3>
-            <p>Starts a program by its Start menu name, <code>.exe</code>, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused.</p>
+            <p>Starts a program by its Start menu name, <code>.exe</code>, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. <code>calc.exe</code>, <code>notepad.exe</code>, and <code>mspaint.exe</code> count in any case, with or without <code>.exe</code>. Calculator's window is <code>CalculatorApp.exe</code>; a per-app rule for <code>calc.exe</code> still matches it. Windows Terminal is a shell, so a script or Text mode will not open it.</p>
             <div class="ex"><span class="ex__t">Hold <span class="kbd kbd--sm">S</span></span><span class="ex__a">Spotify.exe</span></div>
             <div class="ex"><span class="ex__t"><span class="kbd kbd--sm">F13</span> → <span class="kbd kbd--sm">C</span></span><span class="ex__a">calc.exe</span></div>
           </article>
@@ -628,7 +628,7 @@
           </details>
           <details>
             <summary>Is Keyware open source?</summary>
-            <div class="faq__a"><p>Yes, under the MIT license. The app, its tests and this website's code are on <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>, so anyone can read exactly what Keyware does, build it themselves or suggest a change.</p></div>
+            <div class="faq__a"><p>Yes, under the MIT license, so anyone can read what Keyware does and suggest a change.</p></div>
           </details>
           <details>
             <summary>Does Keyware work on a Mac?</summary>
@@ -761,7 +761,6 @@
         <a href="#faq">FAQ</a>
         <a href="/privacy">Privacy</a>
         <a href="/support">Support</a>
-        <a href="https://github.com/notomar2014-ui/keyware" target="_blank" rel="noopener">GitHub</a>
         <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>
       </nav>
       <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.4.1</span> · Windows is a trademark of Microsoft.</p>

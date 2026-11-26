@@ -18,6 +18,8 @@ import re
 from functools import lru_cache
 from typing import Any
 
+import engine.applaunch  # noqa: F401  registers spoken-name matching used by "app is"
+from engine.appidentity import app_names_match, is_shell_name
 from engine.keys import canonicalize, is_allowed, is_trigger_only, ordered_keys
 from engine.models import (
     BLOCKED_PATH_EXTENSIONS,
@@ -51,7 +53,8 @@ _NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,15}")
 _SHELL = re.compile(
     r"^(?:cmd|powershell|pwsh|powershell_ise|wscript|cscript|mshta|rundll32|regsvr32|"
     r"reg|regedit|bcdedit|diskpart|shutdown|taskkill|schtasks|netsh|certutil|bitsadmin|"
-    r"wmic|msiexec|cipher|sdelete|ftp|tftp|conhost|wt|bash|sh|python|python3|py)(?:\.exe)?$",
+    r"wmic|msiexec|cipher|sdelete|ftp|tftp|conhost|wt|windowsterminal|wsl|ubuntu|debian|kali|winget|"
+    r"bash|sh|python|python3|py)(?:\.exe)?$",
     re.IGNORECASE,
 )
 _SCRIPT_EXT = BLOCKED_PATH_EXTENSIONS - {".exe", ".lnk"}
@@ -361,7 +364,9 @@ def _script_app(text: str) -> str:
     app = validate_app(text)
     base = app.replace("\\", "/").rsplit("/", 1)[-1]
     suffix = os.path.splitext(base)[1].lower()
-    if suffix in _SCRIPT_EXT or _SHELL.fullmatch(base):
+    # The regex catches one-word tools. is_shell_name also catches "Windows Terminal"
+    # and the other spellings of the same app (terminal, wt, WindowsTerminal.exe).
+    if suffix in _SCRIPT_EXT or _SHELL.fullmatch(base) or is_shell_name(base):
         raise ValueError("Scripts cannot open a shell, a script, or a system tool.")
     return app
 
@@ -501,7 +506,8 @@ def _value(expr: tuple, variables: dict[str, int]) -> int:
 def _truth(cond: tuple, ctx, variables: dict[str, int]) -> bool:
     kind = cond[0]
     if kind == "app":
-        return (ctx.app.casefold() == cond[2]) is cond[1]
+        # calc.exe matches CalculatorApp.exe, and the comparison ignores case and a missing .exe.
+        return app_names_match(ctx.app, cond[2]) is cond[1]
     if kind == "profile":
         return ctx.profile.casefold() == cond[1]
     if kind == "setup":
