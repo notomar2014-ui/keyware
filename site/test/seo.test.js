@@ -104,6 +104,16 @@ test('the support page is a mailto link and every public page can reach it', () 
   }
 });
 
+test('public pages do not name the GitHub account', () => {
+  const pages = [
+    'index.html', 'guide.html', 'whats-new.html', 'privacy.html', 'support.html',
+    'thanks.html', '404.html', 'llms.txt', 'llms-full.txt',
+  ];
+  for (const file of pages) {
+    assert.ok(!read(file).includes('notomar2014-ui'), file);
+  }
+});
+
 test('donate buttons stay hidden and no personal details appear on public pages', () => {
   for (const f of ['index.html', 'guide.html', 'privacy.html', '404.html', 'llms.txt', 'llms-full.txt']) {
     const text = read(f);

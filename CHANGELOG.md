@@ -3,7 +3,8 @@
 ## 1.4.2
 
 - Windows app names are recognized. `calc.exe`, `calc`, `notepad.exe`, `mspaint.exe`, and `wt.exe` are accepted in any case, with or without `.exe`. App Execution Aliases under `WindowsApps` are not invisible just because `os.path.exists` cannot open them. A real program in `System32`, `SysWOW64`, or on `PATH` is used when it is there. Store apps such as Calculator, Photos, Paint, Settings, Terminal, and Xbox still open by app id.
-- Per-app rules, profiles, and scripts match the process Windows actually shows. Calculator's window is `CalculatorApp.exe`, sometimes hosted by `ApplicationFrameHost.exe`. A rule or script for `calc.exe` matches that window. The same alias list covers the other built-in apps above.
+- Per-app rules, profiles, and scripts match the process Windows actually shows. Calculator's window is `CalculatorApp.exe`, sometimes hosted by `ApplicationFrameHost.exe`. A rule or script for `calc.exe` matches that window. The same alias list covers the other built-in apps above. A profile or rule saved as `ApplicationFrameHost.exe` still matches the app that frame is hosting. Name comparisons are cached so the keyboard hook does not rebuild them on every key.
+- Scripts and Text mode refuse shells by app identity. `wt`, `Windows Terminal`, `WindowsTerminal.exe`, `wsl`, `ubuntu`, `debian`, `kali`, `winget`, and `pwsh` are refused, not only the literal name `wt`.
 
 ## 1.4.1
 

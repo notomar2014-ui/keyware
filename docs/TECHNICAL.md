@@ -57,9 +57,9 @@ When a newer x.y.z tag exists, the open window shows a dismissible row: **Update
 
 Opening an app and matching the app in front use the same names. `calc`, `calc.exe`, and `CALC.EXE` are Calculator. The file Windows puts on `PATH` for Calculator, Paint, Notepad, and Terminal is often an App Execution Alias in `%LOCALAPPDATA%\Microsoft\WindowsApps`. Python's `os.path.exists` returns false for that alias (`WinError 1920`), so a strict existence check used to say the app was not installed. Keyware lists `System32`, `SysWOW64`, `WindowsApps`, and `PATH` instead, and still refuses a made-up path under `WindowsApps`.
 
-A normal exe is started with `CreateProcess`. An alias is not: `CreateProcess` cannot open it, so Keyware activates the Store app id when it knows one, and otherwise uses the shell. The foreground name for a packaged app is the real process. Calculator's is `CalculatorApp.exe`. When the top-level window is `ApplicationFrameHost.exe`, Keyware reads the hosted `CoreWindow` and matches `calc.exe` against that child. The frame host itself is not treated as every app.
+A normal exe is started with `CreateProcess`. An alias is not: `CreateProcess` cannot open it, so Keyware activates the Store app id when it knows one, and otherwise uses the shell. The foreground name for a packaged app is the real process. Calculator's is `CalculatorApp.exe`. When the top-level window is `ApplicationFrameHost.exe`, Keyware reads the hosted `CoreWindow` once for that window and matches `calc.exe` against that child. The alias sets are cached, so the keyboard hook does not rebuild them on every key. The frame host itself is not treated as every app. A profile or per-app rule that was saved as `ApplicationFrameHost.exe` still matches the app that frame is hosting.
 
-`if app is calc.exe` in a script uses that same match. A script still cannot launch `wt.exe`; Windows Terminal is a shell.
+`if app is calc.exe` in a script uses that same match. A script and Text mode refuse shells by app identity: `wt`, `WindowsTerminal.exe`, `Windows Terminal`, `wsl`, `ubuntu`, `debian`, `kali`, `winget`, and `pwsh`, not only the literal name `wt`.
 
 ## Scripts (optional, 1.4.1)
 

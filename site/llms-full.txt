@@ -322,7 +322,7 @@ Opens a web page in your default browser. Links must start with http:// or https
 
 ### ▢Open app
 
-Starts a program by its Start menu name, .exe, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. calc.exe, notepad.exe, mspaint.exe, and wt.exe count in any case, with or without .exe. Calculator's window is CalculatorApp.exe; a per-app rule for calc.exe still matches it.
+Starts a program by its Start menu name, .exe, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. calc.exe, notepad.exe, and mspaint.exe count in any case, with or without .exe. Calculator's window is CalculatorApp.exe; a per-app rule for calc.exe still matches it. Windows Terminal is a shell, so a script or Text mode will not open it.
 
 ### TType text
 
@@ -536,7 +536,7 @@ Yes, completely: no trial, no paid tier, no ads and no account.
 
 ### Is Keyware open source?
 
-Yes, under the MIT license. The app, its tests and this website's code are on GitHub, so anyone can read exactly what Keyware does, build it themselves or suggest a change.
+Yes, under the MIT license, so anyone can read what Keyware does and suggest a change.
 
 ### Does Keyware work on a Mac?
 

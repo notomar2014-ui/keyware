@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import engine.applaunch  # noqa: F401  registers spoken-name matching (Edge, Settings, ...)
-from engine.appidentity import app_names_match
+from engine.appidentity import app_names_match, app_stem, is_frame_host
 from engine.models import Profile
 
 
@@ -20,12 +20,24 @@ def normalize_process(name: str) -> str:
     return text
 
 
-def same_process(expected: str, actual: str) -> bool:
-    """True for the same exe, or for a known Windows alias (``calc.exe`` and ``CalculatorApp.exe``)."""
-    return app_names_match(expected, actual)
+def same_process(expected: str, actual: str, *, hosted_in_frame: bool = False) -> bool:
+    """True for the same exe, or for a known Windows alias (``calc.exe`` and ``CalculatorApp.exe``).
+
+    ``hosted_in_frame`` means the foreground window is ``ApplicationFrameHost.exe``
+    and ``actual`` is the app it is hosting. A saved profile or rule that still
+    names ``ApplicationFrameHost.exe`` keeps matching that app.
+    """
+    if app_names_match(expected, actual):
+        return True
+    return bool(
+        hosted_in_frame
+        and is_frame_host(expected)
+        and app_stem(actual)
+        and not is_frame_host(actual)
+    )
 
 
-def match_profile(profiles: list[Profile], process_name: str) -> Profile:
+def match_profile(profiles: list[Profile], process_name: str, *, hosted_in_frame: bool = False) -> Profile:
     """Return the first enabled app profile whose process list matches.
 
     Profiles earlier in the list win when more than one matches. Anything else,
@@ -40,18 +52,18 @@ def match_profile(profiles: list[Profile], process_name: str) -> Profile:
     for profile in profiles:
         if profile.is_global or not profile.enabled:
             continue
-        if any(same_process(candidate, actual) for candidate in profile.process_names):
+        if any(same_process(candidate, actual, hosted_in_frame=hosted_in_frame) for candidate in profile.process_names):
             return profile
     return global_profile
 
 
-def app_rule_mode(rules: dict[str, str] | None, process_name: str) -> str:
+def app_rule_mode(rules: dict[str, str] | None, process_name: str, *, hosted_in_frame: bool = False) -> str:
     """The per-app rule for the foreground exe. Empty, unknown or unlisted -> "keyware"."""
     actual = normalize_process(process_name)
     if not rules or not actual:
         return "keyware"
     for app, mode in rules.items():
-        if same_process(app, actual):
+        if same_process(app, actual, hosted_in_frame=hosted_in_frame):
             return mode if mode in ("keyware", "app", "both") else "keyware"
     return "keyware"
 

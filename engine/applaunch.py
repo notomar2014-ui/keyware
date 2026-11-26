@@ -21,9 +21,11 @@ import os
 import re
 import sys
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from engine.appidentity import (
     ALIAS_GROUPS,
+    app_stem,
     default_search_dirs,
     identity_keys,
     is_execution_alias,
@@ -352,17 +354,36 @@ def _file_hit(raw: str, which, exists, app_path, list_dir, search_dirs) -> Launc
     return None
 
 
-def _known_for(raw: str) -> KnownApp | None:
-    wanted = identity_keys(os.path.basename(str(raw or "").replace("/", "\\")))
-    if not wanted:
-        return None
-    for app in KNOWN_APPS:
-        keys: set[str] = set()
+def _build_known_index() -> dict[str, int]:
+    """stem -> earliest KnownApp index. Built once so a match does not rebuild every alias set."""
+    index: dict[str, int] = {}
+    for position, app in enumerate(KNOWN_APPS):
         for name in (*app.names, *app.exes):
-            keys |= identity_keys(name)
-        if wanted & keys:
-            return app
-    return None
+            for key in identity_keys(name):
+                index.setdefault(key, position)
+    return index
+
+
+_KNOWN_INDEX = _build_known_index()
+
+
+@lru_cache(maxsize=1024)
+def _known_for_stem(stem: str) -> KnownApp | None:
+    if not stem:
+        return None
+    best: int | None = None
+    for key in identity_keys(stem):
+        position = _KNOWN_INDEX.get(key)
+        if position is None:
+            continue
+        if best is None or position < best:
+            best = position
+    return None if best is None else KNOWN_APPS[best]
+
+
+def _known_for(raw: str) -> KnownApp | None:
+    text = os.path.basename(str(raw or "").replace("/", "\\"))
+    return _known_for_stem(app_stem(text))
 
 
 def _from_known(known: KnownApp, catalog: Catalog, which, exists, app_path) -> Launch | None:

@@ -140,6 +140,8 @@ class KeywareService:
         self.hook_status = "off"
         self.unavailable_reason = ""
         self.foreground_name = ""
+        # True when that name was read from inside ApplicationFrameHost.exe.
+        self.hosted_in_frame = False
         self.active_profile_id = "global"
         self.paused = False
         self._elevated = False
@@ -181,7 +183,8 @@ class KeywareService:
         initial = ""
         if self.context is not None:
             initial = self.context.read()
-        self.set_foreground(initial)
+        hosted = bool(self.context is not None and self.context.hosted_in_frame)
+        self.set_foreground(initial, hosted_in_frame=hosted)
         if not self.synchronous:
             self._start_workers()
         message = self._try_start_hook() if self.config.enabled else None
@@ -384,18 +387,26 @@ class KeywareService:
         rules = {e.binding_id: self._binding_rules(e.binding_id) for e in effects if e.kind == "fire" and e.binding_id}
         if not any(rules.values()):
             return effects, suppress, False
-        name = self._rules_process_name()
-        return apply_app_rules(effects, suppress, lambda binding_id: app_rule_mode(rules.get(binding_id), name))
+        name, hosted = self._rules_process_name()
+        return apply_app_rules(
+            effects, suppress, lambda binding_id: app_rule_mode(rules.get(binding_id), name, hosted_in_frame=hosted)
+        )
 
-    def _rules_process_name(self) -> str:
-        """Foreground exe for app rules. Fresh read so Alt+Tab is not one poll behind."""
+    def _rules_process_name(self) -> tuple[str, bool]:
+        """Foreground exe for app rules, and whether it is hosted in ApplicationFrameHost.
+
+        Fresh read so Alt+Tab is not one poll behind. The frame flag is what lets
+        a saved ``ApplicationFrameHost.exe`` rule still match the hosted app.
+        """
         name = self.foreground_name
+        hosted = self.hosted_in_frame
         if self.context is None:
-            return name
+            return name, hosted
         try:
-            return process_basename(self.context.read()) or name
+            fresh = process_basename(self.context.read()) or name
+            return fresh, bool(self.context.hosted_in_frame)
         except Exception:
-            return name
+            return name, hosted
 
     def _mark_passthrough(self, name: str) -> None:
         held = self._detector.held.get(name)
@@ -408,8 +419,10 @@ class KeywareService:
         bindings = list(self._detector._by_key.get(name, []))
         if not bindings or not any(binding.app_rules for binding in bindings):
             return False
-        proc = self._rules_process_name()
-        return all(app_rule_mode(binding.app_rules, proc) in ("app", "both") for binding in bindings)
+        proc, hosted = self._rules_process_name()
+        return all(
+            app_rule_mode(binding.app_rules, proc, hosted_in_frame=hosted) in ("app", "both") for binding in bindings
+        )
 
     def _filter_app_rule_fires(self, effects: list[Effect]) -> list[Effect]:
         """Hold actions fire from tick, not from the key event. Apply the same rules there."""
@@ -482,10 +495,13 @@ class KeywareService:
             Effect(kind="log", message="Caps Lock is bound, so Keyware turned the Caps Lock light off. Shift + Caps Lock still toggles it."),
         ]
 
-    def set_foreground(self, name: str) -> None:
+    def set_foreground(self, name: str, hosted_in_frame: bool = False) -> None:
         with self._lock:
             self.foreground_name = process_basename(name)
-            active = match_profile(self.config.profiles, self.foreground_name)
+            self.hosted_in_frame = bool(hosted_in_frame)
+            active = match_profile(
+                self.config.profiles, self.foreground_name, hosted_in_frame=self.hosted_in_frame
+            )
             self.active_profile_id = active.id
             effects = self._detector.set_profiles(self.config.global_profile(), active)
         self._dispatch(effects, from_hook=False)
@@ -1546,7 +1562,7 @@ class KeywareService:
         threading.Thread(target=self._replay_loop, name="keyware-replay", daemon=True).start()
         threading.Thread(target=self._tick_loop, name="keyware-tick", daemon=True).start()
         if self.context is not None:
-            self.context.start(self.set_foreground)
+            self.context.start(self._on_foreground)
         threading.Thread(target=self._watch_hook, name="keyware-watch", daemon=True).start()
 
     def _action_loop(self) -> None:
@@ -1718,7 +1734,9 @@ class KeywareService:
             self._invalidate_mouse_cache()
             if not config.dry_run:
                 self._detector.disarm()
-            active = match_profile(self.config.profiles, self.foreground_name)
+            active = match_profile(
+                self.config.profiles, self.foreground_name, hosted_in_frame=self.hosted_in_frame
+            )
             self.active_profile_id = active.id
             effects = self._detector.set_profiles(self.config.global_profile(), active)
         self._dispatch(effects, from_hook=False)
@@ -1744,11 +1762,18 @@ class KeywareService:
         self._invalidate_mouse_cache()
         with self._lock:
             self._detector.config = self.config
-            active = match_profile(self.config.profiles, self.foreground_name)
+            active = match_profile(
+                self.config.profiles, self.foreground_name, hosted_in_frame=self.hosted_in_frame
+            )
             self.active_profile_id = active.id
             effects = self._detector.set_profiles(self.config.global_profile(), active)
         self._dispatch(effects, from_hook=False)
         self._check_clicker()
+
+    def _on_foreground(self, name: str) -> None:
+        """Context poll callback. Reads the frame-host flag the provider just set."""
+        hosted = bool(self.context is not None and self.context.hosted_in_frame)
+        self.set_foreground(name, hosted_in_frame=hosted)
 
     def _on_setup_switched(self, label: str) -> None:
         self._log(f"{label} active.")

@@ -21,6 +21,7 @@ from __future__ import annotations
 import os
 import re
 from collections.abc import Mapping
+from functools import lru_cache
 
 # Compact stems (letters and digits only). Each frozenset is one app.
 ALIAS_GROUPS: tuple[frozenset[str], ...] = (
@@ -70,8 +71,16 @@ def _compact(stem: str) -> str:
 
 
 def identity_keys(name: str) -> frozenset[str]:
-    """Every stem that should be treated as this app, including aliases."""
-    stem = app_stem(name)
+    """Every stem that should be treated as this app, including aliases.
+
+    The set is cached by stem. The keyboard hook compares names on every key,
+    and building the set from scratch was the slow part of that check.
+    """
+    return _identity_keys_cached(app_stem(name))
+
+
+@lru_cache(maxsize=1024)
+def _identity_keys_cached(stem: str) -> frozenset[str]:
     if not stem:
         return frozenset()
     compact = _compact(stem)
@@ -84,6 +93,31 @@ def identity_keys(name: str) -> frozenset[str]:
         if group:
             extra |= set(group)
     return frozenset(keys | extra)
+
+
+# Shells and the Windows Terminal aliases. ``wt`` pulls in ``terminal`` and
+# ``windowsterminal`` through the alias group, so one membership covers every spelling.
+_SHELL_KEYS = frozenset({"wt", "windowsterminal"})
+_SHELL_COMPACT = frozenset({
+    "wsl", "ubuntu", "debian", "kali", "winget", "pwsh", "powershell7",
+})
+
+
+def is_shell_name(name: str) -> bool:
+    """True for a shell, Windows Terminal, or a distro/package launcher that is a shell.
+
+    ``cmd.exe`` and the other classic tools are matched by the script and AI
+    lists. This function adds the names those lists spelled too narrowly:
+    ``terminal``, ``WindowsTerminal.exe``, ``Windows Terminal``, ``wsl``,
+    ``ubuntu``, ``debian``, ``kali``, ``winget``, and ``pwsh``.
+    """
+    stem = app_stem(name)
+    if not stem:
+        return False
+    compact = _compact(stem)
+    if compact in _SHELL_COMPACT or stem in _SHELL_COMPACT:
+        return True
+    return bool(identity_keys(name) & _SHELL_KEYS)
 
 
 def same_app(expected: str, actual: str) -> bool:
@@ -111,9 +145,24 @@ def app_names_match(expected: str, actual: str) -> bool:
 
 
 def is_execution_alias(path: str) -> bool:
-    """True for an App Execution Alias path (``...\\Microsoft\\WindowsApps\\...``)."""
-    folded = str(path or "").replace("/", "\\").lower()
-    return "\\windowsapps\\" in folded
+    """True for an App Execution Alias under the user's ``%LOCALAPPDATA%\\Microsoft\\WindowsApps``.
+
+    ``C:\\Program Files\\WindowsApps`` is the package store, not an alias folder.
+    A path is an alias only when it sits in AppData\\Local\\Microsoft\\WindowsApps
+    (the usual location of ``%LOCALAPPDATA%``) or in the live ``LOCALAPPDATA`` path
+    when that folder has been redirected.
+    """
+    folded = str(path or "").strip().replace("/", "\\").lower()
+    if not folded:
+        return False
+    marker = "\\appdata\\local\\microsoft\\windowsapps\\"
+    if marker in folded:
+        return True
+    local = os.environ.get("LOCALAPPDATA") or ""
+    if not local:
+        return False
+    prefix = os.path.join(local, "Microsoft", "WindowsApps").replace("/", "\\").rstrip("\\").lower() + "\\"
+    return folded.startswith(prefix)
 
 
 def is_frame_host(name: str) -> bool:
@@ -178,8 +227,13 @@ def default_search_dirs(env: Mapping[str, str] | None = None) -> list[str]:
         ordered.append(os.path.join(profile, "AppData", "Local", "Microsoft", "WindowsApps"))
     for item in source.get("PATH", "").split(os.pathsep):
         item = item.strip().strip('"')
-        if item:
-            ordered.append(item)
+        if not item:
+            continue
+        # "." and ".." search the process's current directory. That is not an app folder.
+        relative = item.replace("/", "\\").rstrip("\\")
+        if relative in {".", ".."}:
+            continue
+        ordered.append(item)
     seen: set[str] = set()
     unique: list[str] = []
     for directory in ordered:
