@@ -149,7 +149,7 @@
         <ol class="numbered">
           <li>
             <h3>Download</h3>
-            <p>Most PCs: <a href="/thanks?arch=x64" data-download>Download 64-bit (x64)</a> and save <code>Keyware.exe</code> (v<span data-version>1.4.1</span>, <span data-size>20.8 MB</span>). SHA-256 <code data-sha>6EE816FD5706AD91FF13F1C6FA97E6EDA4E9738E884C7D10AD08BBE0A21554A0</code>. Windows on ARM, including Copilot+ PCs: <a href="/thanks?arch=arm64" data-arm>Download ARM64</a> and save <code>Keyware-arm64.exe</code> (v<span data-version>1.4.1</span>, <span data-arm-size>16.1 MB</span>). SHA-256 <code data-arm-sha>D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D</code>. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a <code>Tools</code> folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.</p>
+            <p>Most PCs: <a href="/thanks?arch=x64" data-download>Download 64-bit (x64)</a> and save <code>Keyware.exe</code> (v<span data-version>1.4.2</span>, <span data-size>20.8 MB</span>). SHA-256 <code data-sha>D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8</code>. Windows on ARM, including Copilot+ PCs: <a href="/thanks?arch=arm64" data-arm>Download ARM64</a> and save <code>Keyware-arm64.exe</code> (v<span data-version>1.4.2</span>, <span data-arm-size>16.1 MB</span>). SHA-256 <code data-arm-sha>FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA</code>. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a <code>Tools</code> folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.</p>
           </li>
           <li>
             <h3>First launch: “Windows protected your PC”</h3>
@@ -365,7 +365,7 @@
           </article>
           <article class="acard">
             <h3><span class="acard__ic" aria-hidden="true">▢</span>Open app</h3>
-            <p>Starts a program by its Start menu name, <code>.exe</code>, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. <code>calc.exe</code>, <code>notepad.exe</code>, and <code>mspaint.exe</code> count in any case, with or without <code>.exe</code>. Calculator's window is <code>CalculatorApp.exe</code>; a per-app rule for <code>calc.exe</code> still matches it. Windows Terminal is a shell, so a script or Text mode will not open it.</p>
+            <p>Starts a program by its Start menu name, <code>.exe</code>, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. <code>calc.exe</code>, <code>notepad.exe</code>, <code>mspaint.exe</code>, and <code>wt.exe</code> count in any case, with or without <code>.exe</code>, including a WindowsApps App Execution Alias. Calculator's window is <code>CalculatorApp.exe</code>. A per-app rule, profile, or script for <code>calc.exe</code> matches that window, including when Windows hosts it in <code>ApplicationFrameHost.exe</code>. A rule saved as <code>ApplicationFrameHost.exe</code> matches the app that frame is hosting. Name checks are cached so the keyboard hook does not rebuild them on every key. Scripts and Text mode refuse shells by the app, including Windows Terminal, WSL, <code>winget</code>, and <code>pwsh</code>.</p>
             <div class="ex"><span class="ex__t">Hold <span class="kbd kbd--sm">S</span></span><span class="ex__a">Spotify.exe</span></div>
             <div class="ex"><span class="ex__t"><span class="kbd kbd--sm">F13</span> → <span class="kbd kbd--sm">C</span></span><span class="ex__a">calc.exe</span></div>
           </article>
@@ -435,7 +435,7 @@
         <h3>When it says no</h3>
         <p>Text mode only makes key bindings. If you type something unrelated, like “write me a poem” or “what's the weather”, you'll see:</p>
         <p class="errline" role="note">That doesn't look like a key binding. Describe what you want your keys to do, like “F9 opens YouTube”.</p>
-        <p>For your safety it also refuses shell commands and scripts (cmd, PowerShell, <code>.bat</code>…), links that aren't http/https, typing into the Run box, apps with command-line arguments, and the panic chord. If the trigger is already used, you get the normal <a href="#conflicts">conflict message</a>.</p>
+        <p>For your safety it also refuses shell commands and scripts (cmd, PowerShell, Windows Terminal, WSL, <code>winget</code>, <code>.bat</code>…), links that aren't http/https, typing into the Run box, apps with command-line arguments, and the panic chord. If the trigger is already used, you get the normal <a href="#conflicts">conflict message</a>.</p>
 
         <h3>Free daily limit</h3>
         <p>Text mode works out of the box with Keyware's free AI. To keep it free for everyone there's a daily limit of <strong>20 requests per PC</strong>, reset every day. If you reach it, Keyware says <em>“Daily AI limit reached, try tomorrow or add your own free key”</em> and offers a button to add one. Manual mode is never limited.</p>
@@ -728,16 +728,16 @@
               <h3>64-bit (x64)</h3>
               <p>On ARM64 Windows this file runs under emulation.</p>
               <a class="btn btn--primary" href="/thanks?arch=x64" data-download>Download 64-bit (x64)</a>
-              <p class="arch-card__file">Keyware.exe · v<span data-version>1.4.1</span> · <span data-size>20.8 MB</span></p>
-              <p class="hashline">SHA-256 <code data-sha>6EE816FD5706AD91FF13F1C6FA97E6EDA4E9738E884C7D10AD08BBE0A21554A0</code></p>
+              <p class="arch-card__file">Keyware.exe · v<span data-version>1.4.2</span> · <span data-size>20.8 MB</span></p>
+              <p class="hashline">SHA-256 <code data-sha>D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8</code></p>
             </div>
             <div class="arch-card">
               <p class="arch-card__kicker">Windows on ARM</p>
               <h3>ARM64</h3>
               <p>Native build, including Copilot+ PCs.</p>
               <a class="btn btn--primary" href="/thanks?arch=arm64" data-arm>Download ARM64</a>
-              <p class="arch-card__file">Keyware-arm64.exe · v<span data-version>1.4.1</span> · <span data-arm-size>16.1 MB</span></p>
-              <p class="hashline">SHA-256 <code data-arm-sha>D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D</code></p>
+              <p class="arch-card__file">Keyware-arm64.exe · v<span data-version>1.4.2</span> · <span data-arm-size>16.1 MB</span></p>
+              <p class="hashline">SHA-256 <code data-arm-sha>FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA</code></p>
             </div>
           </div>
         </div>
@@ -763,7 +763,7 @@
         <a href="/support">Support</a>
         <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>
       </nav>
-      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.4.1</span> · Windows is a trademark of Microsoft.</p>
+      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.4.2</span> · Windows is a trademark of Microsoft.</p>
     </div>
   </footer>
 </body>

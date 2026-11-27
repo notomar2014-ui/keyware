@@ -5,13 +5,13 @@ window.KEYWARE_CONFIG = {
   // Both Windows builds. Keep the hashes identical to site/api/_lib/release.js.
   // /download/Keyware.exe is counted, then served from /download/<VERSION>/Keyware.exe.
   // /download/Keyware-arm64.exe is counted, then redirected to the GitHub release asset.
-  VERSION: "1.4.1",
+  VERSION: "1.4.2",
   DOWNLOAD_URL: "/download/Keyware.exe",
   FILE_SIZE: "20.8 MB",
-  SHA256: "6EE816FD5706AD91FF13F1C6FA97E6EDA4E9738E884C7D10AD08BBE0A21554A0",
+  SHA256: "D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8",
   ARM_URL: "/download/Keyware-arm64.exe",
   ARM_FILE_SIZE: "16.1 MB",
-  ARM_SHA256: "D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D",
+  ARM_SHA256: "FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA",
   // [data-download] opens the thanks page and starts the x64 file.
   // [data-arm] opens the thanks page and starts the ARM64 file.
   // [data-dl-direct] is the file itself, used for "download again" on the thanks page.

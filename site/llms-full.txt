@@ -5,11 +5,11 @@
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20.8 MB, and native ARM64 Keyware-arm64.exe, about 16.1 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.4.1.
+- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20.8 MB, and native ARM64 Keyware-arm64.exe, about 16.1 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.4.2.
 - Download (x64): https://keyware.site/download/Keyware.exe
 - Download (ARM64): https://keyware.site/download/Keyware-arm64.exe
-- SHA-256 (x64 Keyware.exe 1.4.1): 6EE816FD5706AD91FF13F1C6FA97E6EDA4E9738E884C7D10AD08BBE0A21554A0
-- SHA-256 (ARM64 Keyware-arm64.exe 1.4.1): D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D
+- SHA-256 (x64 Keyware.exe 1.4.2): D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8
+- SHA-256 (ARM64 Keyware-arm64.exe 1.4.2): FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA
 - License: MIT, open source.
 - Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. A Play action looks up the name you entered. Feedback sends the message, email, app version and a random install ID; the server keeps a salted hash of that ID. See https://keyware.site/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
@@ -31,76 +31,30 @@ Key facts:
 
 # Home page
 
-Features
+Version 1.4.2
 
-## Every key can do more.
+## Built-in Windows apps, named correctly.
 
-Pick a trigger, pick an action, press Save. Keyware handles the timing, the conflicts and the switching.
+Calculator and the other WindowsApps aliases match the real window, including when Windows hosts it. Full release notes
 
-### New in 1.3.7: setups
+1.4.2
 
-Give a profile up to 9 numbered setups, like 1 Elytra and 2 Spear in Minecraft, each with its own keys. Hold the number key for 8 seconds to switch. A quick tap still types the number. See what's new
+### App Execution Aliases
 
-### One-key on/off
+calc.exe, Notepad, Paint, and Terminal are recognized in any case, with or without .exe. A WindowsApps alias counts as that app.
 
-Ctrl Alt F12 turns Keyware off and on, with a small note each time. Pick your own shortcut in Settings.
+1.4.2
 
-### Per-app shortcut rules
+### The hosted window
 
-Let one app keep its own shortcut, run Keyware's action, or both. Just say it in Text mode: "Ctrl+K opens Notion, but not in Cursor". Version 1.3.8 passes both the key press and the key release, so App or Both no longer leaves a stuck key.
+A rule or script for calc.exe matches Calculator when Windows hosts it in ApplicationFrameHost.exe. Those name checks are cached on the hook.
 
-### Chords & key combos
+1.4.2
 
-Map any modifier combo to an action. Ctrl Win Shift R opens YouTube; a single key can fire a whole combo like Ctrl Shift T.
+### Shells stay blocked
 
-### Tap, hold, double & triple-tap
+Scripts and Text mode refuse Windows Terminal, WSL, winget, and pwsh by the app, so they cannot open a terminal.
 
-One key, several jobs. Give any key a tap action and a separate hold action (200 ms by default, you pick the time), or double- and triple-tap for more. Keys without a hold action are never delayed.
-
-### Caps Lock, your way
-
-Tap Caps Lock for Esc, hold it for Ctrl, bind it to anything, or turn it off. Shift Caps Lock still toggles capitals, and it never gets stuck on.
-
-### Remap the Copilot key
-
-Keyware sees the Copilot key as one key, so it can open any app, send a shortcut, run a macro, act as Ctrl while held, or do different things in different apps. Windows 11 also has a simpler built-in option in Settings › Bluetooth & devices › Keyboard › Customize Copilot key (Search, Copilot or an app, and on newer updates Right Ctrl or the Context menu key). Keyware is for when you want more than that.
-
-### Leader-key sequences
-
-Tap a leader such as F13, then a follow-up key within 1.5 s. Dozens of shortcuts, zero finger gymnastics. Macropads and stream decks that send F13 to F24 work too.
-
-### Macros
-
-Chain keys, typed text, mouse clicks and exact waits into one step-by-step macro. Panic cancels it between steps.
-
-### Open anything, type anything
-
-Open a URL, launch an app, type a snippet like your email address, or send a key combo. All from a single keypress.
-
-### Auto-click
-
-Left, right or middle button at 1 to 50 clicks per second. Run it while you hold a key, or toggle it on and off.
-
-### Per-app profiles
-
-Global, Gaming, Browser and Code profiles switch on their own when the active window changes.
-
-### Conflict prevention
-
-One key can't do two things. If a trigger is already taken, Keyware tells you and offers to replace it.
-
-### Pause & dry run
-
-Ctrl Alt F12 pauses everything instantly. Dry-run mode logs what would fire and lets every key through.
-
-### Lightweight and private
-
-A single small app that sits in your tray. No ads, no tracking, no account and no admin rights. Your settings stay on your PC in a plain JSON file.
-
-- No ads
-- No tracking
-- No account
-- No admin rights
 FAQ
 
 ## Questions, answered.
@@ -109,15 +63,19 @@ More in the full guide, including troubleshooting.
 
 ### Is it free?
 
-Yes. Keyware is completely free: no trial, no paid tier, no ads and no account. Every feature on this page, including Text mode, is included.
+Yes. Keyware is free and open source under the MIT license: no trial, no paid tier, no ads, and no account. Text mode and scripting are included.
 
 ### Is it safe?
 
 Keyware runs as a normal app without admin rights and has no ads or tracking. Your bindings are stored locally in %APPDATA%\Keyware\config.json. Keys you haven't bound pass straight through to Windows, and Ctrl Alt Shift Esc switches everything off instantly.
 
-The key engine does not record or upload what you type. Text mode sends the sentence you typed (plus a short summary of your existing triggers and profile names) so the AI can draft a binding for you to review. A Play action looks up the song or video name you entered. Feedback sends the note you write, the email you enter, the app version and a random install ID; the server keeps only a short salted hash of that ID. Details are in the privacy statement.
+The key engine does not record or upload what you type. Text mode sends the sentence you typed, plus a short summary of your existing triggers and profile names, so the AI can draft a binding for you to review. A Play action looks up the song or video name you entered. Feedback sends the note you write, the email you enter, the app version, and a random install ID; the server keeps only a short salted hash of that ID. Details are in the privacy statement.
 
-Keyware isn't code-signed, so Windows SmartScreen may warn you when you open a new download. Click More info → Run anyway. The SHA-256 for this file is listed with the download.
+Keyware isn't code-signed, so Windows SmartScreen may warn you. Click More info → Run anyway. The SHA-256 for each file is listed with the download.
+
+### What is Advanced scripting?
+
+A switch in Settings. Off, and you never see it. On, a binding can carry a short script that branches on the app, profile, setup, or held modifiers, then types, clicks, opens something, or runs the normal action with do. It cannot open a shell, run a command, or wait more than 2 seconds. The keyboard hook never runs it. Pause and Ctrl Alt Shift Esc stop it between steps. How scripts work
 
 ### Is there a limit on Text mode?
 
@@ -127,7 +85,7 @@ Want more? Add your own free Google Gemini or Groq key in Settings and Text mode
 
 ### Does it work in games?
 
-Yes, in most games. The Gaming profile switches on automatically when your game is in front, and auto-click, holds and macros all work there.
+Yes, in most games. The Gaming profile switches on automatically when your game is in front, and auto-click, holds, and macros all work there.
 
 Two things to know: if a game runs as administrator, Windows won't let a normal app send it keys, so Keyware's remaps pass through instead. And some competitive online games with strict anti-cheat ban macros or auto-clickers, so check a game's rules before using them there. Ctrl Alt F12 pauses Keyware at any time.
 
@@ -138,13 +96,13 @@ There's no installer. To remove Keyware:
 - In Settings, turn off Start Keyware with Windows. It is on by default. Turning it off deletes the Keyware startup entry for your Windows account. If you skip this, Windows still tries to open Keyware when you sign in.
 - Right-click the Keyware icon in the system tray and choose Quit.
 - Delete Keyware.exe. If you also downloaded the ARM64 build, delete Keyware-arm64.exe too.
-- Optional: press Win R, type %APPDATA%\Keyware and delete that folder. That removes your settings, the install ID and a saved AI key. They stay on the PC until you do.
+- Optional: press Win R, type %APPDATA%\Keyware and delete that folder. That removes your settings, the install ID, and a saved AI key. They stay on the PC until you do.
 
 ### Can it remap the Copilot key?
 
 Yes. Record it in the Quick binder (it shows as Copilot key) and bind it to anything, including tap for one thing and hold for another. While it's bound, Copilot or Search won't open.
 
-If you only want it to open Search, Copilot or one app, Windows 11 can do that without any extra software: Settings › Bluetooth & devices › Keyboard › Customize Copilot key. Newer Windows 11 updates add Right Ctrl and the Context menu key as choices. See the guide for details.
+If you only want it to open Search, Copilot, or one app, Windows 11 can do that without any extra software: Settings › Bluetooth & devices › Keyboard › Customize Copilot key. Newer Windows 11 updates add Right Ctrl and the Context menu key as choices. See the guide for details.
 
 ### Which versions of Windows are supported?
 
@@ -165,7 +123,7 @@ Source: https://keyware.site/guide
 
 Keyware is a single program file. There's no installer and nothing to sign up for.
 
-- Download Most PCs: Download 64-bit (x64) and save Keyware.exe (v1.4.1, 20.8 MB). SHA-256 6EE816FD5706AD91FF13F1C6FA97E6EDA4E9738E884C7D10AD08BBE0A21554A0. Windows on ARM, including Copilot+ PCs: Download ARM64 and save Keyware-arm64.exe (v1.4.1, 16.1 MB). SHA-256 D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
+- Download Most PCs: Download 64-bit (x64) and save Keyware.exe (v1.4.2, 20.8 MB). SHA-256 D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8. Windows on ARM, including Copilot+ PCs: Download ARM64 and save Keyware-arm64.exe (v1.4.2, 16.1 MB). SHA-256 FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
 
 ### Download
 
@@ -322,7 +280,7 @@ Opens a web page in your default browser. Links must start with http:// or https
 
 ### ▢Open app
 
-Starts a program by its Start menu name, .exe, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. calc.exe, notepad.exe, and mspaint.exe count in any case, with or without .exe. Calculator's window is CalculatorApp.exe; a per-app rule for calc.exe still matches it. Windows Terminal is a shell, so a script or Text mode will not open it.
+Starts a program by its Start menu name, .exe, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. calc.exe, notepad.exe, mspaint.exe, and wt.exe count in any case, with or without .exe, including a WindowsApps App Execution Alias. Calculator's window is CalculatorApp.exe. A per-app rule, profile, or script for calc.exe matches that window, including when Windows hosts it in ApplicationFrameHost.exe. A rule saved as ApplicationFrameHost.exe matches the app that frame is hosting. Name checks are cached so the keyboard hook does not rebuild them on every key. Scripts and Text mode refuse shells by the app, including Windows Terminal, WSL, winget, and pwsh.
 
 ### TType text
 
@@ -373,7 +331,7 @@ Text mode only makes key bindings. If you type something unrelated, like “writ
 
 That doesn't look like a key binding. Describe what you want your keys to do, like “F9 opens YouTube”.
 
-For your safety it also refuses shell commands and scripts (cmd, PowerShell, .bat…), links that aren't http/https, typing into the Run box, apps with command-line arguments, and the panic chord. If the trigger is already used, you get the normal conflict message.
+For your safety it also refuses shell commands and scripts (cmd, PowerShell, Windows Terminal, WSL, winget, .bat…), links that aren't http/https, typing into the Run box, apps with command-line arguments, and the panic chord. If the trigger is already used, you get the normal conflict message.
 
 ### Free daily limit
 
@@ -640,9 +598,9 @@ Most PCs
 
 On ARM64 Windows this file runs under emulation.
 
-Keyware.exe · v1.4.1 · 20.8 MB
+Keyware.exe · v1.4.2 · 20.8 MB
 
-SHA-256 6EE816FD5706AD91FF13F1C6FA97E6EDA4E9738E884C7D10AD08BBE0A21554A0
+SHA-256 D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8
 
 Windows on ARM
 
@@ -650,6 +608,6 @@ Windows on ARM
 
 Native build, including Copilot+ PCs.
 
-Keyware-arm64.exe · v1.4.1 · 16.1 MB
+Keyware-arm64.exe · v1.4.2 · 16.1 MB
 
-SHA-256 D9CEEE6E7AC046E38FC0E736339E011D07175B191E874CCFDAF1DAA460E75E8D
+SHA-256 FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA
