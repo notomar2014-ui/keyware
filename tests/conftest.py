@@ -42,6 +42,22 @@ def block_real_side_effects(monkeypatch):
     monkeypatch.setitem(sys.modules, "winsound", fake_audio)
 
 
+@pytest.fixture(autouse=True)
+def _clear_launch_cache():
+    """Launch targets and the installed-app list are process-wide. Keep tests independent."""
+    from engine.applaunch import _activator, clear_launch_cache
+
+    def reset() -> None:
+        clear_launch_cache()
+        for name in ("ready", "manager", "activate"):
+            if hasattr(_activator, name):
+                delattr(_activator, name)
+
+    reset()
+    yield
+    reset()
+
+
 def _patch_flaky_tk_init():
     """Windows Tcl sometimes fails to start the Nth Tk() in one process ("tcl_findLibrary").
 

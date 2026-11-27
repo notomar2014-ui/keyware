@@ -20,6 +20,8 @@ import difflib
 import os
 import re
 import sys
+import threading
+import time
 from dataclasses import dataclass, field
 from functools import lru_cache
 
@@ -237,6 +239,282 @@ def launch_token(launch: Launch) -> str:
     return launch.target
 
 
+def _looks_like_path(text: str) -> bool:
+    """True for a filesystem path, including a Windows path when this process is not on Windows."""
+    raw = (text or "").strip().strip('"')
+    if not raw:
+        return False
+    expanded = os.path.expandvars(raw).replace("/", "\\")
+    if os.path.isabs(expanded) or expanded.startswith("\\\\"):
+        return True
+    return len(expanded) >= 3 and expanded[1] == ":" and expanded[2] == "\\"
+
+
+def _token_key(query: str) -> str:
+    return (query or "").strip().strip('"').replace("/", "\\").lower()
+
+
+_TOKEN_TTL = 300.0
+_TOKEN_LOCK = threading.Lock()
+_TOKENS: dict[str, tuple[float, str]] = {}
+
+
+def lookup_token(query: str) -> str | None:
+    """A launch target resolved moments ago. None when this name has not been cached."""
+    key = _token_key(query)
+    if not key:
+        return None
+    now = time.monotonic()
+    with _TOKEN_LOCK:
+        hit = _TOKENS.get(key)
+        if hit is None:
+            return None
+        stored, token = hit
+        if now - stored > _TOKEN_TTL:
+            _TOKENS.pop(key, None)
+            return None
+        return token
+
+
+def remember_token(query: str, token: str) -> None:
+    key = _token_key(query)
+    if not key or not token:
+        return
+    with _TOKEN_LOCK:
+        _TOKENS[key] = (time.monotonic(), token)
+
+
+def clear_launch_cache() -> None:
+    """Drop cached launch targets and the installed-app list. Tests start from empty."""
+    global _CACHE, _CACHE_AT, _PACKAGED_RUNNING
+    with _TOKEN_LOCK:
+        _TOKENS.clear()
+    with _CACHE_LOCK:
+        _CACHE = None
+        _CACHE_AT = 0.0
+    # A test that stopped halfway must not leave the refresh flag stuck on.
+    # Production calls this only when nothing is refreshing.
+    with _PACKAGED_LOCK:
+        _PACKAGED_RUNNING = False
+
+
+def _system_dirs(search_dirs) -> list[str]:
+    found: list[str] = []
+    seen: set[str] = set()
+    for directory in search_dirs or []:
+        folded = str(directory).replace("/", "\\").rstrip("\\")
+        key = folded.lower()
+        if key in seen:
+            continue
+        if key.endswith("\\system32") or key.endswith("\\syswow64"):
+            seen.add(key)
+            found.append(str(directory))
+    return found
+
+
+def _alias_dirs(search_dirs) -> list[str]:
+    """Only App Execution Alias folders. System32 is not one of them."""
+    found: list[str] = []
+    seen: set[str] = set()
+    for directory in search_dirs or []:
+        probe = os.path.join(str(directory), "x.exe")
+        if not is_execution_alias(probe):
+            continue
+        key = str(directory).replace("/", "\\").rstrip("\\").lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        found.append(str(directory))
+    return found
+
+
+def _candidate_names(known: KnownApp | None, raw: str) -> list[str]:
+    names: list[str] = []
+    if known is not None:
+        names.extend(known.exes)
+    base = os.path.basename(str(raw or "").replace("/", "\\"))
+    if base:
+        names.append(base)
+        if not base.lower().endswith(".exe"):
+            names.append(base + ".exe")
+    unique: list[str] = []
+    seen: set[str] = set()
+    for name in names:
+        key = name.lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        unique.append(name)
+    return unique
+
+
+def _exists_real(path: str, exists) -> bool:
+    try:
+        return bool(exists(path)) and not is_execution_alias(path)
+    except Exception:
+        return False
+
+
+def _real_known_exe(known: KnownApp, exists, search_dirs) -> str | None:
+    """A normal file for this app. One stat per location, not a directory listing."""
+    if exists is None:
+        return None
+    for path in known.paths:
+        full = os.path.expandvars(path)
+        if "%" in full:
+            continue
+        if _exists_real(full, exists):
+            return full
+    for directory in _system_dirs(search_dirs):
+        for name in known.exes:
+            exe = name if name.lower().endswith(".exe") else name + ".exe"
+            full = os.path.join(directory, exe)
+            if _exists_real(full, exists):
+                return full
+    return None
+
+
+def _alias_hit(names: list[str], list_dir, search_dirs) -> str | None:
+    if list_dir is None or not names:
+        return None
+    wanted = {name.lower() if name.lower().endswith(".exe") else name.lower() + ".exe" for name in names}
+    for directory in _alias_dirs(search_dirs):
+        try:
+            entries = list_dir(directory) or []
+        except Exception:
+            continue
+        for entry in entries:
+            if str(entry).lower() in wanted:
+                return os.path.join(directory, str(entry))
+    return None
+
+
+def _alias_launch(target: str, label: str) -> Launch:
+    """An App Execution Alias. ShellExecute can open it. CreateProcess cannot.
+
+    ``shell`` here means startfile, not ``subprocess`` with a shell.
+    """
+    via_shell = True
+    return Launch("exe", target, label, shell=via_shell)
+
+
+def _which_launch(known: KnownApp | None, raw: str, which) -> Launch | None:
+    if which is None:
+        return None
+    label = known.label if known is not None else os.path.basename(raw.replace("/", "\\"))
+    for name in _candidate_names(known, raw):
+        try:
+            found = which(name)
+        except Exception:
+            continue
+        if not found:
+            continue
+        if is_execution_alias(found):
+            if known is not None and known.aumid:
+                return Launch("packaged", known.aumid, label)
+            return _alias_launch(found, os.path.basename(found))
+        return Launch("exe", found, label or os.path.basename(found), shell=False)
+    return None
+
+
+def _app_path_launch(known: KnownApp | None, raw: str, app_path, exists) -> Launch | None:
+    if app_path is None:
+        return None
+    label = known.label if known is not None else ""
+    for name in _candidate_names(known, raw):
+        exe = name if name.lower().endswith(".exe") else name + ".exe"
+        try:
+            located = app_path(exe)
+        except Exception:
+            continue
+        if not located:
+            continue
+        if is_execution_alias(located):
+            if known is not None and known.aumid:
+                return Launch("packaged", known.aumid, label or known.label)
+            return _alias_launch(located, os.path.basename(located))
+        if exists is None or _exists_real(located, exists):
+            return Launch("exe", located, label or os.path.basename(located), shell=False)
+    return None
+
+
+def _launch_for_path(path: str, exists, list_dir) -> Launch | None:
+    """An explicit path. A missing file is not turned into a guessed app."""
+    expanded = os.path.expandvars(path)
+    try:
+        present = bool(exists(expanded))
+    except Exception:
+        present = False
+    alias = is_execution_alias(expanded)
+    if present and not alias:
+        kind = "shortcut" if expanded.lower().endswith(".lnk") else "exe"
+        return Launch(kind, expanded, os.path.basename(expanded), shell=False)
+    listed = alias and (present or (list_dir is not None and path_is_listed(expanded, list_dir)))
+    if not listed:
+        return None
+    known = _known_for(expanded)
+    if known is not None and known.aumid:
+        return Launch("packaged", known.aumid, known.label)
+    return _alias_launch(expanded, os.path.basename(expanded))
+
+
+def resolve_fast(
+    query: str,
+    *,
+    exists,
+    which=None,
+    app_path=None,
+    list_dir=None,
+    search_dirs=None,
+) -> Launch | None:
+    """A launch target that does not walk the Start menu and does not start PowerShell.
+
+    Known inbox apps (Calculator, Settings, Phone Link) use their app id after a
+    couple of existence checks in System32. A normal exe found there, or on
+    PATH, is returned as that file. The installed-app catalog is only for a
+    name this function cannot place.
+    """
+    raw = (query or "").strip().strip('"')
+    if not raw or is_packaged_token(raw):
+        return None
+    dirs = list(search_dirs or [])
+    if _looks_like_path(raw):
+        return _launch_for_path(os.path.expandvars(raw), exists, list_dir)
+    known = _known_for(raw)
+    if known is not None:
+        real = _real_known_exe(known, exists, dirs)
+        if real is not None:
+            return Launch("exe", real, known.label, shell=False)
+        # Store apps that ship with Windows do not need a Start-menu scan to prove it.
+        if known.inbox and known.aumid:
+            return Launch("packaged", known.aumid, known.label)
+        found = _which_launch(known, raw, which)
+        if found is not None and not found.shell:
+            return found
+        alias = _alias_hit(list(known.exes), list_dir, dirs)
+        if alias is not None and known.aumid:
+            return Launch("packaged", known.aumid, known.label)
+        if alias is not None:
+            return _alias_launch(alias, known.label)
+        if found is not None:
+            return found
+        located = _app_path_launch(known, raw, app_path, exists)
+        if located is not None:
+            return located
+        return None
+    found = _which_launch(None, raw, which)
+    if found is not None:
+        return found
+    located = _app_path_launch(None, raw, app_path, exists)
+    if located is not None:
+        return located
+    base = os.path.basename(raw.replace("/", "\\"))
+    alias = _alias_hit([base], list_dir, dirs)
+    if alias is not None:
+        return _alias_launch(alias, os.path.basename(alias))
+    return None
+
+
 def is_packaged_token(text: str) -> bool:
     raw = (text or "").strip()
     lower = raw.lower()
@@ -398,15 +676,24 @@ def _from_known(known: KnownApp, catalog: Catalog, which, exists, app_path) -> L
             full = os.path.expandvars(path)
             if "%" not in full and exists(full):
                 return Launch("exe", full, known.label)
-    labels = [known.label, *known.names]
+    labels = [normalize_name(known.label), *[normalize_name(name) for name in known.names]]
+    exe_stems = {item[:-4] if item.lower().endswith(".exe") else item.lower() for item in known.exes}
+    matched: InstalledApp | None = None
     for app in catalog.apps:
         if app.kind == "packaged" and known.aumid and app.target.lower() == known.aumid.lower():
             return Launch("packaged", app.target, app.name or known.label)
-        if any(_name_score(normalize_name(label), app.name) >= 0.99 for label in labels) or _prefix_hit(known, app.name):
-            return _launch_from_installed(app, known.label)
-        exe_stem = os.path.splitext(app.exe)[0]
-        if exe_stem and exe_stem in {item[:-4] if item.endswith(".exe") else item for item in known.exes}:
-            return _launch_from_installed(app, known.label)
+        app_norm = normalize_name(app.name)
+        exe_stem = os.path.splitext(app.exe)[0].lower()
+        if app_norm in labels or _prefix_hit(known, app.name) or (exe_stem and exe_stem in exe_stems):
+            matched = app
+            break
+    if matched is None:
+        for app in catalog.apps:
+            if any(_name_score(label, app.name) >= 0.99 for label in labels):
+                matched = app
+                break
+    if matched is not None:
+        return _launch_from_installed(matched, known.label)
     if known.protocol and known.protocol.lower() in {item.lower() for item in catalog.protocols}:
         return Launch("protocol", known.protocol + ":", known.label)
     if known.aumid and _inbox_allowed(known, catalog):
@@ -430,6 +717,11 @@ def _prefix_hit(known: KnownApp, name: str) -> bool:
 
 
 def _from_catalog(norm: str, catalog: Catalog) -> Launch | None:
+    # Exact names are a string compare. Fuzzy matching walks every installed app
+    # and is only used when nothing matched exactly.
+    for app in catalog.apps:
+        if norm and (norm == normalize_name(app.name) or norm == normalize_name(os.path.splitext(app.exe)[0])):
+            return _launch_from_installed(app, app.name)
     best: InstalledApp | None = None
     best_score = 0.0
     for app in catalog.apps:
@@ -523,7 +815,44 @@ def activate_aumid(aumid: str) -> None:
     )
 
 
+# One activator per thread. CoCreateInstance plus CoUninitialize on every launch
+# paid the COM startup cost again, after the hold had already elapsed.
+_activator = threading.local()
+
+
+def prepare_activation() -> bool:
+    """Create the packaged-app activator on this thread. False when it is unavailable.
+
+    The launch thread calls this at startup, while a hold is still being timed,
+    so the first Calculator launch is just ActivateApplication.
+    """
+    if sys.platform != "win32":
+        return False
+    if getattr(_activator, "ready", False):
+        return True
+    try:
+        manager, activate = _load_activator()
+    except Exception:
+        return False
+    _activator.manager = manager
+    _activator.activate = activate
+    _activator.ready = True
+    return True
+
+
 def _activate_com(aumid: str) -> None:
+    import ctypes
+    from ctypes import wintypes
+
+    if not prepare_activation():
+        raise OSError("ApplicationActivationManager is unavailable")
+    pid = wintypes.DWORD()
+    hr = _activator.activate(_activator.manager, aumid, None, 0, ctypes.byref(pid))
+    if hr < 0:
+        raise OSError(f"ActivateApplication failed ({hr})")
+
+
+def _load_activator():
     import ctypes
     from ctypes import wintypes
 
@@ -540,11 +869,7 @@ def _activate_com(aumid: str) -> None:
     activate = ctypes.WINFUNCTYPE(
         ctypes.HRESULT, ctypes.c_void_p, wintypes.LPCWSTR, wintypes.LPCWSTR, ctypes.c_int, ctypes.POINTER(wintypes.DWORD)
     )(vtable[3])
-    pid = wintypes.DWORD()
-    hr = activate(manager, aumid, None, 0, ctypes.byref(pid))
-    ole32.CoUninitialize()
-    if hr < 0:
-        raise OSError(f"ActivateApplication failed ({hr})")
+    return manager, activate
 
 
 def _guid(text: str):
@@ -567,28 +892,102 @@ def _guid(text: str):
 
 _CACHE: Catalog | None = None
 _CACHE_AT = 0.0
+_CACHE_LOCK = threading.Lock()
+_PACKAGED_LOCK = threading.Lock()
+_PACKAGED_RUNNING = False
+# Long enough that a launch does not rebuild the Start menu every half minute.
+# A stale list is returned immediately while a refresh runs off the launch path.
+_CATALOG_TTL = 300.0
 
 
 def windows_catalog(force: bool = False) -> Catalog:
-    """Installed shortcuts, App Paths, known folders, and packaged apps. Cached briefly."""
-    global _CACHE, _CACHE_AT
-    import time
+    """Installed shortcuts and App Paths.
 
+    PowerShell (``Get-StartApps``) is never run on the caller. A list that is
+    already in memory is returned as-is, including when it is older than the
+    TTL, and refreshed in the background. The first cold read walks the Start
+    menu only; the packaged-app list arrives on ``keyware-apps``.
+    """
     if sys.platform != "win32":
         return Catalog()
     now = time.monotonic()
-    if not force and _CACHE is not None and now - _CACHE_AT < 30:
-        return _CACHE
+    with _CACHE_LOCK:
+        cached = _CACHE
+        fresh = cached is not None and not force and now - _CACHE_AT < _CATALOG_TTL
+    if fresh:
+        return cached  # type: ignore[return-value]
+    if cached is not None and not force:
+        _schedule_refresh()
+        return cached
+    return _build_fast_catalog()
+
+
+def warm_catalog() -> None:
+    """Start the installed-app read on a background thread. A no-op off Windows."""
+    if sys.platform != "win32":
+        return
+    _schedule_refresh()
+
+
+def _schedule_refresh() -> None:
+    global _PACKAGED_RUNNING
+    with _PACKAGED_LOCK:
+        if _PACKAGED_RUNNING:
+            return
+        _PACKAGED_RUNNING = True
+    threading.Thread(target=_refresh_worker, name="keyware-apps", daemon=True).start()
+
+
+def _schedule_packaged() -> None:
+    """Packaged-app list only. The caller already published shortcuts."""
+    _schedule_refresh()
+
+
+def _refresh_worker() -> None:
+    global _PACKAGED_RUNNING, _CACHE, _CACHE_AT
+    try:
+        with _CACHE_LOCK:
+            have_fast = _CACHE is not None
+        if not have_fast:
+            _build_fast_catalog(schedule=False)
+        packaged, enumerated = _read_packaged()
+        if not enumerated:
+            return
+        with _CACHE_LOCK:
+            base = _CACHE or Catalog()
+            apps = [app for app in base.apps if app.kind != "packaged"]
+            apps.extend(packaged)
+            _CACHE = Catalog(apps=apps, protocols=base.protocols, packaged_enumerated=True)
+            _CACHE_AT = time.monotonic()
+        with _TOKEN_LOCK:
+            _TOKENS.clear()
+    finally:
+        with _PACKAGED_LOCK:
+            _PACKAGED_RUNNING = False
+
+
+def _build_fast_catalog(*, schedule: bool = True) -> Catalog:
+    """Shortcuts, App Paths, and known install paths. Does not start PowerShell."""
+    global _CACHE, _CACHE_AT
     apps: list[InstalledApp] = []
     apps.extend(_read_shortcuts())
     apps.extend(_read_app_paths())
     apps.extend(_read_known_paths())
-    packaged, enumerated = _read_packaged()
-    apps.extend(packaged)
     protocols = _read_protocols()
-    _CACHE = Catalog(apps=apps, protocols=protocols, packaged_enumerated=enumerated)
-    _CACHE_AT = now
-    return _CACHE
+    with _CACHE_LOCK:
+        previous = _CACHE
+    if previous is not None and previous.packaged_enumerated:
+        apps.extend(app for app in previous.apps if app.kind == "packaged")
+        enumerated = True
+    else:
+        enumerated = False
+    catalog = Catalog(apps=apps, protocols=protocols, packaged_enumerated=enumerated)
+    with _CACHE_LOCK:
+        _CACHE = catalog
+        _CACHE_AT = time.monotonic()
+    if schedule:
+        _schedule_packaged()
+    return catalog
 
 
 def _read_shortcuts() -> list[InstalledApp]:
@@ -715,19 +1114,34 @@ def _same_known_app(expected: str, actual: str) -> bool:
 register_extra_match(_same_known_app)
 
 
+def _path_which(name: str) -> str | None:
+    """``shutil.which`` only. No directory listing.
+
+    Listing System32 to notice one file name was a visible pause before an app
+    opened. Aliases are found by listing ``WindowsApps`` in ``resolve_fast``.
+    """
+    import shutil
+
+    try:
+        return shutil.which(name)
+    except Exception:
+        return None
+
+
 def windows_which(name: str) -> str | None:
-    """``shutil.which``, then a directory listing.
+    """``shutil.which``, then the App Execution Alias folder.
 
     ``shutil.which`` uses ``os.path.exists``, which is false for App Execution
     Aliases, so ``calc.exe`` on PATH is reported as missing. Listing
-    ``WindowsApps`` still shows the name.
+    ``WindowsApps`` still shows the name. System32 is a normal directory and
+    ``which`` already searched it; listing every file there is not part of a launch.
     """
     import shutil
 
     found = shutil.which(name)
     if found:
         return found
-    return listed_exe(name, safe_list_dir, default_search_dirs())
+    return listed_exe(name, safe_list_dir, _alias_dirs(default_search_dirs()))
 
 
 def windows_search_dirs() -> list[str]:

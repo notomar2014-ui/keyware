@@ -391,6 +391,41 @@ class InputDetector:
         effects.extend(self._expire_stuck(now))
         return effects
 
+    def next_wake(self, now: float) -> float | None:
+        """Earliest time a hold, tap-dance, leader, or setup must be checked.
+
+        The tick thread sleeps until this moment when it is sooner than the
+        normal poll, so a hold runs at its threshold instead of one poll later.
+        ``None`` means nothing is being timed.
+        """
+        if not self.enabled or self.paused:
+            return None
+        wakes: list[float] = []
+        for state in self.tap_holds.values():
+            if state.state == "pending":
+                wakes.append(state.at + state.binding.hold_ms / 1000.0)
+        for key, down in self.held.items():
+            if down.consumed and not down.fired_ids:
+                continue
+            if down.profile_id != self.active_id:
+                continue
+            for binding in self._holds(key):
+                if binding.id in down.fired_ids:
+                    continue
+                wakes.append(down.at + binding.hold_ms / 1000.0)
+        if self.dance is not None:
+            wakes.append(self.dance.deadline)
+        if self.leader_until is not None:
+            wakes.append(self.leader_until)
+        setup = self.setup_hold
+        if setup is not None and not setup.done and setup.profile_id == self.active_id:
+            limit = self._setup_hold_ms()
+            if limit > 0:
+                wakes.append(setup.at + limit / 1000.0)
+        if not wakes:
+            return None
+        return min(wakes)
+
     def reconcile(self, is_down: Callable[[str], bool], now: float) -> list[Effect]:
         """Drop keys the OS says are up. Used after Win+L and other lost key-ups."""
         if not self.enabled:

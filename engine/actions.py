@@ -519,36 +519,74 @@ class SystemOpener:
         return self._fetcher(url, USER_AGENT)
 
 
-def resolve_installed_app(app: str) -> str | None:
+def resolve_installed_app(
+    app: str,
+    *,
+    catalog_reader=None,
+    which=None,
+    exists=None,
+    app_path=None,
+    list_dir=None,
+    search_dirs=None,
+) -> str | None:
     """A path, ``spotify:``, or ``appsfolder:<AUMID>``. None when nothing on this PC can open it.
 
-    Off Windows this is always None: tests never launch a real program.
-    An explicit packaged id is returned as-is so a saved binding still opens.
+    Off Windows this is None unless a test passes its own file and catalog
+    functions. An explicit packaged id is returned as-is so a saved binding
+    still opens.
+
+    Known apps and real executables are resolved without the Start menu and
+    without PowerShell. The installed-app catalog runs only for a name that
+    those checks cannot place, and that read does not start PowerShell on
+    this call.
     """
     from engine.applaunch import (
-        APPS_PREFIX, is_packaged_token, launch_token, packaged_aumid, resolve_launch, windows_app_path,
-        windows_catalog, windows_search_dirs, windows_which,
+        APPS_PREFIX, _looks_like_path, _path_which, is_packaged_token, launch_token, lookup_token,
+        packaged_aumid, remember_token, resolve_fast, resolve_launch, windows_app_path,
+        windows_catalog, windows_search_dirs,
     )
     from engine.appidentity import safe_list_dir
 
     text = (app or "").strip().strip('"')
+    if not text:
+        return None
     if is_packaged_token(text):
         aumid = packaged_aumid(text)
         return text if text.lower().startswith(APPS_PREFIX) else APPS_PREFIX + aumid
-    if sys.platform != "win32":
+    cached = lookup_token(text)
+    if cached is not None:
+        return cached
+    injected = any(item is not None for item in (catalog_reader, which, exists, app_path, list_dir, search_dirs))
+    if sys.platform != "win32" and not injected:
         return None
+
+    exists_fn = os.path.exists if exists is None else exists
+    which_fn = _path_which if which is None else which
+    app_path_fn = windows_app_path if app_path is None else app_path
+    list_dir_fn = safe_list_dir if list_dir is None else list_dir
+    dirs = list(windows_search_dirs() if search_dirs is None else search_dirs)
+    fast = resolve_fast(
+        text, exists=exists_fn, which=which_fn, app_path=app_path_fn, list_dir=list_dir_fn, search_dirs=dirs,
+    )
+    if fast is not None:
+        token = launch_token(fast)
+        remember_token(text, token)
+        return token
+    # A path that is not there stays not there. Do not guess a Store app from its file name.
+    if _looks_like_path(text):
+        return None
+    reader = windows_catalog if catalog_reader is None else catalog_reader
+    catalog = reader()
+    # which / list_dir already ran in resolve_fast. A second PATH walk here
+    # listed System32 on every Start-menu name.
     result = resolve_launch(
-        text,
-        windows_catalog(),
-        which=windows_which,
-        exists=os.path.exists,
-        app_path=windows_app_path,
-        list_dir=safe_list_dir,
-        search_dirs=windows_search_dirs(),
+        text, catalog, which=lambda _name: None, exists=exists_fn, app_path=lambda _name: None, list_dir=None,
     )
     if result.launch is None:
         return None
-    return launch_token(result.launch)
+    token = launch_token(result.launch)
+    remember_token(text, token)
+    return token
 
 
 def _frame_children(user32, exe_of, hwnd) -> list[tuple[str, str]]:

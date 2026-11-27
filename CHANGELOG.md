@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- A hold runs at the moment its time is reached, while the key is still down. Opening an app no longer walks the Start menu or starts PowerShell before the program is launched. Calculator (`calc.exe`), other known Windows apps, and a normal exe start immediately. The first time Windows itself opens a Store app (a cold Calculator) can still take a moment; opening it again, or opening Notepad, does not wait on Keyware.
+
 ## 1.4.2
 
 - Windows app names are recognized. `calc.exe`, `calc`, `notepad.exe`, `mspaint.exe`, and `wt.exe` are accepted in any case, with or without `.exe`. App Execution Aliases under `WindowsApps` are not invisible just because `os.path.exists` cannot open them. A real program in `System32`, `SysWOW64`, or on `PATH` is used when it is there. Store apps such as Calculator, Photos, Paint, Settings, Terminal, and Xbox still open by app id.
