@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.3
 
 - A hold runs at the moment its time is reached, while the key is still down. Opening an app no longer walks the Start menu or starts PowerShell before the program is launched. Calculator (`calc.exe`), other known Windows apps, and a normal exe start immediately. The first time Windows itself opens a Store app (a cold Calculator) can still take a moment; opening it again, or opening Notepad, does not wait on Keyware.
 

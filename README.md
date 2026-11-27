@@ -39,6 +39,10 @@ bindings you review before saving. Nothing is ever saved automatically.
   a *Play* song or video), also use the network. What each one sends is on the
   [privacy page](https://keyware.site/privacy).
 
+## New in 1.4.3
+
+- **Holds open the app immediately.** A hold runs at the moment its time is reached, while the key is still down. Opening an app no longer walks the Start menu or starts PowerShell before the program is launched. Calculator (`calc.exe`), other known Windows apps, and a normal exe start immediately. The first time Windows itself opens a Store app (a cold Calculator) can still take a moment; opening it again, or opening Notepad, does not wait on Keyware.
+
 ## New in 1.4.2
 
 - **Windows app names.** `calc.exe`, `notepad.exe`, `mspaint.exe`, and `wt.exe` are recognized with or without `.exe`, in any case. Store aliases under `WindowsApps`, and programs in `System32` or on `PATH`, are not reported as missing.

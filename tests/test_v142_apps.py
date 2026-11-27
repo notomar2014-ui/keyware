@@ -55,8 +55,8 @@ def _exists_system32(path):
 def test_version_is_142():
     from store.validate_msix import _version4
 
-    assert __version__ == "1.4.2"
-    assert _version4() == "1.4.2.0"
+    assert __version__ == "1.4.3"
+    assert _version4() == "1.4.3.0"
 
 
 def test_alias_groups_do_not_overlap_and_each_is_one_app():
