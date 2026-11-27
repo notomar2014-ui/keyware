@@ -32,7 +32,7 @@ bindings you review before saving. Nothing is ever saved automatically.
 - **Safe by design.** An unbound key is never swallowed, the hook only runs while
   Keyware is ON, and **Ctrl + Alt + Shift + Esc** drops it instantly.
 - **No admin rights, no ads.**
-- **Starts with Windows by default**, silently in the system tray (no window, hotkeys working). Turn it off in Settings. Closing the window keeps Keyware in the tray; **Quit** in the tray fully closes it.
+- **Starts with Windows by default**, silently in the system tray (no window, hotkeys working). Turn it off in Settings. Closing the window keeps Keyware in the tray; **Quit** in the tray fully closes it. Clicking Keyware in the Start menu, or launching it again, brings that window back.
 - **The hook engine never touches the network.** Optional Text mode sends the
   sentence you type and a short setup summary (not your keystrokes). Optional
   feedback from Settings, and actions you create that look something up (such as

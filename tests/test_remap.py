@@ -258,9 +258,10 @@ def test_main_forwards_the_minimized_flag(monkeypatch):
     monkeypatch.setattr(entry, "_install_excepthook", lambda: None)
     seen: dict[str, bool] = {}
 
-    def fake_run(minimized: bool = False, background: bool = False) -> None:
+    def fake_run(minimized: bool = False, background: bool = False, activation=None) -> None:
         seen["minimized"] = minimized
         seen["background"] = background
+        seen["listening"] = activation is not None
 
     import ui.app as app_module
 
@@ -271,3 +272,4 @@ def test_main_forwards_the_minimized_flag(monkeypatch):
     assert seen["minimized"] is True and seen["background"] is True
     assert entry.main([]) == 0
     assert seen["minimized"] is False and seen["background"] is False
+    assert seen["listening"] is True

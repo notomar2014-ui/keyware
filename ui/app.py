@@ -236,6 +236,7 @@ class KeywareApp(ctk.CTk):
         start_tray: bool = True,
         start_minimized: bool = False,
         nudge_state=None,
+        activation=None,
     ):
         ctk.set_appearance_mode("dark")  # Keyware is dark only
         ctk.set_default_color_theme(str(theme_file()))
@@ -247,6 +248,7 @@ class KeywareApp(ctk.CTk):
         self.tray = None
         self.tray_notices: list[str] = []
         self._tray_events: queue.Queue[str] = queue.Queue()
+        self._activation = activation
         self._macro_rows: list[dict] = []
         self._record_target = None
         self._record_kind = ""
@@ -3158,6 +3160,7 @@ class KeywareApp(ctk.CTk):
         try:
             if self._drain_tray():
                 return
+            self._reveal_if_requested()
             self._drain()
             self._drain_ai()
             self._drain_ai_key()
@@ -3236,12 +3239,60 @@ class KeywareApp(ctk.CTk):
         self._append(f"Config file  {path}")
 
     def _show(self) -> None:
+        """Unhide, raise, and focus. The tray's Show Keyware and a second launch share this."""
         self.deiconify()
         self.lift()
         try:
             self.focus_force()
         except Exception:
+            pass
+        self._restore_os_window()
+
+    def _restore_os_window(self) -> None:
+        """Win32 SW_RESTORE / SW_SHOW plus SetForegroundWindow on the Tk frame.
+
+        Tk's deiconify shows the window with SW_SHOWNOACTIVATE, so it does not
+        come forward on its own. Tests set ``_restore_window`` and never call
+        user32.
+        """
+        restore = getattr(self, "_restore_window", None)
+        if restore is None:
+            if sys.platform != "win32":
+                return
+            from engine.instance import restore_main_window
+
+            restore = restore_main_window
+        try:
+            restore(int(self.winfo_id()))
+        except Exception:
             return
+
+    def _check_activation(self) -> bool:
+        source = getattr(self, "_activation", None)
+        if source is None:
+            return False
+        ask = getattr(source, "activation_requested", None)
+        if not callable(ask):
+            return False
+        try:
+            return bool(ask())
+        except Exception:
+            return False
+
+    def _reveal_if_requested(self) -> None:
+        """Show the window when a second launch asked, then let that process exit."""
+        if not self._check_activation():
+            return
+        try:
+            self._show()
+        finally:
+            source = getattr(self, "_activation", None)
+            ack = getattr(source, "acknowledge", None) if source is not None else None
+            if callable(ack):
+                try:
+                    ack()
+                except Exception:
+                    pass
 
     def _on_close(self) -> None:
         self._stop_recording(cancel=True)
@@ -3286,7 +3337,7 @@ class KeywareApp(ctk.CTk):
         self.destroy()
 
 
-def run(minimized: bool = False, background: bool = False) -> None:
+def run(minimized: bool = False, background: bool = False, activation=None) -> None:
     """background: the Windows sign-in launch. Tray only, no window, no popups, no nudge, not counted."""
     from engine.actions import SystemOpener
     from engine.audio_cue import AudioCue, winsound_player
@@ -3334,7 +3385,12 @@ def run(minimized: bool = False, background: bool = False) -> None:
     if not background:
         state_file = nudge.state_path(service.store.path)
         nudge_state = (state_file, nudge.record_launch(state_file))
-    app = KeywareApp(service, start_minimized=minimized or background, nudge_state=nudge_state)
+    app = KeywareApp(
+        service,
+        start_minimized=minimized or background,
+        nudge_state=nudge_state,
+        activation=activation,
+    )
     app.mainloop()
 
 

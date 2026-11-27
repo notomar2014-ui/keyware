@@ -199,12 +199,13 @@ def test_second_instance_uses_the_injected_lock():
     assert released == ["token"]
 
 
-def test_main_refuses_a_second_instance(monkeypatch, capsys):
+def test_main_reveals_a_second_instance(monkeypatch, capsys):
     monkeypatch.setattr(InstanceLock, "acquire", lambda _self: False)
+    monkeypatch.setattr("engine.instance.notify_running_instance", lambda: True)
     from main import main
 
-    assert main([]) == 2
-    assert "already running" in capsys.readouterr().out
+    assert main([]) == 0
+    assert "Bringing the window forward" in capsys.readouterr().out
 
 
 def test_diag_installs_and_removes_a_fake_hook():
