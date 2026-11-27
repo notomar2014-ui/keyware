@@ -5,11 +5,11 @@
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20.8 MB, and native ARM64 Keyware-arm64.exe, about 16.1 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.4.2.
+- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20.8 MB, and native ARM64 Keyware-arm64.exe, about 16.1 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.4.3.
 - Download (x64): https://keyware.site/download/Keyware.exe
 - Download (ARM64): https://keyware.site/download/Keyware-arm64.exe
-- SHA-256 (x64 Keyware.exe 1.4.2): D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8
-- SHA-256 (ARM64 Keyware-arm64.exe 1.4.2): FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA
+- SHA-256 (x64 Keyware.exe 1.4.3): D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733
+- SHA-256 (ARM64 Keyware-arm64.exe 1.4.3): 2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50
 - License: MIT, open source.
 - Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. A Play action looks up the name you entered. Feedback sends the message, email, app version and a random install ID; the server keeps a salted hash of that ID. See https://keyware.site/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
@@ -31,29 +31,29 @@ Key facts:
 
 # Home page
 
-Version 1.4.2
+Version 1.4.3
 
-## Built-in Windows apps, named correctly.
+## Hold to open an app, without the wait.
 
-Calculator and the other WindowsApps aliases match the real window, including when Windows hosts it. Full release notes
+Calculator and other built-in Windows apps resolve in under 50 ms. A hold no longer waits on a Start-menu or PowerShell scan. Full release notes
 
-1.4.2
+1.4.3
 
-### App Execution Aliases
+### Under 50 ms
 
-calc.exe, Notepad, Paint, and Terminal are recognized in any case, with or without .exe. A WindowsApps alias counts as that app.
+Built-in apps such as Calculator resolve directly. The hold does not walk the Start menu or run PowerShell Get-StartApps before the program opens.
 
-1.4.2
+1.4.3
 
-### The hosted window
+### A catalog in the background
 
-A rule or script for calc.exe matches Calculator when Windows hosts it in ApplicationFrameHost.exe. Those name checks are cached on the hook.
+Unknown Start-menu names warm Get-StartApps in the background. That catalog is kept for 5 minutes, and a launch does not wait for it.
 
-1.4.2
+1.4.3
 
-### Shells stay blocked
+### Its own launch thread
 
-Scripts and Text mode refuse Windows Terminal, WSL, winget, and pwsh by the app, so they cannot open a terminal.
+App launches run on a dedicated thread with a reused COM activator. The hold dispatches the action before logging and config housekeeping.
 
 FAQ
 
@@ -123,7 +123,7 @@ Source: https://keyware.site/guide
 
 Keyware is a single program file. There's no installer and nothing to sign up for.
 
-- Download Most PCs: Download 64-bit (x64) and save Keyware.exe (v1.4.2, 20.8 MB). SHA-256 D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8. Windows on ARM, including Copilot+ PCs: Download ARM64 and save Keyware-arm64.exe (v1.4.2, 16.1 MB). SHA-256 FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
+- Download Most PCs: Download 64-bit (x64) and save Keyware.exe (v1.4.3, 20.8 MB). SHA-256 D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733. Windows on ARM, including Copilot+ PCs: Download ARM64 and save Keyware-arm64.exe (v1.4.3, 16.1 MB). SHA-256 2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
 
 ### Download
 
@@ -280,7 +280,7 @@ Opens a web page in your default browser. Links must start with http:// or https
 
 ### ▢Open app
 
-Starts a program by its Start menu name, .exe, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. calc.exe, notepad.exe, mspaint.exe, and wt.exe count in any case, with or without .exe, including a WindowsApps App Execution Alias. Calculator's window is CalculatorApp.exe. A per-app rule, profile, or script for calc.exe matches that window, including when Windows hosts it in ApplicationFrameHost.exe. A rule saved as ApplicationFrameHost.exe matches the app that frame is hosting. Name checks are cached so the keyboard hook does not rebuild them on every key. Scripts and Text mode refuse shells by the app, including Windows Terminal, WSL, winget, and pwsh.
+Starts a program by its Start menu name, .exe, or path. You can pass links or files for it to open. Shells, scripts, and command switches are refused. calc.exe, notepad.exe, mspaint.exe, and wt.exe count in any case, with or without .exe, including a WindowsApps App Execution Alias. Calculator's window is CalculatorApp.exe. A per-app rule, profile, or script for calc.exe matches that window, including when Windows hosts it in ApplicationFrameHost.exe. A rule saved as ApplicationFrameHost.exe matches the app that frame is hosting. Name checks are cached so the keyboard hook does not rebuild them on every key. Scripts and Text mode refuse shells by the app, including Windows Terminal, WSL, winget, and pwsh. A hold that opens a built-in app such as Calculator resolves it in under 50 ms, with no Start-menu walk and no PowerShell Get-StartApps scan on that path. Unknown Start-menu names are catalogued in the background and kept for 5 minutes. The launch runs on its own thread with a reused COM activator, and the hold dispatches the action before logging.
 
 ### TType text
 
@@ -598,9 +598,9 @@ Most PCs
 
 On ARM64 Windows this file runs under emulation.
 
-Keyware.exe · v1.4.2 · 20.8 MB
+Keyware.exe · v1.4.3 · 20.8 MB
 
-SHA-256 D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8
+SHA-256 D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733
 
 Windows on ARM
 
@@ -608,6 +608,6 @@ Windows on ARM
 
 Native build, including Copilot+ PCs.
 
-Keyware-arm64.exe · v1.4.2 · 16.1 MB
+Keyware-arm64.exe · v1.4.3 · 16.1 MB
 
-SHA-256 FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA
+SHA-256 2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50

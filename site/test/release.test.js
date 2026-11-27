@@ -14,8 +14,8 @@ const { Stats } = require('../api/_lib/stats');
 const { MemoryKV } = require('../api/_lib/kv');
 
 const ROOT = path.join(__dirname, '..');
-const HASH = 'D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8';
-const ARM_HASH = 'FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA';
+const HASH = 'D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733';
+const ARM_HASH = '2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50';
 const CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';
 
 function armAsset(extra = {}) {
@@ -51,17 +51,17 @@ async function run(handler, opts) {
 }
 
 test('x64 release constants match the published file for this version', () => {
-  assert.equal(release.VERSION, '1.4.2');
+  assert.equal(release.VERSION, '1.4.3');
   assert.equal(release.X64.sha256, HASH);
   assert.equal(release.SHA256, HASH);
-  assert.equal(release.X64.bytes, 21844279);
+  assert.equal(release.X64.bytes, 21855700);
   assert.equal(release.X64.size, '20.8 MB');
   assert.equal(release.ARM_SHA256, ARM_HASH);
-  assert.equal(release.ARM_BYTES, 16868206);
+  assert.equal(release.ARM_BYTES, 16878617);
   assert.equal(release.formatSize(release.ARM_BYTES), '16.1 MB');
   assert.notEqual(release.ARM_SHA256, HASH);
   assert.equal(release.X64.version, release.VERSION);
-  assert.equal(release.FILE_PATH, '/download/1.4.2/Keyware.exe');
+  assert.equal(release.FILE_PATH, '/download/1.4.3/Keyware.exe');
   const exe = fs.readFileSync(path.join(ROOT, 'download', release.VERSION, 'Keyware.exe'));
   assert.equal(exe.length, release.X64.bytes);
   assert.equal(crypto.createHash('sha256').update(exe).digest('hex').toUpperCase(), HASH);
@@ -102,9 +102,9 @@ test('lookup uses the release tag for this version and caches one answer', async
   const first = await release.lookupArm({ fetchImpl, now: () => 1000, cache, cacheMs: 5000 });
   const second = await release.lookupArm({ fetchImpl, now: () => 2000, cache, cacheMs: 5000 });
   assert.equal(urls.length, 1);
-  assert.match(urls[0], /\/releases\/tags\/v1\.4\.2$/);
+  assert.match(urls[0], /\/releases\/tags\/v1\.4\.3$/);
   assert.equal(first.sha256, second.sha256);
-  assert.equal(first.version, '1.4.2');
+  assert.equal(first.version, '1.4.3');
 });
 
 test('the release API lists x64 always and ARM64 only when the asset is real', async () => {
@@ -112,7 +112,7 @@ test('the release API lists x64 always and ARM64 only when the asset is real', a
   assert.equal(none.statusCode, 200);
   assert.deepEqual(none.json.builds.map((b) => b.arch), ['x64']);
   assert.equal(none.json.builds[0].sha256, HASH);
-  assert.equal(none.json.version, '1.4.2');
+  assert.equal(none.json.version, '1.4.3');
   const listed = await run(createReleaseHandler({ lookup: async () => release.armFromAsset(armAsset()) }));
   assert.deepEqual(listed.json.builds.map((b) => b.arch), ['x64', 'arm64']);
   assert.equal(listed.json.builds[1].version, listed.json.version);
@@ -160,10 +160,10 @@ test('the download page offers x64 and ARM64 as equal choices, with no Mac downl
   assert.ok(vercel.rewrites.some((r) => r.source === '/download/Keyware-arm64.exe' && r.destination === '/api/download?arch=arm64'));
   assert.ok(!fs.existsSync(path.join(ROOT, 'download', 'Keyware-arm64.exe')));
   const notes = fs.readFileSync(path.join(ROOT, 'whats-new.html'), 'utf8');
-  assert.match(notes, /Version 1\.4\.2/);
-  assert.match(notes, /WindowsApps/);
-  assert.match(notes, /ApplicationFrameHost\.exe/);
-  assert.match(notes, /cached/i);
-  assert.match(notes, /winget/);
+  assert.match(notes, /Version 1\.4\.3/);
+  assert.match(notes, /under 50 ms/);
+  assert.match(notes, /Get-StartApps/);
+  assert.match(notes, /5 minutes/);
+  assert.match(notes, /COM activator/);
   assert.ok(!notes.includes('notomar2014-ui'));
 });
