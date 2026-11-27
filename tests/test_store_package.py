@@ -128,7 +128,7 @@ def test_partner_identity_matches_the_supplied_values(tmp_path):
     saved = json.loads((ROOT / "store" / "partner-identity.json").read_text(encoding="utf-8"))
     assert saved["identity_name"] == "ToolsForYourComputer.Keyware-KeyRemapperforWindows"
     assert saved["publisher"] == "CN=AE8C2F59-F803-4F8E-A325-071CEDD9C69E"
-    assert saved["publisher_display_name"] == "Tools For Your Computer"
+    assert saved["publisher_display_name"] == "Andromatical Labs"
     assert saved["display_name"] == "Keyware - Key Remapper for Windows"
     assert saved["store_id"] == "9NGDP5BL0105"
     assert saved["publisher_display_name"] == saved["publisher_display_name"].strip()
