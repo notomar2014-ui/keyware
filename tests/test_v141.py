@@ -29,8 +29,8 @@ from tests.fakes import RecordingInjector, RecordingOpener, service
 def test_version_and_package_version():
     from store.validate_msix import _version4
 
-    assert __version__ == "1.4.3"
-    assert _version4() == "1.4.3.0"
+    assert __version__ == "1.4.4"
+    assert _version4() == "1.4.4.0"
 
 
 def test_script_is_omitted_until_a_binding_has_one():
