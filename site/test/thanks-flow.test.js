@@ -9,8 +9,8 @@ const { isBot } = require('../api/download');
 const release = require('../api/_lib/release');
 
 const ROOT = path.join(__dirname, '..');
-const X64 = 'D49A9432A1D915C06A50790BDA00051C3431714D763F53EFA3A369EB39DA02D8';
-const ARM = 'FB4AC798CA8455CDEF10366ACBB32C8D02DE2FEED2371DA640C417510B7FDBDA';
+const X64 = 'D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733';
+const ARM = '2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50';
 const KOFI = 'https://ko-fi.com/keyware_donate';
 
 function read(name) {
@@ -58,7 +58,7 @@ test('the thanks page keeps both files, the published hashes, and an optional Ko
   assert.match(html, /does not start, stop, or delay the file/);
   assert.equal(release.X64_SHA256, X64);
   assert.equal(release.ARM_SHA256, ARM);
-  assert.equal(release.VERSION, '1.4.2');
+  assert.equal(release.VERSION, '1.4.3');
   const cfg = read('assets/js/config.js');
   assert.match(cfg, new RegExp(`DONATE_URL: "${KOFI}"`));
   assert.match(cfg, new RegExp(`SHA256: "${X64}"`));
