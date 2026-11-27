@@ -102,7 +102,7 @@ test('lookup uses the release tag for this version and caches one answer', async
   const first = await release.lookupArm({ fetchImpl, now: () => 1000, cache, cacheMs: 5000 });
   const second = await release.lookupArm({ fetchImpl, now: () => 2000, cache, cacheMs: 5000 });
   assert.equal(urls.length, 1);
-  assert.match(urls[0], /\/releases\/tags\/v1\.4\.3$/);
+  assert.match(urls[0], /\/releases\/tags\/v1\.4\.4$/);
   assert.equal(first.sha256, second.sha256);
   assert.equal(first.version, '1.4.4');
 });
@@ -160,6 +160,8 @@ test('the download page offers x64 and ARM64 as equal choices, with no Mac downl
   assert.ok(vercel.rewrites.some((r) => r.source === '/download/Keyware-arm64.exe' && r.destination === '/api/download?arch=arm64'));
   assert.ok(!fs.existsSync(path.join(ROOT, 'download', 'Keyware-arm64.exe')));
   const notes = fs.readFileSync(path.join(ROOT, 'whats-new.html'), 'utf8');
+  assert.match(notes, /Version 1\.4\.4/);
+  assert.match(notes, /Opening Keyware again shows the window/);
   assert.match(notes, /Version 1\.4\.3/);
   assert.match(notes, /under 50 ms/);
   assert.match(notes, /Get-StartApps/);
