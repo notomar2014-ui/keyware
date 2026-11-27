@@ -41,7 +41,7 @@ def _catalog(*apps, protocols=(), enumerated=True) -> Catalog:
 
 
 def test_version_is_current():
-    assert __version__ == "1.4.3"
+    assert __version__ == "1.4.4"
 
 
 def test_phone_link_uses_the_store_id_not_a_missing_exe():
