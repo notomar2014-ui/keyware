@@ -85,7 +85,7 @@ def test_background_launch_skips_the_nudge_and_hides_the_window(monkeypatch, tmp
     seen = {}
 
     class FakeApp:
-        def __init__(self, service, start_minimized=False, nudge_state=None):
+        def __init__(self, service, start_minimized=False, nudge_state=None, activation=None):
             seen["minimized"] = start_minimized
             seen["nudge_state"] = nudge_state
 

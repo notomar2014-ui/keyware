@@ -283,7 +283,11 @@ def test_main_uses_startup_task_launch_only_when_packaged(monkeypatch):
     monkeypatch.setattr(entry, "_install_excepthook", lambda: None)
     import ui.app as app_module
 
-    monkeypatch.setattr(app_module, "run", lambda minimized=False, background=False: seen.update(m=minimized, b=background))
+    monkeypatch.setattr(
+        app_module,
+        "run",
+        lambda minimized=False, background=False, activation=None: seen.update(m=minimized, b=background),
+    )
     monkeypatch.setattr(startup, "is_packaged", lambda kernel32=None: True)
     monkeypatch.setattr(startup, "launched_by_startup_task", lambda app_instance=None: True)
     assert entry.main([]) == 0 and seen == {"m": True, "b": True}

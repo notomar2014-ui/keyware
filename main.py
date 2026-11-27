@@ -75,6 +75,29 @@ def run_startup_status(args: list[str]) -> int:
     return 0
 
 
+def _packaged_startup(args: list[str]) -> bool:
+    """True when Windows started this process from the MSIX startup task.
+
+    The manifest passes ``--background``. This covers a Windows build that
+    drops that argument. A Start menu tile is a normal launch, so this stays
+    false for the Store package. The portable exe has no package identity, so
+    it stays false there too.
+    """
+    if args:
+        return False
+    from engine.startup import is_packaged, launched_by_startup_task
+
+    return bool(is_packaged() and launched_by_startup_task())
+
+
+def _say(text: str) -> None:
+    """print, but a windowed exe has no console (stdout is None)."""
+    try:
+        print(text)
+    except Exception:
+        return
+
+
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     set_app_user_model_id()
@@ -94,23 +117,34 @@ def main(argv: list[str] | None = None) -> int:
         return run_action_file(args)
     if "--ai-test" in args:
         return run_ai_test(args)
-    from engine.instance import InstanceLock
+    from engine.instance import InstanceLock, notify_running_instance, second_launch_action
 
     lock = InstanceLock()
     if not lock.acquire():
-        print("Keyware is already running.")
-        return 2
+        # A second Start-menu or Keyware.exe launch reveals the window the
+        # first process already owns. A silent start (--background,
+        # --minimized, or the MSIX startup task) must not.
+        if second_launch_action(args, packaged_startup=_packaged_startup(args)) == "reveal":
+            brought = False
+            try:
+                brought = bool(notify_running_instance())
+            except Exception:
+                brought = False
+            if brought:
+                _say("Keyware is already running. Bringing the window forward.")
+            else:
+                _say("Keyware is already running.")
+        return 0
     try:
         _install_excepthook()
         from ui.app import run
 
-        background = "--background" in args
-        if not background and not args:
-            # MSIX build: the startup task normally passes --background itself (uap10:Parameters).
-            from engine.startup import is_packaged, launched_by_startup_task
-
-            background = is_packaged() and launched_by_startup_task()
-        run(minimized=background or "--minimized" in args, background=background)
+        background = "--background" in args or _packaged_startup(args)
+        run(
+            minimized=background or "--minimized" in args,
+            background=background,
+            activation=lock,
+        )
         return 0
     finally:
         lock.release()
