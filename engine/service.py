@@ -106,6 +106,16 @@ class KeywareService:
             jitter_min_ms=self.config.jitter_min_ms,
             jitter_max_ms=self.config.jitter_max_ms,
         )
+        # Launches never wait behind a macro, a script, or a catalog scan.
+        # Jitter is for injected keys; opening an app has none.
+        self.launch_executor = ActionExecutor(
+            opener,
+            self.injector,
+            _zero_sleep,
+            rng or random.SystemRandom(),
+            jitter_min_ms=0,
+            jitter_max_ms=0,
+        )
         if synchronous:
             self.executor.sleeper = _zero_sleep
         # Run command: the window sets this to a Yes/No dialog. Without it, commands never run.
@@ -129,6 +139,7 @@ class KeywareService:
         self._key_down = key_down
         self._ui: queue.Queue[UiMessage] = queue.Queue()
         self._actions: queue.Queue = queue.Queue()
+        self._launches: queue.Queue = queue.Queue()
         self._replay_queue: queue.Queue = queue.Queue()
         self._log_lines: queue.Queue[str] = queue.Queue()
         self._mouse_bound_cache: frozenset[str] | None = None
@@ -190,6 +201,12 @@ class KeywareService:
         message = self._try_start_hook() if self.config.enabled else None
         if message:
             self._log(message)
+        if not self.synchronous:
+            # The Start-menu list and the packaged-app activator are ready
+            # before a hold reaches its threshold. Neither runs on the hook.
+            from engine.applaunch import warm_catalog
+
+            warm_catalog()
         from engine import __version__
 
         state = "ON" if self.hook_status == "on" else "OFF"
@@ -200,7 +217,7 @@ class KeywareService:
         self._stop.set()
         self._flush_logs()
         self.clicker.close()
-        self.executor.cancel()
+        self._cancel_executors()
         with self._lock:
             effects = self._detector.set_enabled(False)
             self._copilot.reset()
@@ -216,6 +233,7 @@ class KeywareService:
             self.context.stop()
         if self._workers:
             self._actions.put(None)
+            self._launches.put(None)
             self._replay_queue.put(None)
 
     def wants_mouse(self, button: str) -> bool:
@@ -432,19 +450,11 @@ class KeywareService:
         return filtered
 
     def tick(self, now: float | None = None) -> None:
-        self._flush_logs()
         moment = self._clock() if now is None else now
-        # The hold timer runs every 20 ms. Statting the config that often
-        # wakes the disk on the same cadence as the hook's timer thread.
-        if moment - self._reload_at >= 0.5:
-            self._reload_at = moment
-            self.maybe_reload()
-        self.consider_update()
         if self._recorder is not None:
             self._tick_recorder(self._clock() if now is None else now)
         elif self._record_stop_pending:
             self._end_recording()
-        self._poll_elevation()
         with self._lock:
             moment = self._clock() if now is None else now
             effects = self._detector.tick(moment)
@@ -468,7 +478,17 @@ class KeywareService:
                 self._log(f"Dry run: {message}")
             if pause:
                 self.toggle_pause()
+        # Queue the launch before any disk or config work. The hold has
+        # already reached its threshold; the app should start now.
         self._dispatch(effects, from_hook=False)
+        self._flush_logs()
+        # The hold timer runs every 20 ms. Statting the config that often
+        # wakes the disk on the same cadence as the hook's timer thread.
+        if moment - self._reload_at >= 0.5:
+            self._reload_at = moment
+            self.maybe_reload()
+        self.consider_update()
+        self._poll_elevation()
 
     def _caps_check(self) -> list[Effect]:
         """When Caps Lock becomes a bound key, make sure its light is not stuck on.
@@ -541,7 +561,7 @@ class KeywareService:
             self.paused = False
             self._suspended = False
             self._hook_failures = 0
-            self.executor.reset()
+            self._reset_executors()
             message = self._try_start_hook()
             if message:
                 return message
@@ -560,7 +580,7 @@ class KeywareService:
             return
         if self.paused:
             self.paused = False
-            self.executor.reset()
+            self._reset_executors()
             with self._lock:
                 self._detector.set_paused(False)
             self._log("Resumed.")
@@ -569,7 +589,7 @@ class KeywareService:
             return
         self.paused = True
         self.clicker.stop_all("paused")
-        self.executor.cancel()
+        self._cancel_executors()
         self._drain_actions()
         with self._lock:
             effects = self._detector.set_paused(True)
@@ -1333,7 +1353,7 @@ class KeywareService:
 
     def _stop_hook(self, *, clear_master: bool, log: str | None = None) -> None:
         self.clicker.stop_all("Keyware off")
-        self.executor.cancel()
+        self._cancel_executors()
         self._drain_actions()
         self.paused = False
         self._suspended = False
@@ -1370,7 +1390,7 @@ class KeywareService:
 
     def _on_panic(self, from_hook: bool) -> None:
         self.clicker.stop_all("panic")
-        self.executor.cancel()
+        self._cancel_executors()
         self._drain_actions()
         try:
             self.hook.stop()
@@ -1512,6 +1532,8 @@ class KeywareService:
         finally:
             self.executor.guard = None
 
+    _LAUNCH_ACTIONS = frozenset({"open_app", "open_calculator", "calculator", "open_url", "open_path"})
+
     def _start_action(self, action, *, from_hook: bool) -> None:
         if self.synchronous and not from_hook:
             try:
@@ -1521,6 +1543,11 @@ class KeywareService:
             return
         if not self._workers:
             self._start_workers()
+        # Opening an app, a link, or a file does not wait for a macro that is
+        # already typing, and it does not probe the foreground window first.
+        if getattr(action, "type", "") in self._LAUNCH_ACTIONS:
+            self._launches.put(action)
+            return
         self._actions.put(("run", action, self._fire_window()))
 
     def _replay(self, op: str, key: str) -> None:
@@ -1559,11 +1586,35 @@ class KeywareService:
             return
         self._workers = True
         threading.Thread(target=self._action_loop, name="keyware-actions", daemon=True).start()
+        threading.Thread(target=self._launch_loop, name="keyware-launch", daemon=True).start()
         threading.Thread(target=self._replay_loop, name="keyware-replay", daemon=True).start()
         threading.Thread(target=self._tick_loop, name="keyware-tick", daemon=True).start()
         if self.context is not None:
             self.context.start(self._on_foreground)
         threading.Thread(target=self._watch_hook, name="keyware-watch", daemon=True).start()
+
+    def _launch_loop(self) -> None:
+        """Run open-app / open-url / open-path as soon as they are queued.
+
+        The COM activator is created here, before the first launch, so that
+        cost is paid at startup rather than after a hold threshold.
+        """
+        try:
+            from engine.applaunch import prepare_activation
+
+            prepare_activation()
+        except Exception:
+            pass
+        while True:
+            action = self._launches.get()
+            if action is None or self._stop.is_set():
+                return
+            if self.launch_executor.cancelled:
+                continue
+            try:
+                self.launch_executor.run(action)
+            except Exception as exc:
+                self._log(f"Action failed: {exc}")
 
     def _action_loop(self) -> None:
         while True:
@@ -1677,12 +1728,47 @@ class KeywareService:
                 with self._replay_lock:
                     self._replay_inflight = max(0, self._replay_inflight - 1)
 
+    def _tick_delay(self) -> float:
+        """How long to sleep before the next hold check.
+
+        The poll stays at 20 ms so lost key-ups are still noticed. A hold,
+        tap-dance, or setup that comes due sooner wakes the thread then,
+        instead of waiting out the rest of the poll.
+        """
+        delay = HOLD_TICK_SECONDS
+        try:
+            now = self._clock()
+            with self._lock:
+                wake = self._detector.next_wake(now)
+        except Exception:
+            return delay
+        if wake is None:
+            return delay
+        remaining = wake - self._clock()
+        if remaining <= 0:
+            return 0.0
+        if remaining < delay:
+            return remaining
+        return delay
+
     def _tick_loop(self) -> None:
-        while not self._stop.wait(HOLD_TICK_SECONDS):
+        spins = 0
+        while not self._stop.is_set():
+            delay = self._tick_delay()
+            if delay <= 0:
+                spins += 1
+                # A deadline that tick() could not consume must not spin the core.
+                if spins > 2:
+                    delay = HOLD_TICK_SECONDS
+            else:
+                spins = 0
+            if self._stop.wait(delay):
+                return
             try:
                 self.tick()
             except Exception:
                 self._log("Hold timer error. In-progress holds were left unchanged.")
+                self._stop.wait(HOLD_TICK_SECONDS)
 
     def _watch_hook(self) -> None:
         while not self._stop.wait(0.25):
@@ -1801,12 +1887,21 @@ class KeywareService:
             raise ValueError("That profile no longer exists.")
         return profile
 
+    def _cancel_executors(self) -> None:
+        self.executor.cancel()
+        self.launch_executor.cancel()
+
+    def _reset_executors(self) -> None:
+        self.executor.reset()
+        self.launch_executor.reset()
+
     def _drain_actions(self) -> None:
-        while True:
-            try:
-                self._actions.get_nowait()
-            except queue.Empty:
-                break
+        for pending in (self._actions, self._launches):
+            while True:
+                try:
+                    pending.get_nowait()
+                except queue.Empty:
+                    break
 
     def _log(self, text: str) -> None:
         self._put(UiMessage(kind="log", text=text))
