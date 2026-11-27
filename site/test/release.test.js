@@ -14,8 +14,8 @@ const { Stats } = require('../api/_lib/stats');
 const { MemoryKV } = require('../api/_lib/kv');
 
 const ROOT = path.join(__dirname, '..');
-const HASH = 'D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733';
-const ARM_HASH = '2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50';
+const HASH = 'FDE40C8EE789BC3FF411A809502226D2B09912243E4E8885D76FD52FFD645FE0';
+const ARM_HASH = '45A019818A38E00FF4A2056078D2873B71DD5C919FB08F4C1810D1A783E26EC1';
 const CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';
 
 function armAsset(extra = {}) {
@@ -51,17 +51,17 @@ async function run(handler, opts) {
 }
 
 test('x64 release constants match the published file for this version', () => {
-  assert.equal(release.VERSION, '1.4.3');
+  assert.equal(release.VERSION, '1.4.4');
   assert.equal(release.X64.sha256, HASH);
   assert.equal(release.SHA256, HASH);
-  assert.equal(release.X64.bytes, 21855700);
-  assert.equal(release.X64.size, '20.8 MB');
+  assert.equal(release.X64.bytes, 21863707);
+  assert.equal(release.X64.size, '20.9 MB');
   assert.equal(release.ARM_SHA256, ARM_HASH);
-  assert.equal(release.ARM_BYTES, 16878617);
+  assert.equal(release.ARM_BYTES, 16888019);
   assert.equal(release.formatSize(release.ARM_BYTES), '16.1 MB');
   assert.notEqual(release.ARM_SHA256, HASH);
   assert.equal(release.X64.version, release.VERSION);
-  assert.equal(release.FILE_PATH, '/download/1.4.3/Keyware.exe');
+  assert.equal(release.FILE_PATH, '/download/1.4.4/Keyware.exe');
   const exe = fs.readFileSync(path.join(ROOT, 'download', release.VERSION, 'Keyware.exe'));
   assert.equal(exe.length, release.X64.bytes);
   assert.equal(crypto.createHash('sha256').update(exe).digest('hex').toUpperCase(), HASH);
@@ -104,7 +104,7 @@ test('lookup uses the release tag for this version and caches one answer', async
   assert.equal(urls.length, 1);
   assert.match(urls[0], /\/releases\/tags\/v1\.4\.3$/);
   assert.equal(first.sha256, second.sha256);
-  assert.equal(first.version, '1.4.3');
+  assert.equal(first.version, '1.4.4');
 });
 
 test('the release API lists x64 always and ARM64 only when the asset is real', async () => {
@@ -112,7 +112,7 @@ test('the release API lists x64 always and ARM64 only when the asset is real', a
   assert.equal(none.statusCode, 200);
   assert.deepEqual(none.json.builds.map((b) => b.arch), ['x64']);
   assert.equal(none.json.builds[0].sha256, HASH);
-  assert.equal(none.json.version, '1.4.3');
+  assert.equal(none.json.version, '1.4.4');
   const listed = await run(createReleaseHandler({ lookup: async () => release.armFromAsset(armAsset()) }));
   assert.deepEqual(listed.json.builds.map((b) => b.arch), ['x64', 'arm64']);
   assert.equal(listed.json.builds[1].version, listed.json.version);

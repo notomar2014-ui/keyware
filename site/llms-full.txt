@@ -5,11 +5,11 @@
 Key facts:
 
 - Price: free. No trial, no paid tier, no account.
-- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20.8 MB, and native ARM64 Keyware-arm64.exe, about 16.1 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.4.3.
+- Platform: Windows 10 and Windows 11. Two portable downloads, no installer: 64-bit (x64) Keyware.exe, about 20.9 MB, and native ARM64 Keyware-arm64.exe, about 16.1 MB. On ARM64 Windows the 64-bit file runs under emulation. There is no Mac download: remapping uses a Windows keyboard and mouse hook, and a Mac build of this app would not remap keys. Current version: 1.4.4.
 - Download (x64): https://keyware.site/download/Keyware.exe
 - Download (ARM64): https://keyware.site/download/Keyware-arm64.exe
-- SHA-256 (x64 Keyware.exe 1.4.3): D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733
-- SHA-256 (ARM64 Keyware-arm64.exe 1.4.3): 2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50
+- SHA-256 (x64 Keyware.exe 1.4.4): FDE40C8EE789BC3FF411A809502226D2B09912243E4E8885D76FD52FFD645FE0
+- SHA-256 (ARM64 Keyware-arm64.exe 1.4.4): 45A019818A38E00FF4A2056078D2873B71DD5C919FB08F4C1810D1A783E26EC1
 - License: MIT, open source.
 - Privacy: settings stay on the PC in %APPDATA%\Keyware\config.json. The hook engine never goes online. Text mode sends the sentence you typed plus a short setup summary, not your keystrokes. A Play action looks up the name you entered. Feedback sends the message, email, app version and a random install ID; the server keeps a salted hash of that ID. See https://keyware.site/privacy.
 - Safety: unbound keys pass straight through; Ctrl+Alt+Shift+Esc is a panic stop; Ctrl+Alt+F12 pauses; it never injects keys into elevated (admin) windows.
@@ -31,29 +31,29 @@ Key facts:
 
 # Home page
 
-Version 1.4.3
+Version 1.4.4
 
-## Hold to open an app, without the wait.
+## Open Keyware again, and the window comes back.
 
-Calculator and other built-in Windows apps resolve in under 50 ms. A hold no longer waits on a Start-menu or PowerShell scan. Full release notes
+Clicking Keyware in the Start menu, or launching it again, while it is already in the tray, minimized, or behind other windows now brings that window forward. Full release notes
 
-1.4.3
+1.4.4
 
-### Under 50 ms
+### Start menu and a second launch
 
-Built-in apps such as Calculator resolve directly. The hold does not walk the Start menu or run PowerShell Get-StartApps before the program opens.
+If Keyware is already running in the tray, a Start menu click or another Keyware.exe launch restores and focuses the existing window, then the new process exits.
 
-1.4.3
+1.4.4
 
-### A catalog in the background
+### Minimized or behind other windows
 
-Unknown Start-menu names warm Get-StartApps in the background. That catalog is kept for 5 minutes, and a launch does not wait for it.
+A hidden, minimized, or covered Keyware window is shown and brought to the front, the same way the tray's Show Keyware action does.
 
-1.4.3
+1.4.4
 
-### Its own launch thread
+### Silent starts stay silent
 
-App launches run on a dedicated thread with a reused COM activator. The hold dispatches the action before logging and config housekeeping.
+Start with Windows, --background, and --minimized still start in the tray and do not pop the window open.
 
 FAQ
 
@@ -123,7 +123,7 @@ Source: https://keyware.site/guide
 
 Keyware is a single program file. There's no installer and nothing to sign up for.
 
-- Download Most PCs: Download 64-bit (x64) and save Keyware.exe (v1.4.3, 20.8 MB). SHA-256 D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733. Windows on ARM, including Copilot+ PCs: Download ARM64 and save Keyware-arm64.exe (v1.4.3, 16.1 MB). SHA-256 2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
+- Download Most PCs: Download 64-bit (x64) and save Keyware.exe (v1.4.4, 20.9 MB). SHA-256 FDE40C8EE789BC3FF411A809502226D2B09912243E4E8885D76FD52FFD645FE0. Windows on ARM, including Copilot+ PCs: Download ARM64 and save Keyware-arm64.exe (v1.4.4, 16.1 MB). SHA-256 45A019818A38E00FF4A2056078D2873B71DD5C919FB08F4C1810D1A783E26EC1. On ARM64 Windows the 64-bit file runs under emulation. Put the file somewhere you'll find it again, such as your Desktop or a Tools folder. Keyware runs on Windows 10 and 11. There is no Mac download. On a Mac, turning Keyware on does not remap keys.
 
 ### Download
 
@@ -602,9 +602,9 @@ Most PCs
 
 On ARM64 Windows this file runs under emulation.
 
-Keyware.exe · v1.4.3 · 20.8 MB
+Keyware.exe · v1.4.4 · 20.9 MB
 
-SHA-256 D113388C26015C74EAD0CC2AAACA472EB75F1662BC6D3595FDE13C3C94591733
+SHA-256 FDE40C8EE789BC3FF411A809502226D2B09912243E4E8885D76FD52FFD645FE0
 
 Windows on ARM
 
@@ -612,6 +612,6 @@ Windows on ARM
 
 Native build, including Copilot+ PCs.
 
-Keyware-arm64.exe · v1.4.3 · 16.1 MB
+Keyware-arm64.exe · v1.4.4 · 16.1 MB
 
-SHA-256 2020B1C2BDF356B5D1CE49B3848D608DC11CFAA9BE015FEFF815C3F99C3F5D50
+SHA-256 45A019818A38E00FF4A2056078D2873B71DD5C919FB08F4C1810D1A783E26EC1

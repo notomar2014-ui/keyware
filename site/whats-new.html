@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>What's new · Keyware</title>
-  <meta name="description" content="What's new in Keyware 1.4.3: a hold that opens Calculator and other built-in apps resolves in under 50 ms, with a background app catalog and a dedicated launch thread.">
+  <meta name="description" content="What's new in Keyware 1.4.4: clicking Keyware in the Start menu, or launching it again, while it is already in the tray now brings that window forward.">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="color-scheme" content="dark">
   <link rel="canonical" href="https://keyware.site/whats-new">
@@ -57,6 +57,17 @@
 
   <div class="container container--guide guide">
     <main id="main" class="doc">
+
+      <section id="v1-4-4" class="doc__section">
+        <p class="doc__kicker">27 November 2026</p>
+        <h2>Version 1.4.4</h2>
+        <ul>
+          <li><strong>Opening Keyware again shows the window.</strong> Clicking Keyware in the Start menu, or launching <code>Keyware.exe</code> again, while it is already in the tray, minimized, or behind other windows now brings that window forward.</li>
+          <li><strong>The new process exits.</strong> The instance you just started asks the running one to restore and focus the window, then exits.</li>
+          <li><strong>Silent starts stay silent.</strong> <code>--background</code> and <code>--minimized</code> still start in the tray, including Start with Windows for the portable exe and the Microsoft Store startup task.</li>
+        </ul>
+        <p><a href="/#install">Choose 64-bit (x64) or ARM64</a></p>
+      </section>
 
       <section id="v1-4-3" class="doc__section">
         <p class="doc__kicker">27 November 2026</p>
@@ -164,7 +175,7 @@
         <a href="/support">Support</a>
         <a class="footer__support" data-support href="#" target="_blank" rel="noopener" hidden>Support Keyware</a>
       </nav>
-      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.4.3</span> · Windows is a trademark of Microsoft.</p>
+      <p class="footer__legal">© <span id="year">2026</span> Keyware · v<span data-version>1.4.4</span> · Windows is a trademark of Microsoft.</p>
     </div>
   </footer>
 </body>
