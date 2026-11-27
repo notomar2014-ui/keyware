@@ -220,7 +220,9 @@ def test_windows_catalog_does_not_run_powershell_on_the_caller(monkeypatch):
 
     stale = Catalog(apps=[InstalledApp("Discord", "shortcut", r"C:\Menu\Discord.lnk")])
     launch._CACHE = stale
-    launch._CACHE_AT = 0.0
+    # time.monotonic() is seconds since boot. A stamp of 0 looks fresh on a
+    # runner that has been up for less than the catalog TTL.
+    launch._CACHE_AT = time.monotonic() - (launch._CATALOG_TTL + 1)
     scheduled.clear()
     again = windows_catalog()
     assert again.apps[0].name == "Discord"
